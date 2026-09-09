@@ -103,7 +103,7 @@ export const RoboticsShowcase = () => {
                   <line x1="20" y1="130" x2="140" y2="130" stroke="#3b82f6" strokeWidth="0.5" />
                   <line x1="20" y1="128" x2="20" y2="132" stroke="#3b82f6" strokeWidth="0.5" />
                   <line x1="140" y1="128" x2="140" y2="132" stroke="#3b82f6" strokeWidth="0.5" />
-                  <text x="80" y="127" fill="#3b82f6" fontSize="4" fontFamily="monospace">450mm</text>
+                  <text x="80" y="127" fill="#3b82f6" fontSize="4" fontFamily="monospace">TBD_DIMENSION</text>
 
                   {/* Stage-specific graphics */}
                   {activeStage === 0 && (
@@ -148,9 +148,9 @@ export const RoboticsShowcase = () => {
                   )}
 
                   {/* Tech specs block */}
-                  <text x="165" y="30" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">MAT: AL7075-T6</text>
-                  <text x="165" y="35" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">TOL: ±0.05mm</text>
-                  <text x="165" y="45" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">MASS: {activeBotData?.weight}</text>
+                  <text x="165" y="30" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">MAT: TBD_MATERIAL</text>
+                  <text x="165" y="35" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">TOL: TBD_TOLERANCE</text>
+                  <text x="165" y="45" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">DIM: TBD_DIMENSION</text>
                   <text x="165" y="50" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">REV: 02.B</text>
                 </svg>
               </motion.div>
