@@ -46,7 +46,7 @@ export const EngineeringNotes = () => {
                 <div className="text-accent font-mono text-xs tracking-widest mb-2 opacity-80 group-hover:opacity-100 transition-opacity">
                   {rule.num}
                 </div>
-                <div className="text-lg md:text-xl text-text-muted font-light leading-relaxed font-serif" style={{ fontFamily: "'Caveat', cursive, serif" }}>
+                <div className="text-lg md:text-2xl text-text-muted font-light leading-relaxed font-hand">
                   {rule.text}
                 </div>
                 <div className="absolute -left-12 top-2 text-[#222] font-mono text-sm opacity-50 hidden md:block">

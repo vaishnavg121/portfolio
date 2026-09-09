@@ -15,7 +15,7 @@ export const ContactFooter = () => {
           className="mb-16"
         >
           <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-medium mb-6 tracking-tight">
-            LET'S BUILD SOMETHING <br className="hidden md:block" />
+            LET&apos;S BUILD SOMETHING <br className="hidden md:block" />
             <span className="text-accent italic font-serif">INTERESTING.</span>
           </h2>
           <p className="text-text-muted font-mono text-sm tracking-widest uppercase">

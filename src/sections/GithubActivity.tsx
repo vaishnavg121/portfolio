@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 
 export const GithubActivity = () => {
   // Mock data adapter interface
@@ -23,7 +23,14 @@ export const GithubActivity = () => {
     return data;
   };
 
-  const gridData = useMemo(() => generateMockData(), []);
+  const [gridData, setGridData] = useState<{date: string, count: number}[][]>([]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setGridData(generateMockData());
+  }, []);
+
+  if (gridData.length === 0) return null;
 
   const getColor = (count: number) => {
     if (count === 0) return "bg-[#1a1a1a]";
@@ -45,12 +52,21 @@ export const GithubActivity = () => {
               System Commits
             </h3>
           </div>
-          <div className="text-xs font-mono text-text-muted mt-4 md:mt-0">
-            [DATA SOURCE: MOCK // GITHUB API PENDING]
+          <div className="text-xs font-mono mt-4 md:mt-0 flex flex-col items-end">
+            <span className="bg-accent text-white px-2 py-1 font-bold tracking-widest">[ DEV_PLACEHOLDER ]</span>
+            <span className="text-text-muted mt-2">API INTEGRATION PENDING</span>
           </div>
         </div>
 
-        <div className="w-full overflow-x-auto pb-4 custom-scrollbar">
+        <div className="w-full overflow-x-auto pb-4 custom-scrollbar relative">
+          {/* Warning overlay tape */}
+          <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden opacity-20">
+            <div className="w-[150%] h-8 bg-accent -rotate-2 translate-y-12 flex items-center overflow-hidden">
+               <div className="whitespace-nowrap font-mono font-bold text-black text-sm tracking-widest repeating-linear-gradient">
+                 MOCK DATA // MOCK DATA // MOCK DATA // MOCK DATA // MOCK DATA // MOCK DATA // MOCK DATA //
+               </div>
+            </div>
+          </div>
           <div className="min-w-[800px] flex gap-1">
             {gridData.map((week, wIdx) => (
               <div key={wIdx} className="flex flex-col gap-1">

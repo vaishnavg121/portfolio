@@ -9,6 +9,7 @@ export const EntrySequence = () => {
   useEffect(() => {
     // Check reduced motion
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStage(3);
       return;
     }

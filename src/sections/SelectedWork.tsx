@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+// using GSAP instead of framer-motion here
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -65,7 +65,7 @@ export const SelectedWork = () => {
   useGSAP(() => {
     const projects = gsap.utils.toArray('.project-card') as HTMLElement[];
     
-    projects.forEach((project, i) => {
+    projects.forEach((project) => {
       // Fade in project content
       gsap.fromTo(project, 
         { opacity: 0, y: 50 },
@@ -128,53 +128,69 @@ export const SelectedWork = () => {
           Selected Work
         </h2>
 
-        <div className="flex flex-col gap-32">
+        <div className="flex flex-col gap-32 md:gap-48">
           {PROJECTS.map((project, index) => (
-            <div key={project.id} className="project-card flex flex-col md:flex-row gap-12 md:gap-24 items-start">
+            <div key={project.id} className="project-card flex flex-col md:flex-row gap-12 md:gap-16 items-start">
               {/* Info Side */}
-              <div className="flex-1 md:w-1/2 md:sticky md:top-32">
-                <div className="font-mono text-accent text-sm mb-4">{project.id} // {project.category}</div>
-                <h3 className="text-4xl md:text-6xl font-display font-medium mb-6">{project.title}</h3>
-                <p className="text-text-muted text-lg mb-8 max-w-md leading-relaxed">
+              <div className="flex-1 md:w-5/12 md:sticky md:top-32 relative z-20">
+                <div className="flex items-baseline gap-4 mb-4">
+                  <span className="font-mono text-4xl text-border opacity-50 tracking-tighter">{project.id}</span>
+                  <div className="font-mono text-accent text-xs tracking-widest uppercase">{project.category}</div>
+                </div>
+                
+                <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-medium mb-6 uppercase tracking-tight leading-none">
+                  {project.title}
+                </h3>
+                
+                <p className="text-text-muted text-base md:text-lg mb-8 max-w-sm leading-relaxed border-l border-border pl-4">
                   {project.description}
                 </p>
-                <div className="flex flex-wrap gap-3 mb-12">
+                
+                <div className="flex flex-wrap gap-2 mb-12">
                   {project.tags.map(tag => (
-                    <span key={tag} className="text-xs font-mono border border-border px-3 py-1 text-text-muted rounded-sm">
+                    <span key={tag} className="text-[10px] font-mono border border-[#333] px-2 py-1 text-text-muted uppercase tracking-wider">
                       {tag}
                     </span>
                   ))}
                 </div>
+                
                 <button 
                   data-cursor="VIEW"
-                  className="flex items-center gap-3 text-sm font-mono uppercase tracking-widest text-text-primary hover:text-accent transition-colors group"
+                  className="flex items-center gap-3 text-xs font-mono uppercase tracking-widest text-text-primary hover:text-accent transition-colors group"
                 >
-                  View Project
-                  <MoveRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
+                  <span className="border-b border-accent pb-1">View Project</span>
+                  <MoveRight className="w-4 h-4 group-hover:translate-x-2 transition-transform text-accent" />
                 </button>
               </div>
 
               {/* Visual Side */}
-              <div className="flex-1 w-full bg-surface-elevated aspect-[4/5] md:aspect-square flex items-center justify-center p-8 border border-border relative overflow-hidden group" data-cursor="VIEW">
+              <div className="flex-1 md:w-7/12 w-full bg-[#0a0a0a] min-h-[500px] flex items-center justify-center p-8 border border-border relative overflow-hidden group" data-cursor="VIEW">
                 {/* Abstract Visual Placeholder */}
-                <div className="absolute inset-0 opacity-20 transition-opacity group-hover:opacity-40" 
+                <div className="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-30" 
                   style={{
                     background: index % 2 === 0 
-                      ? 'radial-gradient(circle at center, var(--accent-soft) 0%, transparent 70%)'
-                      : 'linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%)'
+                      ? 'radial-gradient(circle at center, var(--accent) 0%, transparent 60%)'
+                      : 'linear-gradient(45deg, transparent 40%, rgba(204,51,51,0.15) 50%, transparent 60%)'
                   }}
                 />
                 
+                <div className="absolute top-4 right-4 text-[10px] font-mono text-[#333] tracking-widest">
+                  SYS_VISUAL // {project.theme.toUpperCase()}
+                </div>
+
                 {/* Architecture Diagram */}
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="text-xs font-mono text-text-muted mb-8 tracking-widest uppercase opacity-50">System Architecture</div>
+                <div className="relative z-10 w-full max-w-xs flex flex-col gap-1">
+                  <div className="text-[10px] font-mono text-text-muted mb-4 tracking-widest uppercase flex items-center gap-2">
+                    <div className="w-2 h-2 bg-accent" /> System Pipeline
+                  </div>
                   {project.architecture.map((node, i) => (
-                    <div key={node} className="flex flex-col items-center">
-                      <div className="arch-node border border-text-muted text-text-primary px-4 py-2 font-mono text-xs bg-surface shadow-lg tracking-wider">
-                        {node}
+                    <div key={node} className="flex flex-col">
+                      <div className="arch-node bg-[#111] border-l-2 border-accent text-text-primary px-4 py-3 font-mono text-xs shadow-xl tracking-wider flex justify-between items-center">
+                        <span>{node}</span>
+                        <span className="text-[#444] text-[10px]">0{i + 1}</span>
                       </div>
                       {i < project.architecture.length - 1 && (
-                        <div className="arch-line w-[1px] bg-accent my-1 opacity-50" />
+                        <div className="arch-line w-[1px] h-4 bg-[#333] ml-4 opacity-50" />
                       )}
                     </div>
                   ))}

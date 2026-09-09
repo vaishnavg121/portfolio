@@ -66,7 +66,7 @@ export const RoboticsShowcase = () => {
                       : 'border-[#222] text-text-muted hover:border-text-muted hover:text-text-primary'
                   }`}
                 >
-                  0{idx + 1} // {stage}
+                  0{idx + 1} {`//`} {stage}
                 </button>
               ))}
             </div>
@@ -89,49 +89,69 @@ export const RoboticsShowcase = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.05 }}
                 transition={{ duration: 0.4 }}
-                className="absolute inset-0 flex items-center justify-center p-12"
+                className="absolute inset-0 p-8 md:p-12"
               >
-                {/* SVG Blueprint Placeholder */}
-                <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Technical SVG Blueprint Placeholder */}
+                <svg width="100%" height="100%" viewBox="0 0 200 150" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                  
+                  {/* Grid / Frame */}
+                  <rect x="5" y="5" width="190" height="140" stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
+                  <line x1="5" y1="20" x2="195" y2="20" stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
+                  <line x1="160" y1="5" x2="160" y2="145" stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
+                  
+                  {/* Measurements */}
+                  <line x1="20" y1="130" x2="140" y2="130" stroke="#3b82f6" strokeWidth="0.5" />
+                  <line x1="20" y1="128" x2="20" y2="132" stroke="#3b82f6" strokeWidth="0.5" />
+                  <line x1="140" y1="128" x2="140" y2="132" stroke="#3b82f6" strokeWidth="0.5" />
+                  <text x="80" y="127" fill="#3b82f6" fontSize="4" fontFamily="monospace">450mm</text>
+
+                  {/* Stage-specific graphics */}
                   {activeStage === 0 && (
-                    <>
-                      <rect x="20" y="30" width="60" height="40" stroke="#3b82f6" strokeWidth="0.5" strokeDasharray="2 2" />
-                      <circle cx="35" cy="50" r="10" stroke="#3b82f6" strokeWidth="0.5" />
-                      <circle cx="65" cy="50" r="10" stroke="#3b82f6" strokeWidth="0.5" />
-                      <line x1="10" y1="50" x2="90" y2="50" stroke="#3b82f6" strokeWidth="0.2" opacity="0.5" />
-                      <line x1="50" y1="10" x2="50" y2="90" stroke="#3b82f6" strokeWidth="0.2" opacity="0.5" />
-                      <text x="5" y="10" fill="#3b82f6" fontSize="3" fontFamily="monospace">FRONT ELEVATION</text>
-                    </>
+                     <g stroke="#3b82f6" strokeWidth="0.5">
+                       <rect x="40" y="50" width="80" height="40" strokeDasharray="2 2" />
+                       <circle cx="60" cy="70" r="15" />
+                       <circle cx="100" cy="70" r="15" />
+                       <line x1="20" y1="70" x2="140" y2="70" strokeWidth="0.2" opacity="0.5" />
+                       <line x1="80" y1="30" x2="80" y2="110" strokeWidth="0.2" opacity="0.5" />
+                       <text x="10" y="15" fill="#3b82f6" fontSize="5" fontFamily="monospace">TOP_DOWN_ELEVATION</text>
+                     </g>
                   )}
-                  {activeStage === 1 && (
-                    <>
-                      <g stroke="#3b82f6" strokeWidth="0.5">
-                        <circle cx="30" cy="30" r="8" />
-                        <rect x="60" y="20" width="15" height="20" />
-                        <path d="M20,70 L40,70 L45,80 L15,80 Z" />
-                        <circle cx="70" cy="70" r="12" strokeDasharray="1 1"/>
-                      </g>
-                      <text x="5" y="10" fill="#3b82f6" fontSize="3" fontFamily="monospace">BOM / COMPONENTS</text>
-                    </>
+                  {activeStage > 0 && activeStage < 3 && (
+                     <g stroke="#3b82f6" strokeWidth="0.5">
+                       <circle cx="50" cy="50" r="10" fill="rgba(59, 130, 246, 0.1)" />
+                       <rect x="80" y="40" width="20" height="20" fill="rgba(59, 130, 246, 0.1)" />
+                       <path d="M40,90 L60,90 L70,110 L30,110 Z" fill="rgba(59, 130, 246, 0.1)" />
+                       <circle cx="100" cy="100" r="15" strokeDasharray="1 1"/>
+                       <line x1="60" y1="50" x2="80" y2="50" strokeWidth="0.2" strokeDasharray="2 2" />
+                       <text x="10" y="15" fill="#3b82f6" fontSize="5" fontFamily="monospace">{`BOM // CNC_PARTS`}</text>
+                     </g>
                   )}
-                  {activeStage > 1 && (
-                    <>
-                      <path d="M20 40 L80 40 L70 60 L30 60 Z" fill="rgba(59, 130, 246, 0.1)" stroke="#3b82f6" strokeWidth="1" />
-                      <circle cx="35" cy="50" r="8" fill="rgba(59, 130, 246, 0.2)" stroke="#3b82f6" strokeWidth="0.5" />
-                      <circle cx="65" cy="50" r="8" fill="rgba(59, 130, 246, 0.2)" stroke="#3b82f6" strokeWidth="0.5" />
-                      <text x="5" y="10" fill="#3b82f6" fontSize="3" fontFamily="monospace">ISOMETRIC SYS_VIEW</text>
-                      
-                      {activeStage === 4 && (
-                        <motion.rect 
-                          x="0" y="0" width="100" height="100" 
-                          fill="rgba(204, 51, 51, 0.1)" 
-                          initial={{ opacity: 0 }} 
-                          animate={{ opacity: [0, 0.5, 0] }} 
-                          transition={{ repeat: Infinity, duration: 2 }} 
-                        />
-                      )}
-                    </>
+                  {activeStage >= 3 && (
+                     <g stroke="#3b82f6" strokeWidth="0.5">
+                       {/* Isometric placeholder */}
+                       <path d="M50 60 L110 40 L150 70 L90 90 Z" fill="rgba(59, 130, 246, 0.15)" strokeWidth="1" />
+                       <path d="M50 60 L50 75 L90 105 L90 90 Z" fill="rgba(59, 130, 246, 0.2)" strokeWidth="1" />
+                       <path d="M150 70 L150 85 L90 105 L90 90 Z" fill="rgba(59, 130, 246, 0.1)" strokeWidth="1" />
+                       
+                       <text x="10" y="15" fill="#3b82f6" fontSize="5" fontFamily="monospace">SYS_ASSEMBLY_ISO</text>
+                       
+                       {activeStage === 4 && (
+                         <motion.rect 
+                           x="85" y="85" width="10" height="10" 
+                           fill="rgba(204, 51, 51, 0.5)" 
+                           initial={{ opacity: 0 }} 
+                           animate={{ opacity: [0, 1, 0] }} 
+                           transition={{ repeat: Infinity, duration: 1.5 }} 
+                         />
+                       )}
+                     </g>
                   )}
+
+                  {/* Tech specs block */}
+                  <text x="165" y="30" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">MAT: AL7075-T6</text>
+                  <text x="165" y="35" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">TOL: ±0.05mm</text>
+                  <text x="165" y="45" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">MASS: {activeBotData?.weight}</text>
+                  <text x="165" y="50" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">REV: 02.B</text>
                 </svg>
               </motion.div>
             </AnimatePresence>

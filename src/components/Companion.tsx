@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, useScroll, useVelocity, useTransform, useSpring } from "framer-motion";
+import { motion, useScroll, useVelocity, useSpring } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export type CompanionState = "IDLE" | "WALK" | "RUN" | "READ" | "SLEEP" | "SURPRISED" | "WIND_BLOWN" | "WAVE";

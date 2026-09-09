@@ -30,73 +30,77 @@ export const Hero = () => {
         </svg>
       </div>
 
-      <div className="container mx-auto px-6 md:px-12 z-10">
-        <div className="max-w-4xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.2, ease: "easeOut" }}
-            className="mb-6 font-mono text-xs text-text-muted tracking-widest uppercase"
-          >
-            CS + Finance @ BITS Pilani, Hyderabad
-          </motion.div>
+      <div className="container mx-auto px-6 md:px-12 z-10 w-full h-full flex flex-col justify-center pb-20">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 relative">
+          
+          {/* Main Title Block */}
+          <div className="md:col-span-10 md:col-start-1 relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.2, ease: "easeOut" }}
+              className="mb-4 md:mb-6 font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase flex items-center gap-4"
+            >
+              <span>SYS_INIT</span>
+              <div className="h-[1px] w-12 bg-border" />
+              <span>CS + Finance @ BITS Pilani</span>
+            </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.4, ease: "easeOut" }}
-            className="text-6xl md:text-8xl lg:text-9xl font-display font-medium tracking-tighter leading-[0.9] mb-8"
-          >
-            VAISHNAV<br />GADAMSETTY
-          </motion.h1>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.4, ease: "easeOut" }}
+              className="text-[12vw] md:text-[8vw] lg:text-[7rem] font-display font-medium tracking-tighter leading-[0.85] uppercase"
+            >
+              Vaishnav
+              <br />
+              <span className="text-text-muted">Gadamsetty</span>
+            </motion.h1>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.6, ease: "easeOut" }}
-            className="relative"
-          >
-            <h2 className="text-2xl md:text-4xl text-text-primary font-light leading-tight mb-6 max-w-2xl">
-              I build things around <br className="hidden md:block"/>
-              <span className="italic font-serif">intelligence, markets & machines.</span>
-            </h2>
+          {/* Subtitle / Description Block - positioned editorially */}
+          <div className="md:col-span-5 md:col-start-7 lg:col-start-8 mt-12 md:mt-24 relative z-20">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.6, ease: "easeOut" }}
+            >
+              <h2 className="text-xl md:text-2xl text-text-primary font-light leading-snug mb-6 border-l-2 border-accent pl-6">
+                I build things around <br />
+                <span className="italic font-serif">intelligence, markets & machines.</span>
+              </h2>
 
-            <p className="text-text-muted max-w-xl text-sm md:text-base leading-relaxed mb-12">
-              I'm interested in AI/ML, finance, RAG & agentic systems, C++, and robotics. 
-              Most of my projects begin with something I want to understand and evolve into systems I can experiment with and use.
-            </p>
+              <p className="text-text-muted text-sm leading-relaxed pl-6 mb-10 max-w-sm">
+                I&apos;m interested in AI/ML, finance, RAG & agentic systems, C++, and robotics. 
+                Most of my projects begin with something I want to understand and evolve into systems I can experiment with and use.
+              </p>
 
+              {/* Links */}
+              <div className="flex flex-wrap items-center gap-6 text-xs font-mono tracking-widest uppercase pl-6">
+                <button 
+                  onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" })}
+                  className="flex items-center gap-2 text-text-primary hover:text-accent transition-colors group"
+                  data-cursor="VIEW"
+                >
+                  Explore Work 
+                  <MoveRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+                <a href="https://github.com/vaishnav" target="_blank" rel="noreferrer" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">GitHub</a>
+              </div>
+            </motion.div>
+            
             {/* Hand-written style annotation */}
-            <div className="absolute top-0 right-0 md:-right-32 lg:-right-48 hidden md:block opacity-60 rotate-6" style={{ fontFamily: "'Caveat', cursive" }}>
+            <div className="absolute -top-16 -right-4 md:-right-24 opacity-80 rotate-[8deg]">
               <motion.span 
                 initial={{ opacity: 0, pathLength: 0 }}
                 animate={{ opacity: 1, pathLength: 1 }}
                 transition={{ delay: 2, duration: 1 }}
-                className="text-accent text-lg"
+                className="text-accent text-xl md:text-2xl font-hand"
               >
-                // curiosity usually gets out of hand
+                {`// curiosity usually gets out of hand`}
               </motion.span>
             </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.8, ease: "easeOut" }}
-            className="flex flex-wrap items-center gap-6 text-sm font-mono tracking-wider"
-          >
-            <button 
-              onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" })}
-              className="flex items-center gap-2 text-text-primary hover:text-accent transition-colors group"
-              data-cursor="VIEW"
-            >
-              Explore Work 
-              <MoveRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <a href="https://github.com/vaishnav" target="_blank" rel="noreferrer" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">GitHub</a>
-            <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">LinkedIn</a>
-            <a href="/resume.pdf" target="_blank" rel="noreferrer" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">Resume</a>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

@@ -21,6 +21,7 @@ export const CustomCursor = () => {
     // Disable if reduced motion is preferred
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsVisible(true);
 
     const moveCursor = (e: MouseEvent) => {
