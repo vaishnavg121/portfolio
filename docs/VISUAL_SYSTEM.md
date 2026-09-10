@@ -8,6 +8,58 @@ The visual language incorporates subtle structural nods to specific anime aesthe
 - **Death Note**: Psychological, editorial atmosphere created through strict grids, ink reveals, rule/numbering systems (e.g., in Engineering Notes), and handwritten cursive annotations (`Caveat` font).
 - **Demon Slayer**: Rhythmic, elemental motion. Interpreted abstractly through flow lines (Windy project), ember fields (AlphaCouncil project), and slash reveals (transitions).
 
+## THE INK FAMILIAR
+
+**Role**: Vaishnav Gadamsetty's portfolio companion. Represents curiosity, exploration, and the space between intelligence and machines.
+
+**Appearance**:
+- Tiny shadow/ink creature with a charcoal-black body and warm cream face.
+- Large expressive dark eyes and two tall irregular ink/flame-shaped ears.
+- Flowing ink tail/body wisps and a small crimson scarf.
+- Occasional detached ink droplets.
+- Compact, readable, mysterious but approachable, and playful rather than childish.
+
+**Palette**:
+- Ink: `#1A1A1A`
+- Charcoal: `#2D2D2D`
+- Cream: `#F5EDE3`
+- Crimson accent: `#B22234`
+- Mist: `#6B6B6B`
+
+**Ink Behavior**:
+- **IDLE**: Minimal/subtle ink movement.
+- **MOVE**: Ink trails behind body.
+- **FAST SCROLL**: Ink stretches/streaks.
+- **WIND**: Ink particles scatter.
+- **READ**: Ink subtly converges around character/book.
+These behaviors should eventually scale and respond to the `intensity` input.
+
+**Section Interactions**:
+- **Hero**: SLEEP → wake into IDLE
+- **General scrolling**: WALK
+- **Fast scrolling**: RUN
+- **AlphaCouncil / Robotics / GitHub**: INSPECT
+- **Swa.Neeti / Engineering Notes**: READ
+- **Windy**: WIND_BLOWN
+- **Contact**: WAVE
+
+**GitHub Interaction Contract**:
+The Ink Familiar interacts with the GitHub contribution calendar by eventually walking beside/across the graph, stopping at interesting contribution cells to switch to `INSPECT` mode. It uses a magnifying glass interaction from the approved character sheet and reacts to hovered cells. It must *never* obscure contribution data.
+
+**Motion Relationship (Transition Connection)**:
+The Familiar's ink is conceptually connected to the site's existing effects:
+- Familiar ink → `InkReveal`
+- Familiar fast movement → `SlashTransition`
+- Familiar Windy reaction → `FlowLines`
+- Familiar movement fragments → subtle project particles
+
+**Rive Contract**:
+- State machine name: `InkFamiliar`
+- Numeric state inputs (`stateIndex`):
+  - 0 = IDLE, 1 = WALK, 2 = RUN, 3 = SLEEP, 4 = READ, 5 = SURPRISED, 6 = WIND_BLOWN, 7 = INSPECT, 8 = WAVE
+- Other inputs: `direction` (-1 left, +1 right), `intensity` (0.0 → 1.0)
+- Triggers: `surprise`, `inspect`, `wave`
+
 ## Effect Primitives
 We use a modular set of motion primitives located in `src/components/effects`:
 - `InkReveal`: A procedural clip-path reveal using radial gradients to simulate ink spreading across paper. Used for Swa.Neeti and Engineering Notes.

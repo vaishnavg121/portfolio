@@ -29,7 +29,10 @@ export type CompanionEventType =
   | "project-open"
   | "github-cell-hover"
   | "notes-open"
-  | "command-trigger";
+  | "command-trigger"
+  | "companion-trail-start"
+  | "companion-trail-update"
+  | "companion-trail-end";
 
 export interface CompanionEventDetail {
   type: CompanionEventType;

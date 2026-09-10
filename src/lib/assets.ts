@@ -6,7 +6,9 @@ export type ProjectAssetSet = {
 };
 
 export const MASCOT_ASSETS = {
-  rive: "/assets/mascot/vaishnav-companion.riv",
+  rive: "/assets/mascot/ink-familiar.riv",
+  static: "/assets/mascot/ink-familiar-static.webp",
+  poster: "/assets/mascot/ink-familiar-poster.webp",
 };
 
 export const GLOBAL_TEXTURES = {

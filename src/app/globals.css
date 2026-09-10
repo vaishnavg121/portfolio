@@ -11,6 +11,13 @@
   --border: #262626;
   --danger: #e63946;
   --blue-accent: #3b82f6;
+
+  /* Mascot Colors */
+  --mascot-ink: #1A1A1A;
+  --mascot-charcoal: #2D2D2D;
+  --mascot-cream: #F5EDE3;
+  --mascot-crimson: #B22234;
+  --mascot-mist: #6B6B6B;
 }
 
 @theme inline {
@@ -23,6 +30,12 @@
   --color-accent-soft: var(--accent-soft);
   --color-border: var(--border);
   --color-danger: var(--danger);
+
+  --color-mascot-ink: var(--mascot-ink);
+  --color-mascot-charcoal: var(--mascot-charcoal);
+  --color-mascot-cream: var(--mascot-cream);
+  --color-mascot-crimson: var(--mascot-crimson);
+  --color-mascot-mist: var(--mascot-mist);
 
   --font-sans: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
