@@ -28,6 +28,17 @@ export const GLOBAL_TEXTURES = {
   paperNoise: "/assets/textures/paper-noise.webp",
 };
 
+export const THEME_ASSETS = {
+  github: {
+    inkLeft: "/assets/theme/github/github-ink-left.png",
+    inkRight: "/assets/theme/github/github-ink-right.png",
+    crescent: "/assets/theme/github/github-crescent.png",
+    bottomBrush: "/assets/theme/github/github-bottom-brush.png",
+    speckles: "/assets/theme/github/github-ink-speckles.png",
+    grain: "/assets/theme/github/github-grain.webp",
+  }
+};
+
 export const PROJECT_ASSETS: Record<string, ProjectAssetSet> = {
   alphacouncil: {
     hero: undefined,

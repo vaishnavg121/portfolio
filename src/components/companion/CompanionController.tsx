@@ -159,6 +159,8 @@ export const CompanionController = () => {
   };
 
   // 5. Global Interaction Events
+  const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     const handleInteract = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -166,6 +168,15 @@ export const CompanionController = () => {
       if (detail?.type === "github-cell-hover" && detail.target) {
         targetElementRef.current = detail.target as HTMLElement;
         temporarilySetState("INSPECT", 1500);
+
+        if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
+        idleTimeoutRef.current = setTimeout(() => {
+          const endAnchor = document.querySelector('[data-anchor="github-calendar-end"]') as HTMLElement;
+          if (endAnchor && document.getElementById("github")?.contains(targetElementRef.current)) {
+             targetElementRef.current = endAnchor;
+             setState("IDLE");
+          }
+        }, 4000);
       }
     };
 

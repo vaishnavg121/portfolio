@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { fetchGithubContributions, GithubCalendarData } from "@/lib/actions/github";
+import { THEME_ASSETS } from "@/lib/assets";
 
 export const GithubActivity = () => {
   const [calendarData, setCalendarData] = useState<GithubCalendarData | null>(null);
@@ -49,32 +50,60 @@ export const GithubActivity = () => {
       <div className="container mx-auto px-4 md:px-8 max-w-[1100px]">
         
         {/* Panel Shell */}
-        <div className="relative rounded-[16px] md:rounded-[24px] overflow-hidden border border-white/[0.05] bg-[#090a0b] shadow-[0_32px_100px_rgba(0,0,0,0.5)]">
+        <div className="relative rounded-[16px] md:rounded-[24px] overflow-hidden border border-white/[0.05] bg-[#0c0d0e] shadow-[0_32px_100px_rgba(0,0,0,0.5)]">
           
-          {/* 1. Atmospheric Gradient & Grain */}
-          <div className="absolute inset-0 pointer-events-none anim-atmosphere" style={{
-             background: 'radial-gradient(circle at 80% 20%, rgba(204,51,51,0.04), transparent 50%), radial-gradient(circle at 20% 80%, rgba(255,255,255,0.02), transparent 40%)'
-          }} />
-          <div className="absolute inset-0 pointer-events-none opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: 'url(/assets/theme/github/github-paper-grain.webp)', backgroundSize: '200px' }} />
+          {/* 1. Grain */}
+          <div className="absolute inset-0 pointer-events-none opacity-10 mix-blend-overlay" style={{ backgroundImage: `url(${THEME_ASSETS.github.grain})`, backgroundSize: '250px' }} />
 
-          {/* 2. Perimeter Ink Artwork */}
-          <div className="absolute inset-0 pointer-events-none opacity-60 md:opacity-90 mix-blend-lighten anim-ink-drift" style={{
-             backgroundImage: `
-               url('/assets/theme/github/github-ink-left.png'),
-               url('/assets/theme/github/github-brush-crescent.png'),
-               url('/assets/theme/github/github-ink-right.png'),
-               url('/assets/theme/github/github-ink-bottom-right.png'),
-               url('/assets/theme/github/github-ink-bottom-left.png')
-             `,
-             backgroundPosition: 'left bottom, top right, right 10%, right bottom, left bottom',
-             backgroundRepeat: 'no-repeat',
-             backgroundSize: 'auto 70%, auto 50%, auto 60%, auto 35%, auto 25%'
+          {/* 2. Atmospheric crimson gradient */}
+          <div className="absolute inset-0 pointer-events-none anim-atmosphere" style={{
+             background: 'radial-gradient(circle at 80% 20%, rgba(204,51,51,0.05), transparent 55%), radial-gradient(circle at 10% 80%, rgba(255,255,255,0.02), transparent 45%)'
+          }} />
+
+          {/* 3. Left ink artwork */}
+          <div className="absolute bottom-0 left-0 w-[40%] h-[90%] pointer-events-none opacity-90" style={{
+             backgroundImage: `url(${THEME_ASSETS.github.inkLeft})`,
+             backgroundPosition: 'left bottom', backgroundRepeat: 'no-repeat', backgroundSize: 'contain',
+             maskImage: 'linear-gradient(to right, black 30%, transparent 100%)',
+             WebkitMaskImage: 'linear-gradient(to right, black 30%, transparent 100%)'
+          }} />
+
+          {/* 4. Right ink artwork */}
+          <div className="absolute top-[10%] right-0 w-[30%] h-[70%] pointer-events-none opacity-60 hidden md:block" style={{
+             backgroundImage: `url(${THEME_ASSETS.github.inkRight})`,
+             backgroundPosition: 'right center', backgroundRepeat: 'no-repeat', backgroundSize: 'contain',
+             maskImage: 'linear-gradient(to left, black 40%, transparent 100%)',
+             WebkitMaskImage: 'linear-gradient(to left, black 40%, transparent 100%)'
+          }} />
+
+          {/* 5. Crescent artwork */}
+          <div className="absolute top-[-15%] right-[-10%] w-[55%] h-[70%] pointer-events-none opacity-35 hidden md:block" style={{
+             backgroundImage: `url(${THEME_ASSETS.github.crescent})`,
+             backgroundPosition: 'top right', backgroundRepeat: 'no-repeat', backgroundSize: 'contain',
+             maskImage: 'linear-gradient(to bottom left, black 40%, transparent 100%)',
+             WebkitMaskImage: 'linear-gradient(to bottom left, black 40%, transparent 100%)'
+          }} />
+
+          {/* 6. Bottom brush artwork (Familiar path) */}
+          <div className="absolute bottom-0 right-[5%] w-[60%] h-[50%] pointer-events-none opacity-90" style={{
+             backgroundImage: `url(${THEME_ASSETS.github.bottomBrush})`,
+             backgroundPosition: 'right bottom', backgroundRepeat: 'no-repeat', backgroundSize: 'contain',
+             maskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
+             WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)'
+          }} />
+
+          {/* 7. Speckles */}
+          <div className="absolute inset-0 pointer-events-none opacity-15 hidden md:block" style={{
+             backgroundImage: `url(${THEME_ASSETS.github.speckles})`,
+             backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundSize: 'cover',
+             maskImage: 'radial-gradient(circle at center, transparent 40%, black 100%)',
+             WebkitMaskImage: 'radial-gradient(circle at center, transparent 40%, black 100%)'
           }} />
 
           {/* Vignette Shadow */}
-          <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_120px_rgba(0,0,0,0.7)]" />
+          <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_120px_rgba(0,0,0,0.8)]" />
 
-          {/* 3. Crimson Corner Details */}
+          {/* Microcopy & Corners */}
           <div className="absolute top-5 left-5 w-3 h-[1px] bg-[#cc3333]/60 pointer-events-none" />
           <div className="absolute top-5 left-5 w-[1px] h-3 bg-[#cc3333]/60 pointer-events-none" />
           
@@ -87,7 +116,6 @@ export const GithubActivity = () => {
           <div className="absolute bottom-5 right-5 w-3 h-[1px] bg-[#cc3333]/60 pointer-events-none" />
           <div className="absolute bottom-5 right-5 w-[1px] h-3 bg-[#cc3333]/60 pointer-events-none" />
 
-          {/* Microcopy */}
           <div className="hidden md:block absolute top-6 left-1/2 -translate-x-1/2 text-[8px] font-mono text-[#cc3333]/40 tracking-[0.4em] pointer-events-none">
             {"//"} DISCIPLINE COMPOUNDS.
           </div>
@@ -95,7 +123,7 @@ export const GithubActivity = () => {
             [SYS_LOG]
           </div>
 
-          {/* 4. Left Editorial Rail */}
+          {/* Editorial Rail */}
           <div className="hidden lg:flex absolute left-6 top-1/2 -translate-y-1/2 flex-col items-center gap-10 pointer-events-none opacity-30">
              <div className="w-[1px] h-20 bg-gradient-to-b from-transparent via-white to-transparent" />
              <div className="text-[8px] font-mono tracking-[0.5em] rotate-180" style={{ writingMode: 'vertical-rl' }}>
@@ -104,8 +132,8 @@ export const GithubActivity = () => {
              <div className="w-[1px] h-20 bg-gradient-to-b from-transparent via-[#cc3333] to-transparent" />
           </div>
 
-          {/* Content Layer */}
-          <div className="relative z-10 px-5 py-10 md:pl-24 md:pr-12 md:py-16">
+          {/* 8. Content Layer */}
+          <div className="relative z-10 px-5 py-10 md:pl-28 md:pr-16 md:py-16">
             
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-16">
               <div>
