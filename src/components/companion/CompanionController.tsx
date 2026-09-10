@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useScroll, useVelocity, useSpring } from "framer-motion";
-import { CompanionState, CompanionDirection } from "./companion.types";
+import { CompanionRenderer } from "./CompanionRenderer";
+import { CompanionState, CompanionDirection, CompanionAnchor } from "./companion.types";
 import { SECTION_BEHAVIORS, VELOCITY_THRESHOLDS } from "./companion.config";
-import { CompanionPlaceholder } from "./CompanionPlaceholder";
 
 export const CompanionController = () => {
   const [state, setState] = useState<CompanionState>("SLEEP");
   const [direction, setDirection] = useState<CompanionDirection>("right");
   const [intensity, setIntensity] = useState<number>(0);
+  const [anchor, setAnchor] = useState<CompanionAnchor>("fixed-bottom-right");
   
   const { scrollY } = useScroll();
   const scrollVelocity = useVelocity(scrollY);
@@ -110,8 +111,9 @@ export const CompanionController = () => {
     <div 
       className="fixed bottom-8 right-8 z-40 hidden md:flex items-center justify-center mix-blend-difference"
       onClick={() => temporarilySetState("SURPRISED", 1000)}
+      data-anchor={anchor}
     >
-      <CompanionPlaceholder state={state} direction={direction} intensity={intensity} />
+      <CompanionRenderer state={state} direction={direction} intensity={intensity} />
     </div>
   );
 };

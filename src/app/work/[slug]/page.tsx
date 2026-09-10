@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MoveLeft, ExternalLink } from "lucide-react";
+import { PROJECT_ASSETS } from "@/lib/assets";
 
 export default function ProjectDetail({ params }: { params: { slug: string } }) {
   // Mock data, in a real app fetch from data based on params.slug
@@ -8,6 +9,7 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
     category: "SYSTEMS / ARCHITECTURE",
     description: "This is a placeholder description for the project detail page. It explains the high level overview.",
     tags: ["React", "TypeScript", "Next.js"],
+    assets: PROJECT_ASSETS[params.slug],
   };
 
   return (
@@ -37,10 +39,16 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
         </div>
 
         {/* Visual Header Placeholder */}
-        <div className="w-full aspect-video bg-surface-elevated border border-border mb-24 flex items-center justify-center relative overflow-hidden">
-           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a), linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a)", backgroundSize: "20px 20px", backgroundPosition: "0 0, 10px 10px" }} />
-           <span className="font-mono text-text-muted tracking-widest z-10">[ SYSTEM VISUALIZATION ]</span>
-        </div>
+        {project.assets?.hero ? (
+          <div className="w-full aspect-video mb-24 border border-border overflow-hidden">
+            <img src={project.assets.hero} alt={`${project.title} Hero`} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="w-full aspect-video bg-surface-elevated border border-border mb-24 flex items-center justify-center relative overflow-hidden">
+             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a), linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a)", backgroundSize: "20px 20px", backgroundPosition: "0 0, 10px 10px" }} />
+             <span className="font-mono text-text-muted tracking-widest z-10">[ SYSTEM VISUALIZATION ]</span>
+          </div>
+        )}
 
         {/* Content Structure */}
         <div className="space-y-24">
@@ -55,16 +63,30 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
 
           <section>
             <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">System Architecture</h2>
-            <div className="w-full h-64 bg-surface border border-border flex flex-col items-center justify-center gap-4 mb-8">
-               <div className="font-mono text-xs text-text-muted">[ ARCHITECTURE DIAGRAM PLACEHOLDER ]</div>
-               <div className="flex items-center gap-4 text-xs font-mono">
-                 <div className="px-3 py-1 border border-accent text-accent">CLIENT</div>
-                 <div className="w-8 h-[1px] bg-border" />
-                 <div className="px-3 py-1 border border-text-muted">API</div>
-                 <div className="w-8 h-[1px] bg-border" />
-                 <div className="px-3 py-1 border border-text-muted">DATABASE</div>
-               </div>
-            </div>
+            {project.assets?.diagram ? (
+              <div className="w-full mb-8">
+                <img src={project.assets.diagram} alt={`${project.title} Architecture Diagram`} className="w-full h-auto drop-shadow-2xl" />
+              </div>
+            ) : (
+              <div className="w-full h-64 bg-surface border border-border flex flex-col items-center justify-center gap-4 mb-8">
+                 <div className="font-mono text-xs text-text-muted">[ ARCHITECTURE DIAGRAM PLACEHOLDER ]</div>
+                 <div className="flex items-center gap-4 text-xs font-mono">
+                   <div className="px-3 py-1 border border-accent text-accent">CLIENT</div>
+                   <div className="w-8 h-[1px] bg-border" />
+                   <div className="px-3 py-1 border border-text-muted">API</div>
+                   <div className="w-8 h-[1px] bg-border" />
+                   <div className="px-3 py-1 border border-text-muted">DATABASE</div>
+                 </div>
+              </div>
+            )}
+            
+            {project.assets?.gallery && project.assets.gallery.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                {project.assets.gallery.map((img, i) => (
+                  <img key={i} src={img} alt={`${project.title} screenshot ${i+1}`} className="w-full h-auto border border-border" />
+                ))}
+              </div>
+            )}
           </section>
 
           <section>

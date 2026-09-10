@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 
-export const InkReveal = ({ children, delay = 0 }: { children: React.ReactNode, delay?: number }) => {
+export const InkReveal = ({ children, delay = 0, maskAsset }: { children: React.ReactNode, delay?: number, maskAsset?: string }) => {
   return (
     <div className="relative group overflow-hidden">
       {/* Ink blot simulation using CSS radial gradients and motion */}
@@ -13,7 +13,8 @@ export const InkReveal = ({ children, delay = 0 }: { children: React.ReactNode, 
         viewport={{ once: true, margin: "-10%" }}
         transition={{ duration: 1.5, delay, ease: [0.76, 0, 0.24, 1] }}
         style={{
-          WebkitMaskImage: "radial-gradient(circle, black 0%, transparent 100%)",
+          WebkitMaskImage: maskAsset ? `url(${maskAsset})` : "radial-gradient(circle, black 0%, transparent 100%)",
+          WebkitMaskSize: maskAsset ? "cover" : "auto",
         }}
       />
       {children}

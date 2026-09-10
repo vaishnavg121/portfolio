@@ -48,6 +48,31 @@ To preserve performance on mobile devices:
 - Flow lines use fewer paths.
 - Companion movement is simplified.
 
+## Asset Pipeline
+The asset architecture separates external media (textures, mascots, project imagery) from component logic via the `src/lib/assets.ts` manifest.
+This ensures fallbacks render cleanly until final assets are available.
+
+### Directory Structure
+```
+public/
+  assets/
+    mascot/
+      vaishnav-companion.riv (future)
+    textures/
+      paper-noise.webp
+    projects/
+      [slug]/
+        hero.webp
+        diagram.svg
+        gallery-1.webp
+```
+
+### Media Integration
+- **Hero & Projects**: WebP or AVIF are recommended for raster assets to maintain sharp scaling and small sizes.
+- **Visual Effect Overlays**: SVG masks (e.g. for `InkReveal` or `SlashTransition`) should be minimal `<path>` outputs without embedded `<style>` blocks.
+- **Rive Mascot**: `CompanionRenderer` serves as the abstraction point. The state machine provides `state`, `direction`, and `intensity`. Once `.riv` is provided, replace `CompanionPlaceholder` with `@rive-app/react-canvas` in `CompanionRenderer.tsx`.
+
 ## Future Integrations
 - **Rive Integration**: The `CompanionPlaceholder` implements `CompanionRendererProps`. In the future, a `.riv` component will simply replace the SVG output while utilizing the exact same state machine.
 - **Sound Architecture**: The foundation prepares for a non-intrusive sound system (`soundEnabled = false`).
+

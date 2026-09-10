@@ -63,6 +63,13 @@ export const GithubActivity = () => {
                     <div
                       key={`${wIdx}-${dIdx}`}
                       tabIndex={0}
+                      data-github-cell={day.date}
+                      data-level={day.level}
+                      onMouseEnter={() => {
+                        window.dispatchEvent(new CustomEvent("companionInteract", { 
+                          detail: { type: "inspect-github-cell", data: day }
+                        }));
+                      }}
                       className={`w-3 h-3 rounded-[2px] transition-colors duration-300 hover:border hover:border-white focus:border-white focus:outline-none cursor-crosshair ${getColor(day.level)}`}
                     >
                        <div className="absolute opacity-0 group-hover:opacity-100 bg-[#111] text-[#fff] text-[10px] font-mono p-2 rounded pointer-events-none transform -translate-y-8 -translate-x-1/2 z-50 whitespace-nowrap">

@@ -7,6 +7,7 @@ import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { MoveRight } from "lucide-react";
 import { EmberField, InkReveal, FlowLines, GridEffect, BlueprintEffect } from "@/components/effects";
+import { PROJECT_ASSETS } from "@/lib/assets";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -14,6 +15,7 @@ if (typeof window !== "undefined") {
 
 const PROJECTS = [
   {
+    slug: "alphacouncil",
     id: "01",
     title: "AlphaCouncil",
     category: "FINANCE / AI / SYSTEMS",
@@ -22,8 +24,10 @@ const PROJECTS = [
     theme: "red / ember / market-line",
     architecture: ["MARKET", "DISCOVERY", "COMMITTEE", "RISK", "EXECUTION"],
     EffectComponent: EmberField,
+    assets: PROJECT_ASSETS["alphacouncil"],
   },
   {
+    slug: "swaneeti",
     id: "02",
     title: "Swa.Neeti",
     category: "RAG / AGENTS / REASONING",
@@ -32,8 +36,10 @@ const PROJECTS = [
     theme: "ink / paper spread",
     architecture: ["QUERY", "RETRIEVAL", "AUTHORITIES", "REASONING", "VALIDATION"],
     EffectComponent: () => <InkReveal><div className="absolute inset-0 bg-[#fff] opacity-[0.03] mix-blend-overlay" /></InkReveal>,
+    assets: PROJECT_ASSETS["swaneeti"],
   },
   {
+    slug: "windy",
     id: "03",
     title: "Windy",
     category: "ML / DATA / AVIATION",
@@ -42,8 +48,10 @@ const PROJECTS = [
     theme: "wind / flowing-line motion",
     architecture: ["DATA INGESTION", "FEATURE ENG", "MODEL", "PREDICTION"],
     EffectComponent: FlowLines,
+    assets: PROJECT_ASSETS["windy"],
   },
   {
+    slug: "spenza",
     id: "04",
     title: "Spenza",
     category: "PRODUCT / FINANCE / SOFTWARE",
@@ -52,17 +60,20 @@ const PROJECTS = [
     theme: "clean grid / balance",
     architecture: ["USER", "TRANSACTION", "SPLIT LOGIC", "LEDGER"],
     EffectComponent: GridEffect,
+    assets: PROJECT_ASSETS["spenza"],
   },
   {
+    slug: "thriveforce",
     id: "05",
     title: "ThriveForce",
     category: "ROBOTICS / CAD / HARDWARE",
     description: "Combat robotics systems engineered for high-impact forces.",
-    tags: ["CAD", "Robotics", "Hardware"],
-    theme: "blueprint / mechanical line",
-    architecture: ["DESIGN", "SIMULATION", "FABRICATION", "ASSEMBLY"],
+    tags: ["Hardware", "CAD", "C++"],
+    theme: "blueprint / structural",
+    architecture: ["CHASSIS", "DRIVETRAIN", "WEAPON SYSTEM", "ELECTRONICS"],
     EffectComponent: BlueprintEffect,
-  }
+    assets: PROJECT_ASSETS["thriveforce"],
+  },
 ];
 
 export const SelectedWork = () => {
@@ -171,29 +182,52 @@ export const SelectedWork = () => {
 
               {/* Visual Side */}
               <div className="flex-1 md:w-7/12 w-full bg-[#0a0a0a] min-h-[500px] flex items-center justify-center p-8 border border-border relative overflow-hidden group" data-cursor="VIEW">
-                {/* Visual Effects */}
-                <project.EffectComponent />
+                
+                {/* Hero Asset Background */}
+                {project.assets?.hero && (
+                  <div className="absolute inset-0 z-0">
+                    <img src={project.assets.hero} alt={`${project.title} Hero`} className="w-full h-full object-cover opacity-60 mix-blend-luminosity group-hover:opacity-100 transition-opacity duration-700" />
+                  </div>
+                )}
+
+                {/* Texture Asset Overlay */}
+                {project.assets?.texture && (
+                  <div className="absolute inset-0 z-10 pointer-events-none mix-blend-overlay opacity-30">
+                    <img src={project.assets.texture} alt="" className="w-full h-full object-cover" />
+                  </div>
+                )}
+
+                {/* Visual Effects (Procedural fallback if no hard assets, or complementary overlay) */}
+                <div className="absolute inset-0 z-10">
+                  <project.EffectComponent />
+                </div>
 
                 <div className="absolute top-4 right-4 text-[10px] font-mono text-[#333] tracking-widest z-20">
                   SYS_VISUAL // {project.theme.toUpperCase()}
                 </div>
 
                 {/* Architecture Diagram */}
-                <div className="relative z-10 w-full max-w-xs flex flex-col gap-1">
-                  <div className="text-[10px] font-mono text-text-muted mb-4 tracking-widest uppercase flex items-center gap-2">
-                    <div className="w-2 h-2 bg-accent" /> System Pipeline
-                  </div>
-                  {project.architecture.map((node, i) => (
-                    <div key={node} className="flex flex-col">
-                      <div className="arch-node bg-[#111] border-l-2 border-accent text-text-primary px-4 py-3 font-mono text-xs shadow-xl tracking-wider flex justify-between items-center">
-                        <span>{node}</span>
-                        <span className="text-[#444] text-[10px]">0{i + 1}</span>
+                <div className="relative z-20 w-full max-w-xs flex flex-col gap-1">
+                  {project.assets?.diagram ? (
+                    <img src={project.assets.diagram} alt={`${project.title} Architecture`} className="w-full h-auto drop-shadow-2xl" />
+                  ) : (
+                    <>
+                      <div className="text-[10px] font-mono text-text-muted mb-4 tracking-widest uppercase flex items-center gap-2">
+                        <div className="w-2 h-2 bg-accent" /> System Pipeline
                       </div>
-                      {i < project.architecture.length - 1 && (
-                        <div className="arch-line w-[1px] h-4 bg-[#333] ml-4 opacity-50" />
-                      )}
-                    </div>
-                  ))}
+                      {project.architecture.map((node, i) => (
+                        <div key={node} className="flex flex-col">
+                          <div className="arch-node bg-[#111] border-l-2 border-accent text-text-primary px-4 py-3 font-mono text-xs shadow-xl tracking-wider flex justify-between items-center">
+                            <span>{node}</span>
+                            <span className="text-[#444] text-[10px]">0{i + 1}</span>
+                          </div>
+                          {i < project.architecture.length - 1 && (
+                            <div className="arch-line w-[1px] h-4 bg-[#333] ml-4 opacity-50" />
+                          )}
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
