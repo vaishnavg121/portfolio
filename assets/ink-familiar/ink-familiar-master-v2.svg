@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="100%" height="100%">
+  <g id="InkFamiliar">
+    <g id="Ink">
+      <path id="Tail_Main" fill="#1A1A1A" d="M 550,750 Q 700,900 850,750 Q 1000,550 850,350 Q 750,200 600,150 Q 680,250 750,350 Q 850,500 750,650 Q 650,750 550,750 Z" />
+      <path id="Tail_Wisp1" fill="#1A1A1A" d="M 850,350 Q 900,280 980,200 Q 920,280 880,380 Z" />
+      <path id="Tail_Wisp2" fill="#1A1A1A" d="M 850,500 Q 950,500 1020,450 Q 900,550 820,600 Z" />
+      <path id="Tail_Wisp3" fill="#1A1A1A" d="M 750,650 Q 850,750 950,800 Q 820,800 700,720 Z" />
+      <circle cx="950" cy="350" r="15" fill="#1A1A1A" />
+      <circle cx="980" cy="400" r="10" fill="#1A1A1A" />
+      <circle cx="900" cy="250" r="8" fill="#1A1A1A" />
+      <circle cx="80" cy="450" r="12" fill="#1A1A1A" />
+      <circle cx="120" cy="550" r="8" fill="#1A1A1A" />
+    </g>
+
+    <g id="Body">
+      <path id="Hindpaw_L" fill="#1A1A1A" d="M 220,680 Q 180,750 200,780 Q 240,780 250,700 Z" />
+      <path id="Hindpaw_R" fill="#1A1A1A" d="M 520,700 Q 550,780 580,780 Q 610,780 580,680 Z" />
+      <path id="Torso" fill="#1A1A1A" d="M 220,620 C 150,780 450,850 580,750 C 650,700 600,600 550,600 Z" />
+      <path id="Forepaw_L" fill="#1A1A1A" d="M 280,700 Q 250,800 280,850 Q 310,850 330,730 Z" />
+      <path id="Forepaw_R" fill="#1A1A1A" d="M 420,730 Q 380,800 420,860 Q 460,850 460,740 Z" />
+    </g>
+
+    <g id="Scarf">
+      <path id="Scarf_Neck" fill="#B22234" d="M 230,630 C 300,700 480,710 570,630 C 500,670 300,670 230,630 Z" />
+      <path id="Scarf_Tail_01" fill="#B22234" d="M 540,650 Q 620,680 650,750 Q 600,700 540,650 Z" />
+      <path id="Scarf_Tail_02" fill="#B22234" d="M 560,640 Q 640,650 680,680 Q 620,670 560,640 Z" />
+    </g>
+
+    <g id="Head">
+      <path id="Ear_L" fill="#1A1A1A" d="M 220,300 C 180,180 120,60 160,100 C 180,120 190,150 210,120 C 230,80 260,30 280,30 C 260,120 250,180 270,150 C 300,100 350,80 340,120 C 330,180 350,280 350,280 Z" />
+      <path id="Ear_R" fill="#1A1A1A" d="M 480,260 C 450,150 490,40 510,80 C 520,100 540,150 560,120 C 590,80 650,70 630,120 C 620,150 630,200 650,180 C 680,150 730,100 700,160 C 670,220 620,300 620,300 Z" />
+      <path id="Head_Ink" fill="#1A1A1A" d="M 350,150 C 150,150 100,300 120,480 C 130,650 250,720 400,700 C 550,680 650,580 620,400 C 600,200 500,150 350,150 Z" />
+      <path id="Face_Cream" fill="#F5EDE3" d="M 330,470 C 280,440 200,450 180,520 C 160,600 230,660 300,660 C 340,660 350,620 370,620 C 390,620 400,660 480,660 C 550,660 580,580 580,500 C 580,420 420,410 370,460 C 360,470 340,480 330,470 Z" />
+      
+      <ellipse id="Eye_L" cx="240" cy="530" rx="30" ry="55" transform="rotate(-5 240 530)" fill="#1A1A1A" />
+      <circle cx="230" cy="500" r="14" fill="#FFFFFF" />
+      <circle cx="250" cy="560" r="6" fill="#FFFFFF" />
+      
+      <ellipse id="Eye_R" cx="440" cy="510" rx="45" ry="65" transform="rotate(5 440 510)" fill="#1A1A1A" />
+      <circle cx="420" cy="480" r="20" fill="#FFFFFF" />
+      <circle cx="460" cy="550" r="8" fill="#FFFFFF" />
+      
+      <path id="Mouth" fill="#2D2D2D" d="M 325,580 Q 335,590 345,580 Q 335,600 325,580 Z" />
+    </g>
+  </g>
+</svg>

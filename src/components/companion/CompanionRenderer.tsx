@@ -1,5 +1,6 @@
 import { CompanionRendererProps } from "./companion.types";
 import { CompanionPlaceholder } from "./CompanionPlaceholder";
+import { IllustratedCompanionRenderer } from "./IllustratedCompanionRenderer";
 
 // TODO: When Rive asset is ready, import FutureRiveRenderer here.
 // import { FutureRiveRenderer } from "./FutureRiveRenderer";
@@ -21,5 +22,6 @@ export const CompanionRenderer = (props: CompanionRendererProps) => {
     return <CompanionPlaceholder {...props} />;
   }
 
-  return <CompanionPlaceholder {...props} />;
+  // Use IllustratedRenderer for V1 Phase 2E
+  return <IllustratedCompanionRenderer {...props} />;
 };

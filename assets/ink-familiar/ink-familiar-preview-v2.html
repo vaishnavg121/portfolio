@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ink Familiar - SVG Preview</title>
+    <style>
+        :root {
+            --light-bg: #EAE6DF;
+            --dark-bg: #121212;
+            --text-light: #333;
+            --text-dark: #F5EDE3;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+        }
+
+        .panel {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .panel.light {
+            background-color: var(--light-bg);
+            color: var(--text-light);
+        }
+
+        .panel.dark {
+            background-color: var(--dark-bg);
+            color: var(--text-dark);
+        }
+
+        h1 {
+            text-align: center;
+            width: 100%;
+            margin-bottom: 40px;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .preview-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+            width: 100%;
+        }
+
+        .preview-group h2 {
+            font-size: 14px;
+            opacity: 0.6;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sizes-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .size-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .size-label {
+            font-size: 12px;
+            opacity: 0.5;
+        }
+
+        img {
+            display: block;
+        }
+
+        /* Prevent anti-aliasing blurring on small sizes if possible, though SVG usually handles it */
+        .pixel-hint {
+            image-rendering: optimizeQuality;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Light Theme Panel -->
+        <div class="panel light">
+            <h1>The Ink Familiar</h1>
+            
+            <div class="preview-group">
+                <h2>Inspection (320px)</h2>
+                <img src="ink-familiar-master-v2.svg" width="320" height="320" alt="Ink Familiar 320px">
+            </div>
+
+            <div class="preview-group">
+                <h2>Readability Scale</h2>
+                <div class="sizes-row">
+                    <div class="size-container">
+                        <img src="ink-familiar-master-v2.svg" width="80" height="80" alt="Ink Familiar 80px" class="pixel-hint">
+                        <span class="size-label">80px</span>
+                    </div>
+                    <div class="size-container">
+                        <img src="ink-familiar-master-v2.svg" width="64" height="64" alt="Ink Familiar 64px" class="pixel-hint">
+                        <span class="size-label">64px</span>
+                    </div>
+                    <div class="size-container">
+                        <img src="ink-familiar-master-v2.svg" width="40" height="40" alt="Ink Familiar 40px" class="pixel-hint">
+                        <span class="size-label">40px</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dark Theme Panel -->
+        <div class="panel dark">
+            <h1>The Ink Familiar</h1>
+            
+            <div class="preview-group">
+                <h2>Inspection (320px)</h2>
+                <img src="ink-familiar-master-v2.svg" width="320" height="320" alt="Ink Familiar 320px">
+            </div>
+
+            <div class="preview-group">
+                <h2>Readability Scale</h2>
+                <div class="sizes-row">
+                    <div class="size-container">
+                        <img src="ink-familiar-master-v2.svg" width="80" height="80" alt="Ink Familiar 80px" class="pixel-hint">
+                        <span class="size-label">80px</span>
+                    </div>
+                    <div class="size-container">
+                        <img src="ink-familiar-master-v2.svg" width="64" height="64" alt="Ink Familiar 64px" class="pixel-hint">
+                        <span class="size-label">64px</span>
+                    </div>
+                    <div class="size-container">
+                        <img src="ink-familiar-master-v2.svg" width="40" height="40" alt="Ink Familiar 40px" class="pixel-hint">
+                        <span class="size-label">40px</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
