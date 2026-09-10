@@ -82,8 +82,21 @@ This site is prepared for external asset integration. The following specifies th
 **Expected State Machine Inputs**:
 - `direction` (Number: -1 for left, 1 for right)
 - `intensity` (Number: 0.0 to 1.0)
-- `state` (String or Enum):
-  - `idle`, `walk`, `run`, `sleep`, `read`, `surprised`, `wind_blown`, `inspect`, `wave`
+- `stateIndex` (Number):
+  - `0` = IDLE
+  - `1` = WALK
+  - `2` = RUN
+  - `3` = SLEEP
+  - `4` = READ
+  - `5` = SURPRISED
+  - `6` = WIND_BLOWN
+  - `7` = INSPECT
+  - `8` = WAVE
+
+**Optional Trigger Inputs**:
+- `surprise` (Trigger)
+- `inspect` (Trigger)
+- `wave` (Trigger)
 
 ### Expected Visual Assets & Aspect Ratios
 Global Textures:
