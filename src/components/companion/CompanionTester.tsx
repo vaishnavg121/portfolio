@@ -67,6 +67,20 @@ export const CompanionTester = () => {
           </button>
         </div>
       </div>
+
+      <div className="flex flex-col gap-2 border-t border-white/10 pt-2">
+        <span className="text-xs text-white/50 uppercase">Simulate Interaction</span>
+        <button
+          onClick={(e) => {
+            window.dispatchEvent(new CustomEvent("companionInteract", { 
+              detail: { type: "github-cell-hover", data: { count: 5 }, target: e.currentTarget }
+            }));
+          }}
+          className="bg-[#1a1a1a] text-white text-xs border border-white/10 py-1.5 rounded hover:bg-white/20 transition-colors"
+        >
+          Hover Mock GitHub Cell
+        </button>
+      </div>
     </div>
   );
 };

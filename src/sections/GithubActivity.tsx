@@ -61,23 +61,25 @@ export const GithubActivity = () => {
               [ DATA_UNAVAILABLE // PENDING_TOKEN ]
             </div>
           ) : (
-            <div className="min-w-[800px] flex gap-1">
+            <div className="min-w-[800px] flex gap-1 relative" data-anchor="github-calendar-center">
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4" data-anchor="github-calendar-start" />
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4" data-anchor="github-calendar-end" />
               {calendarData.grid.map((week, wIdx) => (
-                <div key={wIdx} className="flex flex-col gap-1 relative group">
+                <div key={wIdx} className="flex flex-col gap-1 relative">
                   {week.map((day, dIdx) => (
                     <div
                       key={`${wIdx}-${dIdx}`}
                       tabIndex={0}
                       data-github-cell={day.date}
                       data-level={day.level}
-                      onMouseEnter={() => {
+                      onMouseEnter={(e) => {
                         window.dispatchEvent(new CustomEvent("companionInteract", { 
-                          detail: { type: "github-cell-hover", data: day }
+                          detail: { type: "github-cell-hover", data: day, target: e.currentTarget }
                         }));
                       }}
-                      className={`w-3 h-3 rounded-[2px] transition-colors duration-300 hover:border hover:border-white focus:border-white focus:outline-none cursor-crosshair ${getColor(day.level)}`}
+                      className={`w-3 h-3 rounded-[2px] transition-colors duration-300 hover:border hover:border-white focus:border-white focus:outline-none cursor-crosshair group/day relative ${getColor(day.level)}`}
                     >
-                       <div className="absolute opacity-0 group-hover:opacity-100 bg-[#111] text-[#fff] text-[10px] font-mono p-2 rounded pointer-events-none transform -translate-y-8 -translate-x-1/2 z-50 whitespace-nowrap">
+                       <div className="absolute opacity-0 group-hover/day:opacity-100 bg-[#111] text-[#fff] text-[10px] font-mono p-2 rounded pointer-events-none transform -translate-y-10 -translate-x-1/2 left-1/2 z-50 whitespace-nowrap transition-opacity">
                          {day.count} contributions on {new Date(day.date).toDateString()}
                        </div>
                     </div>
