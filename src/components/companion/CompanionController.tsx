@@ -55,8 +55,23 @@ export const CompanionController = () => {
 
       if (targetElementRef.current) {
         const rect = targetElementRef.current.getBoundingClientRect();
-        targetX = rect.left + rect.width / 2 - 40;
-        targetY = rect.top + rect.height / 2 - 40;
+        const isCell = targetElementRef.current.hasAttribute('data-github-cell');
+        
+        if (isCell) {
+          // Prefer below cell
+          targetX = rect.left + rect.width / 2 - 40; 
+          targetY = rect.bottom + 10;
+          
+          // viewport boundary checks for safe margins
+          if (targetY > window.innerHeight - 80) {
+            targetY = rect.top - 80 - 10; // move above cell if it hits bottom
+          }
+          if (targetX < 20) targetX = 20;
+          if (targetX > window.innerWidth - 80 - 20) targetX = window.innerWidth - 80 - 20;
+        } else {
+          targetX = rect.left + rect.width / 2 - 40;
+          targetY = rect.top + rect.height / 2 - 40;
+        }
       }
 
       if (reducedMotion) {
@@ -165,6 +180,32 @@ export const CompanionController = () => {
     }, 2500);
     return () => clearTimeout(timer);
   }, []);
+
+  // Ambient GitHub behavior
+  useEffect(() => {
+    const ambientLoop = setInterval(() => {
+      if (isTransitioningRef.current || reducedMotion) return;
+      
+      const githubSection = document.getElementById("github");
+      if (!githubSection) return;
+      
+      const rect = githubSection.getBoundingClientRect();
+      // Check if github is mostly in view
+      if (rect.top > window.innerHeight * 0.8 || rect.bottom < window.innerHeight * 0.2) return;
+
+      if (Math.random() < 0.15) {
+        const activeCells = Array.from(document.querySelectorAll('[data-github-cell]:not([data-level="0"])'));
+        if (activeCells.length > 0) {
+          const randomCell = activeCells[Math.floor(Math.random() * activeCells.length)];
+          window.dispatchEvent(new CustomEvent("companionInteract", { 
+            detail: { type: "github-cell-hover", target: randomCell }
+          }));
+        }
+      }
+    }, 6000);
+
+    return () => clearInterval(ambientLoop);
+  }, [reducedMotion]);
 
   return (
     <div 
