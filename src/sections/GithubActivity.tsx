@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchGithubContributions, GithubContribution } from "@/lib/actions/github";
+import { fetchGithubContributions, GithubCalendarData } from "@/lib/actions/github";
 
 export const GithubActivity = () => {
-  const [gridData, setGridData] = useState<GithubContribution[][]>([]);
+  const [calendarData, setCalendarData] = useState<GithubCalendarData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       try {
         const data = await fetchGithubContributions("vaishnavg121");
-        setGridData(data);
+        setCalendarData(data);
       } catch (e) {
         console.error(e);
       } finally {
@@ -43,6 +43,11 @@ export const GithubActivity = () => {
           </div>
           <div className="text-xs font-mono mt-4 md:mt-0 flex flex-col items-end">
             <span className="text-text-muted">@vaishnavg121</span>
+            {calendarData && (
+              <span className="text-text-muted opacity-50 mt-1">
+                {calendarData.totalContributions} Contributions ({calendarData.currentYear})
+              </span>
+            )}
           </div>
         </div>
 
@@ -51,13 +56,13 @@ export const GithubActivity = () => {
             <div className="h-24 flex items-center justify-center font-mono text-xs text-text-muted tracking-widest">
               [ FETCHING_DATA ]
             </div>
-          ) : gridData.length === 0 ? (
+          ) : !calendarData || calendarData.grid.length === 0 ? (
             <div className="h-24 flex items-center justify-center font-mono text-xs text-text-muted tracking-widest">
               [ DATA_UNAVAILABLE // PENDING_TOKEN ]
             </div>
           ) : (
             <div className="min-w-[800px] flex gap-1">
-              {gridData.map((week, wIdx) => (
+              {calendarData.grid.map((week, wIdx) => (
                 <div key={wIdx} className="flex flex-col gap-1 relative group">
                   {week.map((day, dIdx) => (
                     <div
@@ -67,7 +72,7 @@ export const GithubActivity = () => {
                       data-level={day.level}
                       onMouseEnter={() => {
                         window.dispatchEvent(new CustomEvent("companionInteract", { 
-                          detail: { type: "inspect-github-cell", data: day }
+                          detail: { type: "github-cell-hover", data: day }
                         }));
                       }}
                       className={`w-3 h-3 rounded-[2px] transition-colors duration-300 hover:border hover:border-white focus:border-white focus:outline-none cursor-crosshair ${getColor(day.level)}`}

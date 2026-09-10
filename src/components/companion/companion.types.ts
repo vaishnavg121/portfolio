@@ -10,3 +10,22 @@ export interface CompanionRendererProps {
   intensity: number; // 0 to 1 based on scroll velocity or interaction
 }
 
+export type CompanionEventType = 
+  | "section-enter"
+  | "section-leave"
+  | "project-hover"
+  | "project-open"
+  | "github-cell-hover"
+  | "notes-open"
+  | "command-trigger";
+
+export interface CompanionEventDetail {
+  type: CompanionEventType;
+  data?: unknown;
+}
+
+declare global {
+  interface WindowEventMap {
+    companionInteract: CustomEvent<CompanionEventDetail>;
+  }
+}

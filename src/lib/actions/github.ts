@@ -3,15 +3,23 @@
 export interface GithubContribution {
   date: string;
   count: number;
-  level: number;
+  level: 0 | 1 | 2 | 3 | 4;
 }
 
-export async function fetchGithubContributions(username: string): Promise<GithubContribution[][]> {
+export interface GithubCalendarData {
+  grid: GithubContribution[][];
+  totalContributions: number;
+  mostActiveDay?: GithubContribution;
+  activeWeeks: number;
+  currentYear: number;
+}
+
+export async function fetchGithubContributions(username: string): Promise<GithubCalendarData | null> {
   const token = process.env.GITHUB_TOKEN;
   
   if (!token) {
     console.warn("No GITHUB_TOKEN configured. Falling back to empty state.");
-    return [];
+    return null;
   }
 
   const query = `
@@ -54,15 +62,18 @@ export async function fetchGithubContributions(username: string): Promise<Github
     }
 
     const data = await response.json();
-    const weeks = data?.data?.user?.contributionsCollection?.contributionCalendar?.weeks;
+    const calendar = data?.data?.user?.contributionsCollection?.contributionCalendar;
+    
+    if (!calendar || !calendar.weeks) return null;
 
-    if (!weeks) return [];
+    const totalContributions = calendar.totalContributions || 0;
+    let mostActiveDay: GithubContribution | undefined = undefined;
+    let activeWeeksCount = 0;
 
-    // Map the GraphQL response to our expected grid structure
-    return weeks.map((week: { contributionDays: { contributionCount: number, date: string, contributionLevel: string }[] }) => 
-      week.contributionDays.map((day: { contributionCount: number, date: string, contributionLevel: string }) => {
-        // Map GitHub's literal enum to numeric intensity (0-4)
-        const levelMap: Record<string, number> = {
+    const grid = calendar.weeks.map((week: { contributionDays: { contributionCount: number, date: string, contributionLevel: string }[] }) => {
+      let weekIsActive = false;
+      const days = week.contributionDays.map((day: { contributionCount: number, date: string, contributionLevel: string }) => {
+        const levelMap: Record<string, 0 | 1 | 2 | 3 | 4> = {
           NONE: 0,
           FIRST_QUARTILE: 1,
           SECOND_QUARTILE: 2,
@@ -70,15 +81,32 @@ export async function fetchGithubContributions(username: string): Promise<Github
           FOURTH_QUARTILE: 4,
         };
         
-        return {
+        const mappedDay: GithubContribution = {
           date: day.date,
           count: day.contributionCount,
           level: levelMap[day.contributionLevel] || 0
         };
-      })
-    );
+
+        if (mappedDay.count > 0) weekIsActive = true;
+        if (!mostActiveDay || mappedDay.count > mostActiveDay.count) {
+          mostActiveDay = mappedDay;
+        }
+
+        return mappedDay;
+      });
+      if (weekIsActive) activeWeeksCount++;
+      return days;
+    });
+
+    return {
+      grid,
+      totalContributions,
+      mostActiveDay,
+      activeWeeks: activeWeeksCount,
+      currentYear: new Date().getFullYear()
+    };
   } catch (error) {
     console.error("Failed to fetch github data:", error);
-    return [];
+    return null;
   }
 }

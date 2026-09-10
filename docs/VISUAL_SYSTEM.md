@@ -72,7 +72,43 @@ public/
 - **Visual Effect Overlays**: SVG masks (e.g. for `InkReveal` or `SlashTransition`) should be minimal `<path>` outputs without embedded `<style>` blocks.
 - **Rive Mascot**: `CompanionRenderer` serves as the abstraction point. The state machine provides `state`, `direction`, and `intensity`. Once `.riv` is provided, replace `CompanionPlaceholder` with `@rive-app/react-canvas` in `CompanionRenderer.tsx`.
 
+## REAL ASSET CONTRACT
+
+This site is prepared for external asset integration. The following specifies the expected file drops.
+
+### Mascot Rive File
+**Path**: `public/assets/mascot/vaishnav-companion.riv`
+
+**Expected State Machine Inputs**:
+- `direction` (Number: -1 for left, 1 for right)
+- `intensity` (Number: 0.0 to 1.0)
+- `state` (String or Enum):
+  - `idle`, `walk`, `run`, `sleep`, `read`, `surprised`, `wind_blown`, `inspect`, `wave`
+
+### Expected Visual Assets & Aspect Ratios
+Global Textures:
+- `public/assets/textures/paper-noise.webp` (Seamless repeating, 512x512)
+- `public/assets/effects/slash-brush.svg` (Diagonal slash mask path)
+- `public/assets/effects/ink-mask.svg` (Radial ink spread mask path)
+
+Project Assets (`/assets/projects/[slug]/`):
+- `hero.webp`: `16:9` ratio, cinematic overlay. Must support `mix-blend-luminosity` (i.e., high contrast or greyscale optimized).
+- `diagram.svg`: Transparent background architecture visual. `1:1` square aspect ratio preferred.
+- `gallery-X.webp`: `16:9` screenshots or CAD renders.
+
+### GitHub Integration
+Real GitHub data is integrated via server actions (`src/lib/actions/github.ts`) using the GraphQL API.
+- Require environment variable: `GITHUB_TOKEN` in `.env.local`
+- Must be a Classic Personal Access Token or Fine-Grained Token with `public_data` read access.
+- Caches for 1 hour (`revalidate: 3600`).
+- If token is missing, the site gracefully falls back to empty states.
+
+### Fallback Strategy
+If an external asset is not yet available, the site falls back automatically:
+- Missing `diagram.svg` -> renders interactive procedural DOM node chart.
+- Missing `hero.webp` -> procedural motion backgrounds (`EmberField`, `FlowLines`, etc.) run as primary visuals.
+- Missing `.riv` -> `CompanionPlaceholder` SVG renders in place.
+
 ## Future Integrations
 - **Rive Integration**: The `CompanionPlaceholder` implements `CompanionRendererProps`. In the future, a `.riv` component will simply replace the SVG output while utilizing the exact same state machine.
 - **Sound Architecture**: The foundation prepares for a non-intrusive sound system (`soundEnabled = false`).
-

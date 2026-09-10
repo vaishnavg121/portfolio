@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
 // using GSAP instead of framer-motion here
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -186,14 +187,25 @@ export const SelectedWork = () => {
                 {/* Hero Asset Background */}
                 {project.assets?.hero && (
                   <div className="absolute inset-0 z-0">
-                    <img src={project.assets.hero} alt={`${project.title} Hero`} className="w-full h-full object-cover opacity-60 mix-blend-luminosity group-hover:opacity-100 transition-opacity duration-700" />
+                    <Image 
+                      src={project.assets.hero} 
+                      alt={`${project.title} Hero`} 
+                      fill 
+                      className="object-cover opacity-60 mix-blend-luminosity group-hover:opacity-100 transition-opacity duration-700" 
+                      onLoad={(e) => { (e.target as HTMLElement).style.opacity = '0.6'; }}
+                    />
                   </div>
                 )}
 
                 {/* Texture Asset Overlay */}
                 {project.assets?.texture && (
                   <div className="absolute inset-0 z-10 pointer-events-none mix-blend-overlay opacity-30">
-                    <img src={project.assets.texture} alt="" className="w-full h-full object-cover" />
+                    <Image 
+                      src={project.assets.texture} 
+                      alt="" 
+                      fill 
+                      className="object-cover" 
+                    />
                   </div>
                 )}
 
@@ -209,7 +221,14 @@ export const SelectedWork = () => {
                 {/* Architecture Diagram */}
                 <div className="relative z-20 w-full max-w-xs flex flex-col gap-1">
                   {project.assets?.diagram ? (
-                    <img src={project.assets.diagram} alt={`${project.title} Architecture`} className="w-full h-auto drop-shadow-2xl" />
+                    <div className="relative w-full aspect-square">
+                      <Image 
+                        src={project.assets.diagram} 
+                        alt={`${project.title} Architecture`} 
+                        fill 
+                        className="object-contain drop-shadow-2xl" 
+                      />
+                    </div>
                   ) : (
                     <>
                       <div className="text-[10px] font-mono text-text-muted mb-4 tracking-widest uppercase flex items-center gap-2">

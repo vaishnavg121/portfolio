@@ -1,10 +1,10 @@
-"use client";
+import Image from "next/image";
 
 export const PaperNoise = ({ textureAsset }: { textureAsset?: string }) => {
   return (
     <>
       {textureAsset && (
-        <img src={textureAsset} alt="" className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-20 mix-blend-overlay z-0" />
+        <Image src={textureAsset} alt="" fill className="object-cover pointer-events-none opacity-20 mix-blend-overlay z-0" />
       )}
       <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.03] mix-blend-overlay z-0" xmlns="http://www.w3.org/2000/svg">
         <filter id="noiseFilter">

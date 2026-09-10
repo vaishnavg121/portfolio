@@ -51,14 +51,14 @@ export const CommandPalette = () => {
     
     if (SECRET_COMMANDS.includes(cmdStr)) {
       if (cmdStr === "hamster") {
-        window.dispatchEvent(new CustomEvent("easterEgg", { detail: "hamster" }));
+        window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "command-trigger", data: "hamster" } }));
       } else if (cmdStr === "breathing") {
-        window.dispatchEvent(new CustomEvent("easterEgg", { detail: "breathing" }));
+        window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "command-trigger", data: "breathing" } }));
       } else if (cmdStr === "notes") {
-        window.dispatchEvent(new CustomEvent("easterEgg", { detail: "notes" }));
+        window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "command-trigger", data: "notes" } }));
         document.getElementById("notes")?.scrollIntoView({ behavior: "smooth" });
       } else if (cmdStr === "sudo hire vaishnav") {
-        window.dispatchEvent(new CustomEvent("easterEgg", { detail: "hire" }));
+        window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "command-trigger", data: "hire" } }));
         document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
       }
       setIsOpen(false);

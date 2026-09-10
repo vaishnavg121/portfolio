@@ -10,7 +10,7 @@ export const CompanionController = () => {
   const [state, setState] = useState<CompanionState>("SLEEP");
   const [direction, setDirection] = useState<CompanionDirection>("right");
   const [intensity, setIntensity] = useState<number>(0);
-  const [anchor, setAnchor] = useState<CompanionAnchor>("fixed-bottom-right");
+  const [anchor] = useState<CompanionAnchor>("fixed-bottom-right");
   
   const { scrollY } = useScroll();
   const scrollVelocity = useVelocity(scrollY);
@@ -73,17 +73,19 @@ export const CompanionController = () => {
     }, duration);
   };
 
-  // 3. Global Easter Egg Events
+  // 3. Global Interaction Events
   useEffect(() => {
-    const handleEasterEgg = (e: Event) => {
+    const handleInteract = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (detail === "hamster") {
+      if (detail?.type === "command-trigger" && detail.data === "hamster") {
         temporarilySetState("SURPRISED", 2000);
+      } else if (detail?.type === "github-cell-hover") {
+        temporarilySetState("INSPECT", 500);
       }
     };
 
-    window.addEventListener("easterEgg", handleEasterEgg);
-    return () => window.removeEventListener("easterEgg", handleEasterEgg);
+    window.addEventListener("companionInteract", handleInteract);
+    return () => window.removeEventListener("companionInteract", handleInteract);
   }, []);
 
   // Set initial wave on load

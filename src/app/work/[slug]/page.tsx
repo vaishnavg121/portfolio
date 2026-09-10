@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { MoveLeft, ExternalLink } from "lucide-react";
 import { PROJECT_ASSETS } from "@/lib/assets";
 
@@ -40,8 +41,13 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
 
         {/* Visual Header Placeholder */}
         {project.assets?.hero ? (
-          <div className="w-full aspect-video mb-24 border border-border overflow-hidden">
-            <img src={project.assets.hero} alt={`${project.title} Hero`} className="w-full h-full object-cover" />
+          <div className="w-full aspect-video mb-24 border border-border overflow-hidden relative">
+            <Image 
+              src={project.assets.hero} 
+              alt={`${project.title} Hero`} 
+              fill 
+              className="object-cover" 
+            />
           </div>
         ) : (
           <div className="w-full aspect-video bg-surface-elevated border border-border mb-24 flex items-center justify-center relative overflow-hidden">
@@ -64,8 +70,13 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
           <section>
             <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">System Architecture</h2>
             {project.assets?.diagram ? (
-              <div className="w-full mb-8">
-                <img src={project.assets.diagram} alt={`${project.title} Architecture Diagram`} className="w-full h-auto drop-shadow-2xl" />
+              <div className="w-full mb-8 relative aspect-video">
+                <Image 
+                  src={project.assets.diagram} 
+                  alt={`${project.title} Architecture Diagram`} 
+                  fill 
+                  className="object-contain drop-shadow-2xl" 
+                />
               </div>
             ) : (
               <div className="w-full h-64 bg-surface border border-border flex flex-col items-center justify-center gap-4 mb-8">
@@ -83,7 +94,14 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
             {project.assets?.gallery && project.assets.gallery.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
                 {project.assets.gallery.map((img, i) => (
-                  <img key={i} src={img} alt={`${project.title} screenshot ${i+1}`} className="w-full h-auto border border-border" />
+                  <div key={i} className="relative aspect-video border border-border">
+                    <Image 
+                      src={img} 
+                      alt={`${project.title} screenshot ${i+1}`} 
+                      fill 
+                      className="object-cover" 
+                    />
+                  </div>
                 ))}
               </div>
             )}
