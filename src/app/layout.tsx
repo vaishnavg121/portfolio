@@ -4,6 +4,7 @@ import "./globals.css";
 import React from "react";
 import { CommandPalette } from "@/components/CommandPalette";
 import { CustomCursor } from "@/components/CustomCursor";
+import { CompanionTester } from "@/components/companion/CompanionTester";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -48,6 +49,7 @@ export default function RootLayout({
         <CustomCursor />
         {children}
         <CommandPalette />
+        <CompanionTester />
       </body>
     </html>
   );

@@ -7,6 +7,20 @@ import { CompanionRendererProps } from "./companion.types";
 import { MASCOT_ASSETS } from "@/lib/assets";
 import { CompanionPlaceholder } from "./CompanionPlaceholder";
 
+type PoseConfig = { scale: number; yOffset: string };
+
+const NORMALIZATION: Record<string, PoseConfig> = {
+  "IDLE": { scale: 1, yOffset: "0%" },
+  "WALK": { scale: 1, yOffset: "0%" },
+  "RUN": { scale: 1.15, yOffset: "5%" },
+  "SLEEP": { scale: 1, yOffset: "0%" },
+  "READ": { scale: 1.05, yOffset: "2%" },
+  "SURPRISED": { scale: 1.15, yOffset: "-5%" },
+  "WIND_BLOWN": { scale: 1.15, yOffset: "5%" },
+  "INSPECT": { scale: 1, yOffset: "0%" },
+  "WAVE": { scale: 1.15, yOffset: "-5%" },
+};
+
 export const IllustratedCompanionRenderer = (props: CompanionRendererProps) => {
   const { state, direction } = props;
   const shouldReduceMotion = useReducedMotion();
@@ -42,6 +56,7 @@ export const IllustratedCompanionRenderer = (props: CompanionRendererProps) => {
   const originalImage = getStateImage();
   const isCurrentFailed = failedAssets.has(originalImage);
   const currentImage = isCurrentFailed ? MASCOT_ASSETS.poses.idle : originalImage;
+  const norm = NORMALIZATION[isCurrentFailed ? "IDLE" : state] || NORMALIZATION.IDLE;
 
   if (idleFailed) {
     return <CompanionPlaceholder {...props} />;
@@ -126,7 +141,7 @@ export const IllustratedCompanionRenderer = (props: CompanionRendererProps) => {
 
   return (
     <motion.div
-      className="relative w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 flex-shrink-0"
+      className="relative w-[44px] h-[44px] sm:w-[58px] sm:h-[58px] md:w-[72px] md:h-[72px] lg:w-[90px] lg:h-[90px] flex-shrink-0"
       initial={false}
       animate={{
         scaleX: direction === "left" ? -1 : 1,
@@ -140,9 +155,9 @@ export const IllustratedCompanionRenderer = (props: CompanionRendererProps) => {
       <AnimatePresence mode="wait">
         <motion.div
           key={currentImage}
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.97 }}
+          initial={{ opacity: 0, scale: 0.97 * norm.scale, y: norm.yOffset }}
+          animate={{ opacity: 1, scale: norm.scale, y: norm.yOffset }}
+          exit={{ opacity: 0, scale: 0.97 * norm.scale, y: norm.yOffset }}
           transition={{ duration: 0.15 }}
           className="absolute inset-0 origin-bottom"
         >
@@ -155,7 +170,7 @@ export const IllustratedCompanionRenderer = (props: CompanionRendererProps) => {
                 src={currentImage}
                 alt=""
                 fill
-                sizes="(max-width: 640px) 40px, (max-width: 768px) 56px, 80px"
+                sizes="(max-width: 640px) 44px, (max-width: 768px) 58px, (max-width: 1024px) 72px, 90px"
                 className="object-contain"
                 priority
                 onError={handleImageError}
