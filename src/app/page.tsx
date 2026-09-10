@@ -7,7 +7,7 @@ import { RoboticsShowcase } from "@/sections/RoboticsShowcase";
 import { GithubActivity } from "@/sections/GithubActivity";
 import { EngineeringNotes } from "@/sections/EngineeringNotes";
 import { ContactFooter } from "@/sections/ContactFooter";
-import { Companion } from "@/components/Companion";
+import { Companion } from "@/components/companion";
 
 export default function Home() {
   return (

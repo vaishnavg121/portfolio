@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { MoveRight } from "lucide-react";
+import { EmberField, InkReveal, FlowLines, GridEffect, BlueprintEffect } from "@/components/effects";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -20,6 +21,7 @@ const PROJECTS = [
     tags: ["Python", "Agents", "Finance", "LLMs"],
     theme: "red / ember / market-line",
     architecture: ["MARKET", "DISCOVERY", "COMMITTEE", "RISK", "EXECUTION"],
+    EffectComponent: EmberField,
   },
   {
     id: "02",
@@ -29,6 +31,7 @@ const PROJECTS = [
     tags: ["RAG", "Next.js", "PostgreSQL", "Reasoning"],
     theme: "ink / paper spread",
     architecture: ["QUERY", "RETRIEVAL", "AUTHORITIES", "REASONING", "VALIDATION"],
+    EffectComponent: () => <InkReveal><div className="absolute inset-0 bg-[#fff] opacity-[0.03] mix-blend-overlay" /></InkReveal>,
   },
   {
     id: "03",
@@ -38,6 +41,7 @@ const PROJECTS = [
     tags: ["ML", "Data", "Aviation"],
     theme: "wind / flowing-line motion",
     architecture: ["DATA INGESTION", "FEATURE ENG", "MODEL", "PREDICTION"],
+    EffectComponent: FlowLines,
   },
   {
     id: "04",
@@ -47,6 +51,7 @@ const PROJECTS = [
     tags: ["TypeScript", "React", "PostgreSQL"],
     theme: "clean grid / balance",
     architecture: ["USER", "TRANSACTION", "SPLIT LOGIC", "LEDGER"],
+    EffectComponent: GridEffect,
   },
   {
     id: "05",
@@ -56,6 +61,7 @@ const PROJECTS = [
     tags: ["CAD", "Robotics", "Hardware"],
     theme: "blueprint / mechanical line",
     architecture: ["DESIGN", "SIMULATION", "FABRICATION", "ASSEMBLY"],
+    EffectComponent: BlueprintEffect,
   }
 ];
 
@@ -129,7 +135,7 @@ export const SelectedWork = () => {
         </h2>
 
         <div className="flex flex-col gap-32 md:gap-48">
-          {PROJECTS.map((project, index) => (
+          {PROJECTS.map((project) => (
             <div key={project.id} className="project-card flex flex-col md:flex-row gap-12 md:gap-16 items-start">
               {/* Info Side */}
               <div className="flex-1 md:w-5/12 md:sticky md:top-32 relative z-20">
@@ -165,16 +171,10 @@ export const SelectedWork = () => {
 
               {/* Visual Side */}
               <div className="flex-1 md:w-7/12 w-full bg-[#0a0a0a] min-h-[500px] flex items-center justify-center p-8 border border-border relative overflow-hidden group" data-cursor="VIEW">
-                {/* Abstract Visual Placeholder */}
-                <div className="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-30" 
-                  style={{
-                    background: index % 2 === 0 
-                      ? 'radial-gradient(circle at center, var(--accent) 0%, transparent 60%)'
-                      : 'linear-gradient(45deg, transparent 40%, rgba(204,51,51,0.15) 50%, transparent 60%)'
-                  }}
-                />
-                
-                <div className="absolute top-4 right-4 text-[10px] font-mono text-[#333] tracking-widest">
+                {/* Visual Effects */}
+                <project.EffectComponent />
+
+                <div className="absolute top-4 right-4 text-[10px] font-mono text-[#333] tracking-widest z-20">
                   SYS_VISUAL // {project.theme.toUpperCase()}
                 </div>
 

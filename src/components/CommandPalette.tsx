@@ -47,11 +47,19 @@ export const CommandPalette = () => {
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQuery(val);
-    if (SECRET_COMMANDS.includes(val.toLowerCase())) {
-      console.log(`Secret triggered: ${val}`);
-      // Easter egg logic could trigger visual effects here
-      if (val.toLowerCase() === "sudo hire vaishnav") {
-        alert("Permission granted. Initializing onboarding sequence...");
+    const cmdStr = val.toLowerCase();
+    
+    if (SECRET_COMMANDS.includes(cmdStr)) {
+      if (cmdStr === "hamster") {
+        window.dispatchEvent(new CustomEvent("easterEgg", { detail: "hamster" }));
+      } else if (cmdStr === "breathing") {
+        window.dispatchEvent(new CustomEvent("easterEgg", { detail: "breathing" }));
+      } else if (cmdStr === "notes") {
+        window.dispatchEvent(new CustomEvent("easterEgg", { detail: "notes" }));
+        document.getElementById("notes")?.scrollIntoView({ behavior: "smooth" });
+      } else if (cmdStr === "sudo hire vaishnav") {
+        window.dispatchEvent(new CustomEvent("easterEgg", { detail: "hire" }));
+        document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
       }
       setIsOpen(false);
       setQuery("");
