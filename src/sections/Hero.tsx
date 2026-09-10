@@ -2,10 +2,14 @@
 
 import { motion } from "framer-motion";
 import { MoveRight } from "lucide-react";
+import { THEME_ASSETS } from "@/lib/assets";
 
 export const Hero = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20" id="hero">
+      {/* Global Grain */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: `url(${THEME_ASSETS.global.paperGrain})`, backgroundSize: '300px' }} />
+      
       {/* Background Graphic */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none flex items-center justify-center">
         <svg viewBox="0 0 100 100" className="w-full h-full max-w-4xl" preserveAspectRatio="xMidYMid slice">

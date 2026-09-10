@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { THEME_ASSETS } from "@/lib/assets";
 
 export const EntrySequence = () => {
   const [stage, setStage] = useState(0); // 0: initializing, 1: text, 2: slash, 3: done
@@ -62,11 +63,17 @@ export const EntrySequence = () => {
 
         {stage === 2 && (
           <motion.div
-            initial={{ scaleX: 0, opacity: 0 }}
-            animate={{ scaleX: 1, opacity: 1, rotate: -15 }}
-            className="absolute w-[150vw] h-[2px] bg-white origin-center"
-            transition={{ duration: 0.2, ease: "easeIn" }}
-            style={{ boxShadow: "0 0 20px rgba(255,255,255,0.8)" }}
+            initial={{ scale: 0, opacity: 0, x: "-50%", y: "-50%" }}
+            animate={{ scale: 1.2, opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.5 }}
+            className="absolute top-1/2 left-1/2 pointer-events-none w-[120vw] h-[120vw] max-w-[2000px] max-h-[2000px]"
+            style={{ 
+              backgroundImage: `url(${THEME_ASSETS.global.slashTransition})`,
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
           />
         )}
       </motion.div>

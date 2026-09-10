@@ -1,21 +1,23 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { THEME_ASSETS } from "@/lib/assets";
 
-export const InkReveal = ({ children, delay = 0, maskAsset }: { children: React.ReactNode, delay?: number, maskAsset?: string }) => {
+export const InkReveal = ({ children, delay = 0 }: { children?: React.ReactNode, delay?: number }) => {
   return (
-    <div className="relative group overflow-hidden">
-      {/* Ink blot simulation using CSS radial gradients and motion */}
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
       <motion.div
-        className="absolute inset-0 z-10 pointer-events-none mix-blend-multiply bg-background"
-        initial={{ clipPath: "circle(0% at 50% 50%)" }}
-        whileInView={{ clipPath: "circle(150% at 50% 50%)" }}
-        viewport={{ once: true, margin: "-10%" }}
-        transition={{ duration: 1.5, delay, ease: [0.76, 0, 0.24, 1] }}
+        className="absolute top-[-20%] left-[-10%] w-[80%] h-[140%] opacity-80"
         style={{
-          WebkitMaskImage: maskAsset ? `url(${maskAsset})` : "radial-gradient(circle, black 0%, transparent 100%)",
-          WebkitMaskSize: maskAsset ? "cover" : "auto",
+          backgroundImage: `url(${THEME_ASSETS.global.inkBrushReveal})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'left center',
+          backgroundRepeat: 'no-repeat',
         }}
+        initial={{ x: "-20%", opacity: 0 }}
+        whileInView={{ x: 0, opacity: [0, 0.5, 0.4] }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 1.5, delay, ease: "easeOut" }}
       />
       {children}
     </div>

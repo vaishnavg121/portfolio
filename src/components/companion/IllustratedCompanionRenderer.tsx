@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CompanionRendererProps } from "./companion.types";
-import { MASCOT_ASSETS } from "@/lib/assets";
+import { MASCOT_ASSETS, THEME_ASSETS } from "@/lib/assets";
 import { CompanionPlaceholder } from "./CompanionPlaceholder";
 
 type PoseConfig = { scale: number; yOffset: string };
@@ -152,6 +152,28 @@ export const IllustratedCompanionRenderer = (props: CompanionRendererProps) => {
       }}
       aria-hidden="true"
     >
+      <AnimatePresence>
+        {(state === "RUN" || state === "WALK") && !shouldReduceMotion && (
+          <motion.div
+            key="ink-trail"
+            className="absolute top-1/2 -translate-y-1/2 right-[80%] h-[120%] origin-right pointer-events-none opacity-40"
+            style={{
+              backgroundImage: `url(${THEME_ASSETS.global.inkTrail})`,
+              backgroundSize: '100% 100%',
+              backgroundPosition: 'left center',
+              backgroundRepeat: 'no-repeat',
+            }}
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ 
+               opacity: state === "RUN" ? 0.6 : 0.3, 
+               width: state === "RUN" ? "150px" : "60px"
+            }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          />
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         <motion.div
           key={currentImage}
@@ -159,7 +181,7 @@ export const IllustratedCompanionRenderer = (props: CompanionRendererProps) => {
           animate={{ opacity: 1, scale: norm.scale, y: norm.yOffset }}
           exit={{ opacity: 0, scale: 0.97 * norm.scale, y: norm.yOffset }}
           transition={{ duration: 0.15 }}
-          className="absolute inset-0 origin-bottom"
+          className="absolute inset-0 origin-bottom z-10"
         >
           <motion.div
              animate={motionProps.animate}

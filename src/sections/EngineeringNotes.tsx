@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { InkReveal, PaperNoise } from "@/components/effects";
+import { THEME_ASSETS } from "@/lib/assets";
 
 const RULES = [
   {
@@ -20,54 +20,47 @@ const RULES = [
 
 export const EngineeringNotes = () => {
   return (
-    <section id="notes" className="py-32 bg-background relative flex justify-center overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at center, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+    <section id="notes" className="py-32 relative flex justify-center overflow-hidden">
+      {/* Global Grain */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-5 mix-blend-overlay" style={{ backgroundImage: `url(${THEME_ASSETS.global.paperGrain})`, backgroundSize: '300px' }} />
       
-      <InkReveal>
-        <motion.div 
-          initial={{ opacity: 0, rotate: -2, y: 50 }}
-          whileInView={{ opacity: 1, rotate: 0, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-          className="w-[90%] max-w-2xl bg-[#0a0a0a] border border-[#333] shadow-2xl relative p-8 md:p-16 overflow-hidden"
-          style={{
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255,255,255,0.05) inset"
-          }}
-        >
-          {/* Paper Texture */}
-          <PaperNoise />
-
-          {/* Notebook Spine binding simulation */}
-          <div className="absolute left-0 top-0 bottom-0 w-8 border-r border-[#222] bg-[#050505] z-10" />
-          
-          <div className="ml-4 md:ml-8 relative z-20">
-            <h2 className="text-xl md:text-2xl font-serif italic text-text-primary mb-12 border-b border-[#333] pb-4 tracking-wide">
-              Engineering Notes
-            </h2>
-            
-            <div className="flex flex-col gap-12">
-              {RULES.map((rule, idx) => (
-                <div key={idx} className="relative group">
-                  <div className="text-accent font-mono text-xs tracking-widest mb-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                    {rule.num}
-                  </div>
-                  <div className="text-lg md:text-2xl text-text-muted font-light leading-relaxed font-hand">
-                    {rule.text}
-                  </div>
-                  <div className="absolute -left-12 top-2 text-[#222] font-mono text-sm opacity-50 hidden md:block">
-                    {(idx * 13).toString().padStart(3, '0')}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-16 pt-8 border-t border-[#333] flex justify-between items-center opacity-40">
-              <div className="font-mono text-xs">CLASSIFIED / PERSONAL</div>
-              <div className="font-mono text-xs text-accent">VG-121</div>
-            </div>
+      <motion.div 
+        initial={{ opacity: 0, rotate: -1, y: 30 }}
+        whileInView={{ opacity: 1, rotate: 0, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+        className="w-[95%] max-w-3xl relative p-10 md:p-20 overflow-hidden min-h-[600px] flex flex-col justify-center"
+      >
+        {/* Notebook Frame Artwork */}
+        <div className="absolute inset-0 pointer-events-none opacity-90" style={{
+           backgroundImage: `url(${THEME_ASSETS.global.notebookInkFrame})`,
+           backgroundSize: '100% 100%',
+           backgroundPosition: 'center',
+           backgroundRepeat: 'no-repeat'
+        }} />
+        
+        <div className="relative z-20 md:px-10">
+          <div className="text-[#cc3333]/80 font-mono text-[10px] tracking-[0.3em] mb-4 uppercase">
+            {"//"} Personal Annotation
           </div>
-        </motion.div>
-      </InkReveal>
+          <h2 className="text-2xl md:text-3xl font-serif italic text-[#e6e1d6] mb-12 border-b border-[#cc3333]/30 pb-6 tracking-wide">
+            Engineering Notes
+          </h2>
+          
+          <div className="flex flex-col gap-12">
+            {RULES.map((rule, idx) => (
+              <div key={idx} className="relative group">
+                <div className="text-[#cc3333] font-mono text-xs tracking-widest mb-3 opacity-90 transition-opacity">
+                  {rule.num}
+                </div>
+                <div className="text-xl md:text-3xl text-[#e6e1d6]/90 font-light leading-relaxed font-hand tracking-wide">
+                  {rule.text}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
     </section>
   );
 };

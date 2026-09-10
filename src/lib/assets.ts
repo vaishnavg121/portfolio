@@ -36,6 +36,15 @@ export const THEME_ASSETS = {
     bottomBrush: "/assets/theme/github/github-bottom-brush.png",
     speckles: "/assets/theme/github/github-ink-speckles.png",
     grain: "/assets/theme/github/github-grain.webp",
+  },
+  global: {
+    paperGrain: "/assets/theme/global/global-paper-grain.webp",
+    inkBrushReveal: "/assets/theme/global/ink-brush-reveal.png",
+    slashTransition: "/assets/theme/global/slash-transition.png",
+    flowRibbon: "/assets/theme/global/flow-ribbon.png",
+    emberFragments: "/assets/theme/global/ember-fragments.png",
+    notebookInkFrame: "/assets/theme/global/notebook-ink-frame.png",
+    inkTrail: "/assets/theme/global/ink-trail.png",
   }
 };
 
