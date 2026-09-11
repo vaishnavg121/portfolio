@@ -156,20 +156,22 @@ export const IllustratedCompanionRenderer = (props: CompanionRendererProps) => {
         {(state === "RUN" || state === "WALK") && !shouldReduceMotion && (
           <motion.div
             key="ink-trail"
-            className="absolute top-1/2 -translate-y-1/2 right-[80%] h-[120%] origin-right pointer-events-none opacity-40"
+            className="absolute top-1/2 -translate-y-1/2 right-[60%] h-[80%] origin-right pointer-events-none opacity-40"
             style={{
               backgroundImage: `url(${THEME_ASSETS.global.inkTrail})`,
-              backgroundSize: '100% 100%',
-              backgroundPosition: 'left center',
+              backgroundSize: 'cover',
+              backgroundPosition: 'right center',
               backgroundRepeat: 'no-repeat',
+              maskImage: 'linear-gradient(to left, black 20%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to left, black 20%, transparent 100%)',
             }}
             initial={{ opacity: 0, width: 0 }}
             animate={{ 
-               opacity: state === "RUN" ? 0.6 : 0.3, 
-               width: state === "RUN" ? "150px" : "60px"
+               opacity: state === "RUN" ? 0.6 : 0.25, 
+               width: state === "RUN" ? "120px" : "40px"
             }}
             exit={{ opacity: 0, width: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
           />
         )}
       </AnimatePresence>

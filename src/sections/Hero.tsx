@@ -40,9 +40,9 @@ export const Hero = () => {
           {/* Main Title Block */}
           <div className="md:col-span-10 md:col-start-1 relative z-10">
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.2, ease: "easeOut" }}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.75, ease: "easeOut" }}
               className="mb-4 md:mb-6 font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase flex items-center gap-4"
             >
               <span>SYS_INIT</span>
@@ -51,9 +51,9 @@ export const Hero = () => {
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.4, ease: "easeOut" }}
+              initial={{ clipPath: "inset(0 100% 0 0)", opacity: 0 }}
+              animate={{ clipPath: "inset(0 0% 0 0)", opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.8, ease: [0.11, 0, 0.5, 0] }}
               className="text-[12vw] md:text-[8vw] lg:text-[7rem] font-display font-medium tracking-tighter leading-[0.85] uppercase"
             >
               Vaishnav
@@ -65,9 +65,9 @@ export const Hero = () => {
           {/* Subtitle / Description Block - positioned editorially */}
           <div className="md:col-span-5 md:col-start-7 lg:col-start-8 mt-12 md:mt-24 relative z-20">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.6, ease: "easeOut" }}
+              transition={{ duration: 0.6, delay: 0.9, ease: "easeOut" }}
             >
               <h2 className="text-xl md:text-2xl text-text-primary font-light leading-snug mb-6 border-l-2 border-accent pl-6">
                 I build things around <br />
@@ -98,7 +98,7 @@ export const Hero = () => {
               <motion.span 
                 initial={{ opacity: 0, pathLength: 0 }}
                 animate={{ opacity: 1, pathLength: 1 }}
-                transition={{ delay: 2, duration: 1 }}
+                transition={{ delay: 1.2, duration: 0.8 }}
                 className="text-accent text-xl md:text-2xl font-hand"
               >
                 {`// curiosity usually gets out of hand`}

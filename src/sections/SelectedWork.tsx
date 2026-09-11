@@ -7,7 +7,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { MoveRight } from "lucide-react";
-import { EmberField, InkReveal, FlowLines, GridEffect, BlueprintEffect } from "@/components/effects";
+import { EmberField, FlowLines, GridEffect, BlueprintEffect, SwaNeetiInk } from "@/components/effects";
 import { PROJECT_ASSETS } from "@/lib/assets";
 
 if (typeof window !== "undefined") {
@@ -36,7 +36,7 @@ const PROJECTS = [
     tags: ["RAG", "Next.js", "PostgreSQL", "Reasoning"],
     theme: "ink / paper spread",
     architecture: ["QUERY", "RETRIEVAL", "AUTHORITIES", "REASONING", "VALIDATION"],
-    EffectComponent: () => <InkReveal><div className="absolute inset-0 bg-[#fff] opacity-[0.03] mix-blend-overlay" /></InkReveal>,
+    EffectComponent: SwaNeetiInk,
     assets: PROJECT_ASSETS["swaneeti"],
   },
   {
@@ -234,17 +234,19 @@ export const SelectedWork = () => {
                       <div className="text-[10px] font-mono text-text-muted mb-4 tracking-widest uppercase flex items-center gap-2">
                         <div className="w-2 h-2 bg-accent" /> System Pipeline
                       </div>
-                      {project.architecture.map((node, i) => (
-                        <div key={node} className="flex flex-col">
-                          <div className="arch-node bg-[#111] border-l-2 border-accent text-text-primary px-4 py-3 font-mono text-xs shadow-xl tracking-wider flex justify-between items-center">
-                            <span>{node}</span>
-                            <span className="text-[#444] text-[10px]">0{i + 1}</span>
+                      <div className="group/pipeline flex flex-col gap-1">
+                        {project.architecture.map((node, i) => (
+                          <div key={node} className="flex flex-col group/node transition-all duration-300 hover:-translate-y-0.5">
+                            <div className="arch-node bg-[#111] border-l-2 border-accent/30 group-hover/node:border-accent text-text-primary px-4 py-3 font-mono text-xs shadow-xl tracking-wider flex justify-between items-center transition-all duration-300 group-hover/pipeline:opacity-50 group-hover/node:!opacity-100 group-hover/node:bg-[#151515]">
+                              <span>{node}</span>
+                              <span className="text-[#444] text-[10px] group-hover/node:text-accent/70 transition-colors">{`0${i + 1}`}</span>
+                            </div>
+                            {i < project.architecture.length - 1 && (
+                              <div className="arch-line w-[1px] h-4 bg-[#333] ml-4 opacity-50 group-hover/node:h-5 group-hover/node:bg-accent/40 transition-all duration-300" />
+                            )}
                           </div>
-                          {i < project.architecture.length - 1 && (
-                            <div className="arch-line w-[1px] h-4 bg-[#333] ml-4 opacity-50" />
-                          )}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </>
                   )}
                 </div>
