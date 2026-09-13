@@ -64,6 +64,7 @@ export const Hero = () => {
           <motion.div 
             className="md:col-span-10 md:col-start-1 relative z-10"
             style={{ x: shouldReduceMotion ? 0 : titleX, y: shouldReduceMotion ? 0 : titleY }}
+            data-familiar-avoid
           >
             <motion.div
               initial={{ opacity: 0, x: -10 }}
@@ -93,6 +94,7 @@ export const Hero = () => {
           <motion.div 
             className="md:col-span-5 md:col-start-7 lg:col-start-8 mt-12 md:mt-24 relative z-20"
             style={{ x: shouldReduceMotion ? 0 : subtitleX, y: shouldReduceMotion ? 0 : subtitleY }}
+            data-familiar-avoid
           >
             <motion.div
               initial={{ opacity: 0, y: 10 }}

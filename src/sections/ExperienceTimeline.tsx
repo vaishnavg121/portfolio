@@ -2,6 +2,10 @@
 
 // No framer-motion imports needed anymore
 
+import { useRef } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+
 const CHAPTERS = [
   {
     num: "CH.01",
@@ -36,8 +40,55 @@ const CHAPTERS = [
 ];
 
 export const ExperienceTimeline = () => {
+  const containerRef = useRef<HTMLElement>(null);
+
+  useGSAP(() => {
+    const chapters = gsap.utils.toArray('.chapter-block') as HTMLElement[];
+    
+    chapters.forEach((chap) => {
+      const bgNum = chap.querySelector('.bg-num');
+      const content = chap.querySelector('.chap-content');
+      
+      // bg number moves up slower than scroll
+      gsap.to(bgNum, {
+        y: -100,
+        ease: "none",
+        scrollTrigger: {
+          trigger: chap,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 0.5,
+        }
+      });
+
+      // active state dims when scrolling past
+      gsap.fromTo(content, 
+        { opacity: 0.2 },
+        {
+          opacity: 1,
+          scrollTrigger: {
+            trigger: chap,
+            start: "top 80%",
+            end: "top 20%",
+            scrub: true,
+          }
+        }
+      );
+      
+      gsap.to(content, {
+        opacity: 0.2,
+        scrollTrigger: {
+          trigger: chap,
+          start: "bottom 50%",
+          end: "bottom 20%",
+          scrub: true,
+        }
+      });
+    });
+  }, { scope: containerRef });
+
   return (
-    <section className="py-32 bg-background border-t border-border overflow-hidden relative" id="about">
+    <section className="py-32 bg-background border-t border-border overflow-hidden relative" id="about" ref={containerRef}>
       <div className="container mx-auto px-6 md:px-12 max-w-5xl relative z-10">
         <h2 className="text-sm font-mono text-text-muted mb-24 tracking-widest uppercase border-b border-border pb-4">
           Experience / Chapters
@@ -45,13 +96,13 @@ export const ExperienceTimeline = () => {
 
         <div className="flex flex-col gap-32 md:gap-40">
           {CHAPTERS.map((chapter, i) => (
-            <div key={chapter.num} className="relative group">
+            <div key={chapter.num} className="relative group chapter-block">
               {/* Large Background Number */}
-              <div className="absolute -top-16 -left-8 md:-top-24 md:-left-16 text-[120px] md:text-[200px] font-display font-bold text-surface-elevated opacity-50 z-0 leading-none select-none transition-transform duration-700 group-hover:-translate-y-4">
+              <div className="bg-num absolute -top-16 -left-8 md:-top-24 md:-left-16 text-[120px] md:text-[200px] font-display font-bold text-surface-elevated opacity-50 z-0 leading-none select-none transition-transform duration-700 group-hover:-translate-y-4">
                 0{i + 1}
               </div>
               
-              <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+              <div className="chap-content relative z-10 grid grid-cols-1 md:grid-cols-12 gap-8 items-start" data-familiar-avoid>
                 <div className="md:col-span-5 pt-2">
                   <div className="font-mono text-accent text-xs tracking-widest mb-4">
                     {chapter.num}

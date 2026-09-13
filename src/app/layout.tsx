@@ -5,7 +5,7 @@ import React from "react";
 import { CommandPalette } from "@/components/CommandPalette";
 import { CustomCursor } from "@/components/CustomCursor";
 import { CompanionTester } from "@/components/companion/CompanionTester";
-import { PointerProvider } from "@/components/effects";
+import { PointerProvider, SystemRail } from "@/components/effects";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -49,6 +49,7 @@ export default function RootLayout({
       <body className="min-h-full bg-background text-text-primary flex flex-col selection:bg-accent-soft selection:text-accent">
         <PointerProvider>
           <CustomCursor />
+          <SystemRail />
           {children}
           <CommandPalette />
           <CompanionTester />

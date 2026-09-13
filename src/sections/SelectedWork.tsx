@@ -7,9 +7,10 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { MoveRight } from "lucide-react";
-import { EmberField, FlowLines, GridEffect, BlueprintEffect, SwaNeetiInk, MagneticEffect } from "@/components/effects";
+import { EmberField, FlowLines, GridEffect, BlueprintEffect, SwaNeetiInk, MagneticEffect, usePointer } from "@/components/effects";
 import { PROJECT_ASSETS } from "@/lib/assets";
 import { useRouter } from "next/navigation";
+import { motion, useTransform, useReducedMotion } from "framer-motion";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -81,6 +82,15 @@ const PROJECTS = [
 export const SelectedWork = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  
+  const shouldReduceMotion = useReducedMotion();
+  const { sNX, sNY } = usePointer();
+  
+  // Parallax layers (subtle)
+  const layer1X = useTransform(sNX, [-1, 1], [-8, 8]);
+  const layer1Y = useTransform(sNY, [-1, 1], [-8, 8]);
+  const layer2X = useTransform(sNX, [-1, 1], [-15, 15]);
+  const layer2Y = useTransform(sNY, [-1, 1], [-15, 15]);
 
   const handleProjectClick = (slug: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -171,7 +181,7 @@ export const SelectedWork = () => {
           {PROJECTS.map((project) => (
             <div key={project.id} className="project-card flex flex-col md:flex-row gap-12 md:gap-16 items-start">
               {/* Info Side */}
-              <div className="flex-1 md:w-5/12 md:sticky md:top-32 relative z-20">
+              <div className="flex-1 md:w-5/12 md:sticky md:top-32 relative z-20" data-familiar-avoid>
                 <div className="flex items-baseline gap-4 mb-4">
                   <span className="font-mono text-4xl text-border opacity-50 tracking-tighter">{project.id}</span>
                   <div className="font-mono text-accent text-xs tracking-widest uppercase">{project.category}</div>
@@ -213,7 +223,10 @@ export const SelectedWork = () => {
                 
                 {/* Hero Asset Background */}
                 {project.assets?.hero && (
-                  <div className="absolute inset-0 z-0">
+                  <motion.div 
+                    className="absolute inset-0 z-0"
+                    style={{ x: shouldReduceMotion ? 0 : layer1X, y: shouldReduceMotion ? 0 : layer1Y }}
+                  >
                     <Image 
                       src={project.assets.hero} 
                       alt={`${project.title} Hero`} 
@@ -221,25 +234,31 @@ export const SelectedWork = () => {
                       className="object-cover opacity-60 mix-blend-luminosity group-hover:opacity-100 transition-opacity duration-700" 
                       onLoad={(e) => { (e.target as HTMLElement).style.opacity = '0.6'; }}
                     />
-                  </div>
+                  </motion.div>
                 )}
 
                 {/* Texture Asset Overlay */}
                 {project.assets?.texture && (
-                  <div className="absolute inset-0 z-10 pointer-events-none mix-blend-overlay opacity-30">
+                  <motion.div 
+                    className="absolute inset-0 z-10 pointer-events-none mix-blend-overlay opacity-30"
+                    style={{ x: shouldReduceMotion ? 0 : layer2X, y: shouldReduceMotion ? 0 : layer2Y }}
+                  >
                     <Image 
                       src={project.assets.texture} 
                       alt="" 
                       fill 
                       className="object-cover" 
                     />
-                  </div>
+                  </motion.div>
                 )}
 
                 {/* Visual Effects (Procedural fallback if no hard assets, or complementary overlay) */}
-                <div className="absolute inset-0 z-10">
+                <motion.div 
+                  className="absolute inset-0 z-10"
+                  style={{ x: shouldReduceMotion ? 0 : layer1X, y: shouldReduceMotion ? 0 : layer1Y }}
+                >
                   <project.EffectComponent />
-                </div>
+                </motion.div>
 
                 <div className="absolute top-4 right-4 text-[10px] font-mono text-[#333] tracking-widest z-20">
                   SYS_VISUAL // {project.theme.toUpperCase()}

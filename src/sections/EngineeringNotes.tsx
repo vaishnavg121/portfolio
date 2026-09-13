@@ -51,7 +51,7 @@ export const EngineeringNotes = () => {
             }}
           />
 
-          <div className="ml-4 md:ml-8 relative z-20">
+          <div className="ml-4 md:ml-8 relative z-20" data-familiar-avoid>
             <h2 className="text-xl md:text-2xl font-serif italic text-text-primary mb-12 border-b border-[#333] pb-4 tracking-wide relative">
               Engineering Notes
               <div data-familiar-anchor className="absolute right-0 top-0 w-4 h-4 pointer-events-none" />

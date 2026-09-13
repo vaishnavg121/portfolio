@@ -222,7 +222,7 @@ export const GithubActivity = () => {
                             style={{ marginTop: dIdx === 0 && new Date(day.date).getDay() !== 0 ? `${new Date(day.date).getDay() * (12 + 3)}px` : '0' }}
                             className={`w-[12px] h-[12px] rounded-[1px] transition-all duration-300 hover:scale-125 hover:z-10 focus:scale-125 focus:z-10 hover:border hover:border-white focus:border-white focus:outline-none cursor-crosshair group/day relative ${getColor(day.level)} ${day.level === 0 ? 'opacity-20 hover:opacity-100' : 'hover:brightness-110 shadow-sm'}`}
                           >
-                             <div className="absolute opacity-0 group-hover/day:opacity-100 bg-[#090a0b] text-text-primary text-[10px] font-mono p-2 rounded pointer-events-none transform -translate-y-full -translate-x-1/2 left-1/2 -top-2 z-50 whitespace-nowrap transition-opacity border border-[#cc3333]/20 shadow-2xl">
+                             <div data-familiar-avoid className="absolute opacity-0 group-hover/day:opacity-100 bg-[#090a0b] text-text-primary text-[10px] font-mono p-2 rounded pointer-events-none transform -translate-y-full -translate-x-1/2 left-1/2 -top-2 z-50 whitespace-nowrap transition-opacity border border-[#cc3333]/20 shadow-2xl">
                                <span className="text-[#cc3333] font-bold">{day.count}</span> count {"//"} {new Date(day.date).toDateString()}
                              </div>
                           </div>

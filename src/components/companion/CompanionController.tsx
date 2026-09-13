@@ -35,21 +35,19 @@ export const CompanionController = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const targetElementRef = useRef<HTMLElement | null>(null);
   const currentPos = useRef({ x: 0, y: 0 });
+  const optimalOffsetRef = useRef({ x: 0, y: 0 }); // Pre-calculated safe offset
 
-  // Priority Lock System: 0 = Direct, 1 = Section Context, 2 = Ambient
+  // Priority Lock System: 0 = Direct, 1 = Section Context, 2 = Ambient, -1 = Safety Override
   const priorityLockRef = useRef<{ level: number, expires: number }>({ level: 2, expires: 0 });
 
-  // Reduced motion setup
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReducedMotion(mediaQuery.matches);
     const listener = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
     mediaQuery.addEventListener("change", listener);
     return () => mediaQuery.removeEventListener("change", listener);
   }, []);
 
-  // 1. Initial Position Setup
   useEffect(() => {
     currentPos.current = {
       x: window.innerWidth / 2,
@@ -57,10 +55,73 @@ export const CompanionController = () => {
     };
   }, []);
 
+  // Helper to calculate safe offset ONCE when target changes
+  const calculateSafeOffset = (target: HTMLElement) => {
+    const rect = target.getBoundingClientRect();
+    const isCell = target.hasAttribute("data-github-cell");
+    const isPipeline = target.classList.contains("group/node");
+    
+    // 1. Initial preferred offset
+    let candidates = [
+      { x: 40, y: 40 }, // default below right
+      { x: -80, y: 40 }, // below left
+      { x: 40, y: -80 }, // above right
+      { x: -80, y: -80 }, // above left
+      { x: 100, y: 0 }, // far right
+      { x: -140, y: 0 } // far left
+    ];
+
+    if (isCell) {
+      candidates = [
+        { x: 20, y: 20 },
+        { x: -40, y: 20 },
+        { x: 20, y: -40 }
+      ];
+    } else if (isPipeline) {
+      candidates = [
+        { x: -120, y: 0 }, // left of pipeline
+        { x: 120, y: 0 } // right of pipeline
+      ];
+    } else if (target.closest("#notes")) {
+      candidates = [
+        { x: 150, y: 0 }, // outer margin
+        { x: -150, y: 0 }
+      ];
+    }
+
+    // 2. Check collisions
+    const avoids = Array.from(document.querySelectorAll("[data-familiar-avoid]"));
+    const mascotW = 80, mascotH = 80;
+
+    for (const offset of candidates) {
+      const cx = rect.left + rect.width / 2 + offset.x;
+      const cy = rect.top + rect.height / 2 + offset.y;
+      
+      let hits = false;
+      for (const avoid of avoids) {
+        const a = avoid.getBoundingClientRect();
+        if (
+          cx + mascotW/2 > a.left && cx - mascotW/2 < a.right &&
+          cy + mascotH/2 > a.top && cy - mascotH/2 < a.bottom
+        ) {
+          hits = true;
+          break;
+        }
+      }
+
+      if (!hits) {
+        return offset; // Found safe!
+      }
+    }
+
+    return candidates[0]; // Fallback to preferred if everything collides
+  };
+
   // 2. Smooth Movement Loop (Bypasses React State)
   useEffect(() => {
     let raf: number;
     let lastTime = performance.now();
+    let lastTarget: HTMLElement | null = null;
     
     const loop = (time: number) => {
       raf = requestAnimationFrame(loop);
@@ -69,25 +130,19 @@ export const CompanionController = () => {
       const dt = Math.min((time - lastTime) / 1000, 0.1);
       lastTime = time;
 
+      // Recalculate offset ONLY if target changes
+      if (targetElementRef.current !== lastTarget && targetElementRef.current) {
+         optimalOffsetRef.current = calculateSafeOffset(targetElementRef.current);
+         lastTarget = targetElementRef.current;
+      }
+
       let targetX = window.innerWidth - 120;
       let targetY = window.innerHeight - 120;
 
       if (targetElementRef.current) {
         const rect = targetElementRef.current.getBoundingClientRect();
-        const isCell = targetElementRef.current.hasAttribute("data-github-cell");
-        
-        if (isCell) {
-          // Prefer below right
-          targetX = rect.right + 10; 
-          targetY = rect.bottom + 10;
-          if (targetY > window.innerHeight - 60) {
-            targetY = rect.top - 60; // fallback above
-            targetX = rect.left - 20;
-          }
-        } else {
-          targetX = rect.left + rect.width / 2 - 40;
-          targetY = rect.top + rect.height / 2 - 40;
-        }
+        targetX = rect.left + rect.width / 2 + optimalOffsetRef.current.x;
+        targetY = rect.top + rect.height / 2 + optimalOffsetRef.current.y;
 
         // Clamp to viewport
         if (targetX < 20) targetX = 20;
@@ -138,16 +193,14 @@ export const CompanionController = () => {
   // 3. Scroll Velocity Behavior (Travel Priority P2)
   useEffect(() => {
     return smoothVelocity.on("change", (latest) => {
-      // Do not interrupt direct user interaction (P0)
       if (priorityLockRef.current.level === 0 && performance.now() < priorityLockRef.current.expires) return;
       
       const v = Math.abs(latest);
       if (v > VELOCITY_THRESHOLDS.RUN) {
-        setState("RUN"); // Changed from WIND_BLOWN to RUN to represent fast travel
+        setState("RUN");
       } else if (v > VELOCITY_THRESHOLDS.WALK) {
         setState("WALK");
       } else {
-        // Settling back to contextual state
         setState((prev) => {
           if (["WALK", "RUN"].includes(prev)) {
             const activeSection = document.querySelector("section.is-active")?.id;
@@ -173,7 +226,6 @@ export const CompanionController = () => {
         document.querySelectorAll("section[id]").forEach(s => s.classList.remove("is-active"));
         active.target.classList.add("is-active");
 
-        // Only switch section context if not locked in a direct interaction
         if (priorityLockRef.current.level > 0 || performance.now() >= priorityLockRef.current.expires) {
           priorityLockRef.current = { level: 1, expires: performance.now() + 5000 };
 
@@ -204,10 +256,9 @@ export const CompanionController = () => {
     targetElementRef.current = target;
     setState(tempState);
 
-    // Auto-restore after lock
     setTimeout(() => {
       if (priorityLockRef.current.level === 0 && performance.now() >= priorityLockRef.current.expires) {
-        priorityLockRef.current.level = 1; // Drop to section context
+        priorityLockRef.current.level = 1;
         const activeSection = document.querySelector("section.is-active")?.id;
         if (activeSection && SECTION_BEHAVIORS[activeSection]) {
           setState(SECTION_BEHAVIORS[activeSection]);
@@ -228,7 +279,6 @@ export const CompanionController = () => {
       if (detail?.type === "github-cell-hover" && detail.target) {
         executePriorityInteraction(detail.target as HTMLElement, "INSPECT", 2000);
         
-        // After cell hover, hold briefly then optionally walk to safe anchor
         if (ambientTimeoutRef.current) clearTimeout(ambientTimeoutRef.current);
         ambientTimeoutRef.current = setTimeout(() => {
           if (priorityLockRef.current.level > 0) {
@@ -253,7 +303,9 @@ export const CompanionController = () => {
   // Ambient GitHub behavior (P2)
   useEffect(() => {
     const ambientLoop = setInterval(() => {
-      if (reducedMotion || (priorityLockRef.current.level === 0 && performance.now() < priorityLockRef.current.expires)) return;
+      // Check if user is actively reading (stationary for a while)
+      const isReading = document.querySelector("[data-reading-mode='true']");
+      if (reducedMotion || isReading || (priorityLockRef.current.level === 0 && performance.now() < priorityLockRef.current.expires)) return;
       
       const githubSection = document.getElementById("github");
       if (!githubSection || !githubSection.classList.contains("is-active")) return;
@@ -262,21 +314,27 @@ export const CompanionController = () => {
         const activeCells = Array.from(document.querySelectorAll("[data-github-cell]:not([data-level=\"0\"])"));
         if (activeCells.length > 0) {
           const randomCell = activeCells[Math.floor(Math.random() * activeCells.length)];
-          // Only ambiently inspect if we haven't directly interacted recently
           priorityLockRef.current = { level: 2, expires: performance.now() + 1500 };
           targetElementRef.current = randomCell as HTMLElement;
           setState("INSPECT");
         }
       }
-    }, 8000); // Less frequent, more context-aware
+    }, 8000);
 
     return () => clearInterval(ambientLoop);
   }, [reducedMotion]);
 
+  // Contextual scaling
+  const getScale = () => {
+    if (state === "INSPECT") return "scale-[0.9]";
+    if (state === "READ") return "scale-[0.85]";
+    return "scale-100";
+  };
+
   return (
     <div 
       ref={containerRef}
-      className="fixed top-0 left-0 z-50 hidden md:flex items-center justify-center pointer-events-none mix-blend-difference"
+      className={`fixed top-0 left-0 z-50 hidden md:flex items-center justify-center pointer-events-none mix-blend-difference transition-transform duration-700 ${getScale()}`}
       onClick={() => {
         if (containerRef.current) {
           executePriorityInteraction(containerRef.current, "SURPRISED", 1000);

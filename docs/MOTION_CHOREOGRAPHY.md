@@ -1,69 +1,82 @@
 # MOTION CHOREOGRAPHY
 
 ## LOAD
-- **Entrance**: Clean, editorial tracking of actual DOM/Asset initialization.
-- **Ambient**: Sleeping Familiar.
-- **Direct**: N/A
-- **Familiar State**: SLEEP (0-60%) -> IDLE (60-99%) -> SURPRISED (100%).
-- **Exit/Handoff**: Line contracts/rotates, seamless cut to BootSlash.
+- **ENTER**: Dark screen, large editorial percentage, sleeping Familiar.
+- **ACTIVE**: Thin progress rail traverses width. Percentage typography subtly changes weight.
+- **DIRECT INTERACTION**: N/A
+- **EXIT/HANDOFF**: 100% -> Familiar wakes, rail transforms/collapses, procedural slash fires seamlessly.
+- **FAMILIAR**: SLEEP -> WAKE.
+- **MOTION DENSITY**: MEDIUM
 
 ## BOOT
-- **Entrance**: Procedural diagonal slash.
-- **Ambient**: Energy traces.
-- **Direct**: N/A
-- **Familiar State**: Hidden.
-- **Exit/Handoff**: Slash reveals Hero title instantly.
+- **ENTER**: Procedural diagonal slash.
+- **ACTIVE**: Energy traces.
+- **DIRECT INTERACTION**: N/A
+- **EXIT/HANDOFF**: Slash reveals Hero title instantly.
+- **FAMILIAR**: Hidden.
+- **MOTION DENSITY**: HIGH
 
 ## HERO
-- **Entrance**: Title reveal via clipPath, subtitle drops in.
-- **Ambient**: Multi-tier pointer lag parallax (titles vs bg vs annotations).
-- **Direct**: Magnetic "Explore Work" button.
-- **Familiar State**: IDLE / LOOKING near the title anchor.
-- **Exit/Handoff**: Smooth scroll exit, elements settle downward.
+- **ENTER**: Title reveal via clipPath, subtitle drops in.
+- **ACTIVE**: Multi-tier pointer lag parallax (titles vs bg vs annotations). Background calm.
+- **DIRECT INTERACTION**: Magnetic "Explore Work" button.
+- **EXIT/HANDOFF**: Hero supporting elements drift outward. Selected Work chapter marker enters BEFORE Hero fully leaves.
+- **FAMILIAR**: IDLE / LOOKING near the title anchor.
+- **MOTION DENSITY**: LOW (when active)
 
 ## SELECTED WORK
-- **Entrance**: Deep `power3.out` translation on cards, `back.out(1.7)` mechanical assembly on pipelines. Overlapping start with Hero.
-- **Ambient**: Hover response on pipeline rows.
-- **Direct**: Specific row hover calls Familiar. View Project click triggers kinetic acceleration.
-- **Familiar State**: WALK/RUN along the anchors. INSPECT when hovering pipelines.
-- **Exit/Handoff**: Motion settles.
+- **ENTER**: Deep `power3.out` translation on cards, `back.out(1.7)` mechanical assembly on pipelines. Overlapping start with Hero.
+- **ACTIVE**: Hover response on pipeline rows. Project titles drift. Visual internal layers lag.
+- **DIRECT INTERACTION**: Specific row hover calls Familiar to adjacent safe offset. View Project click accelerates kinetic routing.
+- **EXIT/HANDOFF**: Last project visual drifts into background. Constellation lines begin drawing before title fully enters.
+- **FAMILIAR**: WALK/RUN. INSPECT when hovering pipelines (standing beside, never over text).
+- **MOTION DENSITY**: HIGH (Enter) / LOW (Reading)
 
 ## SKILLS
-- **Entrance**: Staggered node reveal.
-- **Ambient**: Physics-based node shifting.
-- **Direct**: Dragging/hovering strengthens connections.
-- **Familiar State**: IDLE or occasional peripheral INSPECT.
-- **Exit/Handoff**: Constellation fades smoothly.
-
-## THRIVEFORCE (Inside Selected Work)
-- **Entrance**: Same as work.
-- **Ambient**: Same as work.
-- **Direct**: Blueprint visualization interaction.
-- **Familiar State**: INSPECT near the blueprint.
-
-## GITHUB
-- **Entrance**: Japanese ink shell fades in smoothly.
-- **Ambient**: Walk/Idle.
-- **Direct**: Hovering a cell summons the Familiar to that EXACT cell -> INSPECT. Lock state until unhover.
-- **Familiar State**: Highly contextual direct response (P0 priority).
-- **Exit/Handoff**: Holds briefly before walking away to avoid flickering.
-
-## ENGINEERING NOTES
-- **Entrance**: Book/rules layout slides in.
-- **Ambient**: Rules subtle movement.
-- **Direct**: Hovering rule anchors Familiar.
-- **Familiar State**: READ state near the rules.
-- **Exit/Handoff**: Book structure settles.
+- **ENTER**: Nodes originate from slightly compressed central constellation, expand outward. Lines draw progressively.
+- **ACTIVE**: Tiny pointer-based spatial response.
+- **DIRECT INTERACTION**: Hovering node makes it gravitational center (connected nodes move 3-8px toward it, lines strengthen).
+- **EXIT/HANDOFF**: Constellation nodes separate outward. One node leads toward Experience section.
+- **FAMILIAR**: Peripheral INSPECT, safely away from nodes.
+- **MOTION DENSITY**: MEDIUM
 
 ## EXPERIENCE
-- **Entrance**: Timeline sequential fade.
-- **Ambient**: Standard pointer flow.
-- **Direct**: Accordion/hover states.
-- **Familiar State**: IDLE.
+- **ENTER**: Timeline sequential fade, vertical chapter rail advances.
+- **ACTIVE**: Current experience brightens, previous dims. Large numerical markers move behind text.
+- **DIRECT INTERACTION**: Accordion/hover states.
+- **EXIT/HANDOFF**: Timeline rail becomes blueprint construction line for ThriveForce.
+- **FAMILIAR**: IDLE, resting at safe margins.
+- **MOTION DENSITY**: MEDIUM
+
+## THRIVEFORCE (Inside Selected Work)
+- **ENTER**: Blueprint construction lines drawing.
+- **ACTIVE**: Scanner/crosshair motion, callout line extension, blueprint layers moving at different depths.
+- **DIRECT INTERACTION**: Blueprint visualization interaction.
+- **EXIT/HANDOFF**: Mechanical line collapses into technical horizontal activity rail for GitHub.
+- **FAMILIAR**: INSPECT near the blueprint.
+- **MOTION DENSITY**: MEDIUM/HIGH
+
+## GITHUB
+- **ENTER**: Month labels / grid tiny staged entry.
+- **ACTIVE**: Walk/Idle.
+- **DIRECT INTERACTION**: Hover cell triggers pulse / coordinate response. Familiar to safe location -> INSPECT cell.
+- **EXIT/HANDOFF**: Crimson ink perimeter becomes subtle editorial ink trace for Notes.
+- **FAMILIAR**: Highly contextual direct response.
+- **MOTION DENSITY**: LOW
+
+## ENGINEERING NOTES
+- **ENTER**: Rule 01 -> Rule 02 -> Rule 03 sequential entry.
+- **ACTIVE**: Rules subtle movement.
+- **DIRECT INTERACTION**: Hovering rule anchors Familiar.
+- **EXIT/HANDOFF**: Book structure settles.
+- **FAMILIAR**: READ state sitting at OUTSIDE EDGE.
+- **MOTION DENSITY**: LOW
 
 ## CONTACT
-- **Entrance**: Footer sweeps up.
-- **Ambient**: Parallax on CTA.
-- **Direct**: Magnetic email button.
-- **Familiar State**: WAVE when reached.
+- **ENTER**: "LET'S BUILD SOMETHING" and "INTERESTING" enter at different speeds.
+- **ACTIVE**: INTERESTING slight italic directional movement.
+- **DIRECT INTERACTION**: Magnetic email button.
+- **EXIT/HANDOFF**: None (End of page).
+- **FAMILIAR**: Arrives BESIDE composition -> WAVE.
+- **MOTION DENSITY**: MEDIUM
 
