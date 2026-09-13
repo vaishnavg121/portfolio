@@ -7,8 +7,9 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { MoveRight } from "lucide-react";
-import { EmberField, FlowLines, GridEffect, BlueprintEffect, SwaNeetiInk } from "@/components/effects";
+import { EmberField, FlowLines, GridEffect, BlueprintEffect, SwaNeetiInk, MagneticEffect } from "@/components/effects";
 import { PROJECT_ASSETS } from "@/lib/assets";
+import { useRouter } from "next/navigation";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -79,6 +80,26 @@ const PROJECTS = [
 
 export const SelectedWork = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  const handleProjectClick = (slug: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    const card = (e.target as HTMLElement).closest('.project-card');
+    if (!card) {
+      router.push(`/work/${slug}`);
+      return;
+    }
+    
+    const visual = card.querySelector('.group');
+    if (visual) {
+      gsap.to(visual, { scale: 0.95, opacity: 0, duration: 0.4, ease: "power2.inOut" });
+    }
+    gsap.to(card, { opacity: 0, x: -20, duration: 0.3, ease: "power2.in" });
+
+    setTimeout(() => {
+      router.push(`/work/${slug}`);
+    }, 350);
+  };
 
   useGSAP(() => {
     const projects = gsap.utils.toArray('.project-card') as HTMLElement[];
@@ -172,13 +193,19 @@ export const SelectedWork = () => {
                   ))}
                 </div>
                 
-                <button 
-                  data-cursor="VIEW"
-                  className="flex items-center gap-3 text-xs font-mono uppercase tracking-widest text-text-primary hover:text-accent transition-colors group"
-                >
-                  <span className="border-b border-accent pb-1">View Project</span>
-                  <MoveRight className="w-4 h-4 group-hover:translate-x-2 transition-transform text-accent" />
-                </button>
+                <MagneticEffect intensity={0.3}>
+                  <button 
+                    onClick={(e) => handleProjectClick(project.slug, e)}
+                    data-cursor="VIEW"
+                    className="flex items-center gap-3 text-xs font-mono uppercase tracking-widest text-text-primary hover:text-accent transition-colors group"
+                  >
+                    <span className="relative pb-1 transform group-hover:translate-x-1 transition-transform duration-300">
+                      View Project
+                      <span className="absolute bottom-0 left-0 w-full h-[1px] bg-accent origin-left scale-x-50 group-hover:scale-x-100 transition-transform duration-300" />
+                    </span>
+                    <MoveRight className="w-4 h-4 group-hover:translate-x-3 transition-transform duration-300 text-accent" />
+                  </button>
+                </MagneticEffect>
               </div>
 
               {/* Visual Side */}
@@ -234,9 +261,13 @@ export const SelectedWork = () => {
                       <div className="text-[10px] font-mono text-text-muted mb-4 tracking-widest uppercase flex items-center gap-2">
                         <div className="w-2 h-2 bg-accent" /> System Pipeline
                       </div>
-                      <div className="group/pipeline flex flex-col gap-1">
+                      <div className="group/pipeline flex flex-col gap-1 pointer-events-auto">
                         {project.architecture.map((node, i) => (
-                          <div key={node} className="flex flex-col group/node transition-all duration-300 hover:-translate-y-0.5">
+                          <div 
+                            key={node} 
+                            className="flex flex-col group/node transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.02]"
+                            onMouseEnter={(e) => window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "pipeline-hover", target: e.currentTarget } }))}
+                          >
                             <div className="arch-node bg-[#111] border-l-2 border-accent/30 group-hover/node:border-accent text-text-primary px-4 py-3 font-mono text-xs shadow-xl tracking-wider flex justify-between items-center transition-all duration-300 group-hover/pipeline:opacity-50 group-hover/node:!opacity-100 group-hover/node:bg-[#151515]">
                               <span>{node}</span>
                               <span className="text-[#444] text-[10px] group-hover/node:text-accent/70 transition-colors">{`0${i + 1}`}</span>

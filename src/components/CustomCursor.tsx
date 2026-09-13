@@ -5,7 +5,7 @@ import { motion, useMotionValue, useSpring } from "framer-motion";
 
 export const CustomCursor = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [cursorState, setCursorState] = useState<"default" | "VIEW" | "DRAG" | "CODE">("default");
+  const [cursorState, setCursorState] = useState<"default" | "VIEW" | "DRAG" | "CODE" | "INSPECT">("default");
   
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
@@ -31,12 +31,9 @@ export const CustomCursor = () => {
 
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName.toLowerCase() === "a" || target.tagName.toLowerCase() === "button" || target.closest("a") || target.closest("button")) {
-         // Could set an interaction state here
-      }
       
       const customCursorData = target.getAttribute("data-cursor") || target.closest("[data-cursor]")?.getAttribute("data-cursor");
-      if (customCursorData === "VIEW" || customCursorData === "DRAG" || customCursorData === "CODE") {
+      if (customCursorData === "VIEW" || customCursorData === "DRAG" || customCursorData === "CODE" || customCursorData === "INSPECT") {
         setCursorState(customCursorData);
       } else {
         setCursorState("default");
@@ -69,8 +66,8 @@ export const CustomCursor = () => {
         className="bg-white rounded-full flex items-center justify-center overflow-hidden"
         initial={false}
         animate={{
-          width: cursorState === "default" ? 12 : 60,
-          height: cursorState === "default" ? 12 : 60,
+          width: cursorState === "default" ? 12 : 70,
+          height: cursorState === "default" ? 12 : 70,
           opacity: cursorState === "default" ? 1 : 0.8,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
@@ -79,7 +76,7 @@ export const CustomCursor = () => {
           <motion.span
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-black text-[10px] font-mono font-bold tracking-widest"
+            className="text-black text-[10px] font-mono font-bold tracking-widest uppercase"
           >
             {cursorState}
           </motion.span>

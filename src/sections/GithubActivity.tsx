@@ -213,6 +213,7 @@ export const GithubActivity = () => {
                             tabIndex={0}
                             data-github-cell={day.date}
                             data-level={day.level}
+                            data-cursor="INSPECT"
                             onMouseEnter={(e) => {
                               window.dispatchEvent(new CustomEvent("companionInteract", { 
                                 detail: { type: "github-cell-hover", data: day, target: e.currentTarget }

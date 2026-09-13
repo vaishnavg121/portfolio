@@ -9,7 +9,7 @@ interface PortfolioLoaderProps {
 }
 
 export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
-  const [loadingText, setLoadingText] = useState("INITIALIZING SYSTEM");
+  const [loadingText, setLoadingText] = useState("INITIALIZING_SYSTEM");
   const [displayProgress, setDisplayProgress] = useState(0);
   const [isFinishing, setIsFinishing] = useState(false);
   
@@ -34,7 +34,7 @@ export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
 
     const tasks = [
       {
-        name: "DOM READY",
+        name: "DOM_READY",
         weight: 10,
         run: async () => {
           if (document.readyState === "complete") return true;
@@ -42,7 +42,7 @@ export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
         }
       },
       {
-        name: "FONTS READY",
+        name: "FONTS_READY",
         weight: 15,
         run: async () => {
           if ("fonts" in document) {
@@ -52,14 +52,14 @@ export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
         }
       },
       {
-        name: "PREPARING INTERFACE",
+        name: "PREPARING_INTERFACE",
         weight: 20,
         run: async () => {
           await preloadImage(THEME_ASSETS.global.paperGrain);
         }
       },
       {
-        name: "SUMMONING FAMILIAR",
+        name: "SUMMONING_FAMILIAR",
         weight: 35,
         run: async () => {
           await Promise.all([
@@ -70,7 +70,7 @@ export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
         }
       },
       {
-        name: "INITIALIZING MOTION",
+        name: "INITIALIZING_MOTION",
         weight: 20,
         run: async () => {
           await new Promise(r => setTimeout(r, 100));
@@ -113,7 +113,7 @@ export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
         setTimeout(() => {
           isCancelled = true;
           onComplete();
-        }, 500); // Wait for the contraction animation
+        }, 500);
       }
     });
 
@@ -132,54 +132,69 @@ export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
   return (
     <motion.div
       key="portfolio-loader"
-      className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center overflow-hidden"
+      className="fixed inset-0 z-[100] bg-background flex flex-col justify-end p-8 md:p-16 overflow-hidden pointer-events-none"
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15, ease: "easeOut" }}
     >
-      <div className="w-full max-w-xs flex flex-col items-center gap-6 relative">
+      <div className="w-full flex flex-col relative h-full">
         
+        {/* Top Header */}
+        <motion.div 
+          className="absolute top-0 left-0 w-full flex justify-between items-start"
+          animate={isFinishing ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
+          <div className="text-[10px] font-mono text-text-muted tracking-widest uppercase">
+            [ VAISHNAV ]
+          </div>
+          <div className="text-[10px] font-mono text-text-muted tracking-widest uppercase text-right">
+            PORTFOLIO // 2026
+          </div>
+        </motion.div>
+
         {/* Mascot */}
-        <div className="absolute -top-32 w-24 h-24 flex items-end justify-center pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 flex items-center justify-center opacity-60">
           <AnimatePresence mode="wait">
             <motion.img
               key={getMascotPose()}
               src={getMascotPose()}
               alt=""
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0, filter: "blur(4px)" }}
+              animate={{ opacity: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, filter: "blur(4px)" }}
+              transition={{ duration: 0.3 }}
               className="max-h-full object-contain"
             />
           </AnimatePresence>
         </div>
 
-        <motion.div 
-          animate={isFinishing ? { opacity: 0, y: -10 } : { opacity: 1, y: 0 }}
-          className="text-xs font-mono text-text-primary tracking-[0.2em]"
-        >
-          VAISHNAV
-        </motion.div>
-
-        {/* Progress Line */}
-        <motion.div 
-          className="w-full relative h-[1px] bg-border overflow-hidden rounded-full origin-center"
-          animate={isFinishing ? { scaleX: 0, opacity: 0, rotate: 15 } : { scaleX: 1, opacity: 1, rotate: 0 }}
-          transition={isFinishing ? { duration: 0.3, ease: "backIn" } : { duration: 0 }}
-        >
+        {/* Bottom Elements */}
+        <div className="mt-auto flex flex-col gap-6">
           <motion.div 
-            className="absolute top-0 left-0 bottom-0 bg-accent"
-            style={{ width: widthTransform }} 
-          />
-        </motion.div>
+            className="flex justify-between items-end"
+            animate={isFinishing ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="text-[10px] font-mono tracking-widest text-text-muted uppercase">
+              {loadingText}
+            </div>
+            <div className="text-6xl md:text-8xl font-display font-medium tracking-tighter tabular-nums text-text-primary/90 leading-none">
+              {displayProgress.toString().padStart(2, "0")}<span className="text-xl md:text-2xl text-text-muted/50 ml-1">%</span>
+            </div>
+          </motion.div>
 
-        <motion.div 
-          animate={isFinishing ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
-          className="flex w-full justify-between items-center text-[10px] font-mono tracking-widest text-text-muted"
-        >
-          <span>{loadingText}</span>
-          <span>[ {displayProgress.toString().padStart(3, "0")}% ]</span>
-        </motion.div>
+          {/* Progress Line */}
+          <motion.div 
+            className="w-full relative h-[1px] bg-white/5 overflow-hidden origin-right"
+            animate={isFinishing ? { scaleX: 0, opacity: 0, rotate: -2 } : { scaleX: 1, opacity: 1, rotate: 0 }}
+            transition={isFinishing ? { duration: 0.4, ease: "backIn" } : { duration: 0 }}
+          >
+            <motion.div 
+              className="absolute top-0 left-0 bottom-0 bg-accent/80"
+              style={{ width: widthTransform }} 
+            />
+          </motion.div>
+        </div>
       </div>
     </motion.div>
   );

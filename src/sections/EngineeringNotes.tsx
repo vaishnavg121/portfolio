@@ -52,19 +52,26 @@ export const EngineeringNotes = () => {
           />
 
           <div className="ml-4 md:ml-8 relative z-20">
-            <h2 className="text-xl md:text-2xl font-serif italic text-text-primary mb-12 border-b border-[#333] pb-4 tracking-wide">
+            <h2 className="text-xl md:text-2xl font-serif italic text-text-primary mb-12 border-b border-[#333] pb-4 tracking-wide relative">
               Engineering Notes
+              <div data-familiar-anchor className="absolute right-0 top-0 w-4 h-4 pointer-events-none" />
             </h2>
             
             <div className="flex flex-col gap-12">
               {RULES.map((rule, idx) => (
                 <motion.div 
                   key={idx} 
-                  className="relative group"
+                  className="relative group cursor-default"
                   initial={{ opacity: 0, x: -10 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.5, delay: idx * 0.15 }}
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    window.dispatchEvent(new CustomEvent("companionInteract", { 
+                      detail: { type: "anchor-hover", target: e.currentTarget }
+                    }));
+                  }}
                 >
                   <div className="text-accent font-mono text-xs tracking-widest mb-2 opacity-80 group-hover:opacity-100 transition-opacity">
                     {rule.num}
@@ -77,6 +84,8 @@ export const EngineeringNotes = () => {
                   <div className="absolute -left-12 top-2 text-[#222] font-mono text-sm opacity-50 hidden md:block">
                     {(idx * 13).toString().padStart(3, '0')}
                   </div>
+                  {/* Local rule anchor for familiar */}
+                  <div data-familiar-anchor className="absolute -right-16 top-1/2 w-4 h-4 pointer-events-none" />
                 </motion.div>
               ))}
             </div>

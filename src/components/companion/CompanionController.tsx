@@ -3,9 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useScroll, useVelocity, useSpring } from "framer-motion";
 import { IllustratedCompanionRenderer as CompanionRenderer } from "./IllustratedCompanionRenderer";
-
-type CompanionState = "IDLE" | "WALK" | "RUN" | "SLEEP" | "SURPRISED" | "WIND_BLOWN" | "INSPECT" | "WAVE" | "SITTING" | "READ";
-type CompanionDirection = "left" | "right";
+import type { CompanionState, CompanionDirection } from "./companion.types";
 
 const VELOCITY_THRESHOLDS = {
   WALK: 50,
@@ -33,11 +31,13 @@ export const CompanionController = () => {
   const { scrollY } = useScroll();
   const scrollVelocity = useVelocity(scrollY);
   const smoothVelocity = useSpring(scrollVelocity, { damping: 50, stiffness: 400 });
-  const isTransitioningRef = useRef(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const targetElementRef = useRef<HTMLElement | null>(null);
   const currentPos = useRef({ x: 0, y: 0 });
+
+  // Priority Lock System: 0 = Direct, 1 = Section Context, 2 = Ambient
+  const priorityLockRef = useRef<{ level: number, expires: number }>({ level: 2, expires: 0 });
 
   // Reduced motion setup
   useEffect(() => {
@@ -77,11 +77,12 @@ export const CompanionController = () => {
         const isCell = targetElementRef.current.hasAttribute("data-github-cell");
         
         if (isCell) {
-          // Prefer below cell
-          targetX = rect.left + rect.width / 2 - 40; 
+          // Prefer below right
+          targetX = rect.right + 10; 
           targetY = rect.bottom + 10;
-          if (targetY > window.innerHeight - 80) {
-            targetY = rect.top - 80 - 10;
+          if (targetY > window.innerHeight - 60) {
+            targetY = rect.top - 60; // fallback above
+            targetX = rect.left - 20;
           }
         } else {
           targetX = rect.left + rect.width / 2 - 40;
@@ -95,24 +96,27 @@ export const CompanionController = () => {
         if (targetY > window.innerHeight - 80) targetY = window.innerHeight - 80;
       }
 
+      const dx = targetX - currentPos.current.x;
+      const dy = targetY - currentPos.current.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
       if (reducedMotion) {
         currentPos.current.x = targetX;
         currentPos.current.y = targetY;
       } else {
-        // Evaluate horizontal arc for Y
-        const dx = targetX - currentPos.current.x;
-        const dy = targetY - currentPos.current.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        
-        const speed = dist > 400 ? 3.0 : 5.0; // slightly slower for long journeys
+        // Slow down dynamically as it arrives
+        const speed = dist < 100 ? 8.0 : (dist > 400 ? 3.0 : 5.0);
         
         // Linear lerp for basic traversal
-        const lerpX = currentPos.current.x + (targetX - currentPos.current.x) * (1 - Math.exp(-speed * dt));
-        const lerpY = currentPos.current.y + (targetY - currentPos.current.y) * (1 - Math.exp(-speed * dt));
+        const lerpX = currentPos.current.x + dx * (1 - Math.exp(-speed * dt));
+        const lerpY = currentPos.current.y + dy * (1 - Math.exp(-speed * dt));
 
         // Horizontal arc physics: add a subtle bezier dip based on distance
-        const normalizedProg = Math.abs(currentPos.current.x - targetX) / (Math.abs(dx) + 1);
-        const arcY = dist > 200 ? Math.sin(normalizedProg * Math.PI) * (dist * 0.1) : 0;
+        let arcY = 0;
+        if (priorityLockRef.current.level > 0 && dist > 150) {
+           const normalizedProg = Math.abs(currentPos.current.x - targetX) / (Math.abs(dx) + 1);
+           arcY = Math.sin(normalizedProg * Math.PI) * (dist * 0.15);
+        }
         
         currentPos.current.x = lerpX;
         currentPos.current.y = lerpY + (arcY * (1 - Math.exp(-speed * dt)));
@@ -120,9 +124,10 @@ export const CompanionController = () => {
 
       containerRef.current.style.transform = `translate3d(${currentPos.current.x}px, ${currentPos.current.y}px, 0)`;
 
-      if (!isTransitioningRef.current && Math.abs(targetX - currentPos.current.x) > 10) {
-        if (targetX > currentPos.current.x && direction !== "right") setDirection("right");
-        if (targetX < currentPos.current.x && direction !== "left") setDirection("left");
+      // Direction derived from movement, avoiding rapid flipping
+      if (dist > 5) {
+        if (dx > 0 && direction !== "right") setDirection("right");
+        if (dx < 0 && direction !== "left") setDirection("left");
       }
     };
     
@@ -130,22 +135,21 @@ export const CompanionController = () => {
     return () => cancelAnimationFrame(raf);
   }, [reducedMotion, direction]);
 
-  // 3. Scroll Velocity Behavior
+  // 3. Scroll Velocity Behavior (Travel Priority P2)
   useEffect(() => {
     return smoothVelocity.on("change", (latest) => {
-      if (isTransitioningRef.current) return;
+      // Do not interrupt direct user interaction (P0)
+      if (priorityLockRef.current.level === 0 && performance.now() < priorityLockRef.current.expires) return;
       
       const v = Math.abs(latest);
       if (v > VELOCITY_THRESHOLDS.RUN) {
-        setState("WIND_BLOWN");
-      } else if (v > VELOCITY_THRESHOLDS.WALK * 5) {
-        setState("RUN");
+        setState("RUN"); // Changed from WIND_BLOWN to RUN to represent fast travel
       } else if (v > VELOCITY_THRESHOLDS.WALK) {
         setState("WALK");
       } else {
+        // Settling back to contextual state
         setState((prev) => {
-          if (["WALK", "RUN", "WIND_BLOWN"].includes(prev)) {
-            // Restore contextual state
+          if (["WALK", "RUN"].includes(prev)) {
             const activeSection = document.querySelector("section.is-active")?.id;
             if (activeSection && SECTION_BEHAVIORS[activeSection]) {
               return SECTION_BEHAVIORS[activeSection];
@@ -159,30 +163,33 @@ export const CompanionController = () => {
     });
   }, [smoothVelocity]);
 
-  // 4. Section Awareness
+  // 4. Section Awareness (P1 Context)
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
       const active = entries.find((e) => e.isIntersecting);
       if (active && active.target.id) {
         const id = active.target.id;
         
-        // Mark section active for velocity restoration logic
         document.querySelectorAll("section[id]").forEach(s => s.classList.remove("is-active"));
         active.target.classList.add("is-active");
 
-        // Find semantic anchor in this section
-        const sectionAnchor = active.target.querySelector("[data-familiar-anchor]") as HTMLElement;
-        if (sectionAnchor) {
-          targetElementRef.current = sectionAnchor;
-        } else if (id !== "github") {
-          targetElementRef.current = null; // Default to lower right
-        }
+        // Only switch section context if not locked in a direct interaction
+        if (priorityLockRef.current.level > 0 || performance.now() >= priorityLockRef.current.expires) {
+          priorityLockRef.current = { level: 1, expires: performance.now() + 5000 };
 
-        if (SECTION_BEHAVIORS[id]) {
-          setState((prev) => {
-             if (["SURPRISED", "WAVE", "WIND_BLOWN"].includes(prev)) return prev;
-             return SECTION_BEHAVIORS[id];
-          });
+          const sectionAnchor = active.target.querySelector("[data-familiar-anchor]") as HTMLElement;
+          if (sectionAnchor) {
+            targetElementRef.current = sectionAnchor;
+          } else if (id !== "github") {
+            targetElementRef.current = null;
+          }
+
+          if (SECTION_BEHAVIORS[id]) {
+            setState((prev) => {
+               if (["SURPRISED", "WAVE"].includes(prev)) return prev;
+               return SECTION_BEHAVIORS[id];
+            });
+          }
         }
       }
     }, { threshold: 0.3 });
@@ -192,43 +199,50 @@ export const CompanionController = () => {
     return () => observer.disconnect();
   }, []);
 
-  const temporarilySetState = (tempState: CompanionState, duration: number) => {
-    isTransitioningRef.current = true;
+  const executePriorityInteraction = (target: HTMLElement, tempState: CompanionState, duration: number) => {
+    priorityLockRef.current = { level: 0, expires: performance.now() + duration };
+    targetElementRef.current = target;
     setState(tempState);
+
+    // Auto-restore after lock
     setTimeout(() => {
-      isTransitioningRef.current = false;
-      
-      const activeSection = document.querySelector("section.is-active")?.id;
-      if (activeSection && SECTION_BEHAVIORS[activeSection]) {
-        setState(SECTION_BEHAVIORS[activeSection]);
-      } else {
-        setState(targetElementRef.current ? "INSPECT" : "IDLE");
+      if (priorityLockRef.current.level === 0 && performance.now() >= priorityLockRef.current.expires) {
+        priorityLockRef.current.level = 1; // Drop to section context
+        const activeSection = document.querySelector("section.is-active")?.id;
+        if (activeSection && SECTION_BEHAVIORS[activeSection]) {
+          setState(SECTION_BEHAVIORS[activeSection]);
+        } else {
+          setState("IDLE");
+        }
       }
-    }, duration);
+    }, duration + 100);
   };
 
-  // 5. Global Interaction Events
-  const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // 5. Global Interaction Events (P0)
+  const ambientTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleInteract = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       
       if (detail?.type === "github-cell-hover" && detail.target) {
-        targetElementRef.current = detail.target as HTMLElement;
-        temporarilySetState("INSPECT", 1500);
-
-        if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
-        idleTimeoutRef.current = setTimeout(() => {
-          const endAnchor = document.querySelector("[data-anchor=\"github-calendar-end\"]") as HTMLElement;
-          if (endAnchor && document.getElementById("github")?.contains(targetElementRef.current)) {
-             targetElementRef.current = endAnchor;
-             setState("IDLE");
+        executePriorityInteraction(detail.target as HTMLElement, "INSPECT", 2000);
+        
+        // After cell hover, hold briefly then optionally walk to safe anchor
+        if (ambientTimeoutRef.current) clearTimeout(ambientTimeoutRef.current);
+        ambientTimeoutRef.current = setTimeout(() => {
+          if (priorityLockRef.current.level > 0) {
+            const endAnchor = document.querySelector("[data-anchor=\"github-calendar-end\"]") as HTMLElement;
+            if (endAnchor && document.getElementById("github")?.contains(targetElementRef.current)) {
+               targetElementRef.current = endAnchor;
+               setState("IDLE");
+            }
           }
         }, 4000);
+      } else if (detail?.type === "pipeline-hover" && detail.target) {
+        executePriorityInteraction(detail.target as HTMLElement, "INSPECT", 2000);
       } else if (detail?.type === "anchor-hover" && detail.target) {
-        targetElementRef.current = detail.target as HTMLElement;
-        temporarilySetState("INSPECT", 2000);
+        executePriorityInteraction(detail.target as HTMLElement, "INSPECT", 1500);
       }
     };
 
@@ -236,27 +250,25 @@ export const CompanionController = () => {
     return () => window.removeEventListener("companionInteract", handleInteract);
   }, []);
 
-  // Ambient GitHub behavior
+  // Ambient GitHub behavior (P2)
   useEffect(() => {
     const ambientLoop = setInterval(() => {
-      if (isTransitioningRef.current || reducedMotion) return;
+      if (reducedMotion || (priorityLockRef.current.level === 0 && performance.now() < priorityLockRef.current.expires)) return;
       
       const githubSection = document.getElementById("github");
-      if (!githubSection) return;
-      
-      const rect = githubSection.getBoundingClientRect();
-      if (rect.top > window.innerHeight * 0.8 || rect.bottom < window.innerHeight * 0.2) return;
+      if (!githubSection || !githubSection.classList.contains("is-active")) return;
 
-      if (Math.random() < 0.15) {
+      if (Math.random() < 0.2) {
         const activeCells = Array.from(document.querySelectorAll("[data-github-cell]:not([data-level=\"0\"])"));
         if (activeCells.length > 0) {
           const randomCell = activeCells[Math.floor(Math.random() * activeCells.length)];
-          window.dispatchEvent(new CustomEvent("companionInteract", { 
-            detail: { type: "github-cell-hover", target: randomCell }
-          }));
+          // Only ambiently inspect if we haven't directly interacted recently
+          priorityLockRef.current = { level: 2, expires: performance.now() + 1500 };
+          targetElementRef.current = randomCell as HTMLElement;
+          setState("INSPECT");
         }
       }
-    }, 6000);
+    }, 8000); // Less frequent, more context-aware
 
     return () => clearInterval(ambientLoop);
   }, [reducedMotion]);
@@ -265,7 +277,11 @@ export const CompanionController = () => {
     <div 
       ref={containerRef}
       className="fixed top-0 left-0 z-50 hidden md:flex items-center justify-center pointer-events-none mix-blend-difference"
-      onClick={() => temporarilySetState("SURPRISED", 1000)}
+      onClick={() => {
+        if (containerRef.current) {
+          executePriorityInteraction(containerRef.current, "SURPRISED", 1000);
+        }
+      }}
     >
       <CompanionRenderer state={state} direction={direction} intensity={0} />
     </div>

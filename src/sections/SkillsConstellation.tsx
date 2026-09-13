@@ -100,7 +100,13 @@ export const SkillsConstellation = () => {
             return (
               <g
                 key={node.id}
-                onMouseEnter={() => setHoveredNode(node.id)}
+                onMouseEnter={(e) => {
+                  setHoveredNode(node.id);
+                  const target = e.currentTarget as unknown as HTMLElement;
+                  window.dispatchEvent(new CustomEvent("companionInteract", { 
+                    detail: { type: "anchor-hover", target }
+                  }));
+                }}
                 onMouseLeave={() => setHoveredNode(null)}
                 className="cursor-pointer transition-all duration-300"
                 style={{ transformOrigin: `${node.x}px ${node.y}px` }}
