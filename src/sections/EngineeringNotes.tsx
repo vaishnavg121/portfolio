@@ -67,7 +67,6 @@ export const EngineeringNotes = () => {
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.5, delay: idx * 0.15 }}
                   onMouseEnter={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
                     window.dispatchEvent(new CustomEvent("companionInteract", { 
                       detail: { type: "anchor-hover", target: e.currentTarget }
                     }));
