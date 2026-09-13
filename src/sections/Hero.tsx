@@ -8,12 +8,9 @@ export const Hero = () => {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <motion.section 
-      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20" 
+    <section 
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 hero-container" 
       id="hero"
-      initial={{ x: 0, y: 0 }}
-      animate={{ x: shouldReduceMotion ? 0 : [0, 3, -2, 0], y: shouldReduceMotion ? 0 : [0, -2, 1, 0] }}
-      transition={{ duration: 0.1, delay: shouldReduceMotion ? 0 : 0.92, ease: "linear" }}
     >
       {/* Global Grain */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: `url(${THEME_ASSETS.global.paperGrain})`, backgroundSize: "300px" }} />
@@ -21,14 +18,14 @@ export const Hero = () => {
       {/* Background Graphic */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none flex items-center justify-center">
         <svg viewBox="0 0 100 100" className="w-full h-full max-w-4xl" preserveAspectRatio="xMidYMid slice">
-            <motion.path
+          <motion.path
             d="M 10 50 Q 30 10, 50 50 T 90 50"
             fill="transparent"
             stroke="var(--accent)"
             strokeWidth="0.2"
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{ pathLength: 1, opacity: 0.5 }}
-            transition={{ duration: shouldReduceMotion ? 0 : 3, ease: "easeInOut", delay: shouldReduceMotion ? 0 : 1 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 3, ease: "easeInOut", delay: shouldReduceMotion ? 0 : 0.5 }}
           />
           <motion.path
             d="M 10 70 Q 40 20, 60 70 T 90 30"
@@ -37,7 +34,7 @@ export const Hero = () => {
             strokeWidth="0.1"
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{ pathLength: 1, opacity: 0.3 }}
-            transition={{ duration: shouldReduceMotion ? 0 : 4, ease: "easeInOut", delay: shouldReduceMotion ? 0 : 1.5 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 4, ease: "easeInOut", delay: shouldReduceMotion ? 0 : 0.8 }}
           />
         </svg>
       </div>
@@ -47,36 +44,22 @@ export const Hero = () => {
           
           {/* Main Title Block */}
           <div className="md:col-span-10 md:col-start-1 relative z-10">
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: shouldReduceMotion ? 0.2 : 0.4, delay: shouldReduceMotion ? 0.1 : 0.85, ease: "easeOut" }}
-              className="mb-4 md:mb-6 font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase flex items-center gap-4"
-            >
+            <div className="mb-4 md:mb-6 font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase flex items-center gap-4 hero-sys-init">
               <span>SYS_INIT</span>
               <div className="h-[1px] w-12 bg-border" />
               <span>CS + Finance @ BITS Pilani</span>
-            </motion.div>
+            </div>
 
-            <motion.h1
-              initial={{ clipPath: "polygon(0 0, 0 0, 0 100%, 0% 100%)", opacity: 0 }}
-              animate={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)", opacity: 1 }}
-              transition={{ duration: shouldReduceMotion ? 0.2 : 0.4, delay: shouldReduceMotion ? 0.1 : 0.88, ease: [0.11, 0, 0.5, 0] }}
-              className="text-[12vw] md:text-[8vw] lg:text-[7rem] font-display font-medium tracking-tighter leading-[0.85] uppercase"
-            >
+            <h1 className="text-[12vw] md:text-[8vw] lg:text-[7rem] font-display font-medium tracking-tighter leading-[0.85] uppercase hero-title">
               Vaishnav
               <br />
               <span className="text-text-muted">Gadamsetty</span>
-            </motion.h1>
+            </h1>
           </div>
 
           {/* Subtitle / Description Block */}
           <div className="md:col-span-5 md:col-start-7 lg:col-start-8 mt-12 md:mt-24 relative z-20">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: shouldReduceMotion ? 0.2 : 0.6, delay: shouldReduceMotion ? 0.15 : 0.91, ease: "easeOut" }}
-            >
+            <div className="hero-subtitle">
               <h2 className="text-xl md:text-2xl text-text-primary font-light leading-snug mb-6 border-l-2 border-accent pl-6">
                 I build things around <br />
                 <span className="italic font-serif">intelligence, markets & machines.</span>
@@ -99,23 +82,18 @@ export const Hero = () => {
                 </button>
                 <a href="https://github.com/vaishnav" target="_blank" rel="noreferrer" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">GitHub</a>
               </div>
-            </motion.div>
+            </div>
             
             {/* Hand-written style annotation */}
             <div className="absolute -top-16 -right-4 md:-right-24 opacity-80 rotate-[8deg]">
-              <motion.span 
-                initial={{ opacity: 0, pathLength: 0 }}
-                animate={{ opacity: 1, pathLength: 1 }}
-                transition={{ delay: shouldReduceMotion ? 0.2 : 1.1, duration: shouldReduceMotion ? 0.2 : 0.6 }}
-                className="text-accent text-xl md:text-2xl font-hand"
-              >
+              <span className="text-accent text-xl md:text-2xl font-hand hero-annotation inline-block">
                 {`// curiosity usually gets out of hand`}
-              </motion.span>
+              </span>
             </div>
           </div>
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 };
 
