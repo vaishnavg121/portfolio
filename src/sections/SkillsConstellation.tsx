@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 
 const NODES = [
   { id: "ai", label: "AI", x: 50, y: 30 },
@@ -36,6 +38,41 @@ const CONNECTIONS = [
 
 export const SkillsConstellation = () => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const containerRef = useRef<HTMLElement>(null);
+
+  useGSAP(() => {
+    // Animate lines
+    gsap.fromTo('.constellation-line',
+      { strokeDasharray: "0 100" },
+      {
+        strokeDasharray: "100 0",
+        duration: 2,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top 60%",
+        }
+      }
+    );
+
+    // Animate nodes expanding outward from center
+    gsap.fromTo('.constellation-node',
+      { scale: 0, opacity: 0, x: 50, y: 50, transformOrigin: "center" },
+      {
+        scale: 1,
+        opacity: 1,
+        x: (index, target) => target.getAttribute('data-x'),
+        y: (index, target) => target.getAttribute('data-y'),
+        stagger: 0.05,
+        duration: 1.5,
+        ease: "back.out(1.5)",
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top 60%",
+        }
+      }
+    );
+  }, { scope: containerRef });
 
   const getConnectedNodes = (nodeId: string) => {
     const connected = new Set<string>();
@@ -49,7 +86,7 @@ export const SkillsConstellation = () => {
   const activeConnections = hoveredNode ? getConnectedNodes(hoveredNode) : new Set();
 
   return (
-    <section className="py-32 relative bg-background border-t border-border overflow-hidden">
+    <section className="py-32 relative bg-background border-t border-border overflow-hidden" ref={containerRef}>
       <div className="container mx-auto px-6 md:px-12 relative z-10">
         <div className="max-w-2xl mb-16">
           <h2 className="text-sm font-mono text-text-muted mb-4 tracking-widest uppercase">
@@ -75,6 +112,7 @@ export const SkillsConstellation = () => {
             return (
               <motion.line
                 key={`line-${idx}`}
+                className="constellation-line"
                 x1={nodeA.x}
                 y1={nodeA.y}
                 x2={nodeB.x}
@@ -100,6 +138,9 @@ export const SkillsConstellation = () => {
             return (
               <g
                 key={node.id}
+                className="constellation-node cursor-pointer transition-all duration-300"
+                data-x={node.x}
+                data-y={node.y}
                 onMouseEnter={(e) => {
                   setHoveredNode(node.id);
                   const target = e.currentTarget as unknown as HTMLElement;
@@ -108,12 +149,10 @@ export const SkillsConstellation = () => {
                   }));
                 }}
                 onMouseLeave={() => setHoveredNode(null)}
-                className="cursor-pointer transition-all duration-300"
-                style={{ transformOrigin: `${node.x}px ${node.y}px` }}
               >
                 <motion.circle
-                  cx={node.x}
-                  cy={node.y}
+                  cx={0}
+                  cy={0}
                   r={isHovered ? 2 : 1}
                   fill={isHovered || isConnected ? "var(--accent)" : "var(--text-muted)"}
                   opacity={isFaded ? 0.2 : 1}
@@ -124,8 +163,8 @@ export const SkillsConstellation = () => {
                   transition={{ duration: 0.3 }}
                 />
                 <motion.text
-                  x={node.x}
-                  y={node.y - 3}
+                  x={0}
+                  y={-3}
                   fontSize="2.5"
                   fill={isHovered || isConnected ? "var(--text-primary)" : "var(--text-muted)"}
                   textAnchor="middle"
@@ -133,7 +172,7 @@ export const SkillsConstellation = () => {
                   className="font-mono tracking-wider select-none pointer-events-none"
                   animate={{
                     opacity: isFaded ? 0.1 : isHovered ? 1 : 0.7,
-                    y: isHovered ? node.y - 4 : node.y - 3
+                    y: isHovered ? -4 : -3
                   }}
                   transition={{ duration: 0.3 }}
                 >

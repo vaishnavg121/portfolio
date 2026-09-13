@@ -1,11 +1,15 @@
 "use client";
 
+import { useRef } from "react";
 import { motion, useReducedMotion, useTransform } from "framer-motion";
 import { MoveRight } from "lucide-react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { THEME_ASSETS } from "@/lib/assets";
 import { usePointer, MagneticEffect } from "@/components/effects";
 
 export const Hero = () => {
+  const containerRef = useRef<HTMLElement>(null);
   const shouldReduceMotion = useReducedMotion();
   const { sNX, sNY } = usePointer();
 
@@ -19,8 +23,51 @@ export const Hero = () => {
   const bgX = useTransform(sNX, [-1, 1], [-15, 15]);
   const bgY = useTransform(sNY, [-1, 1], [-15, 15]);
 
+  useGSAP(() => {
+    if (shouldReduceMotion) return;
+    
+    // Parallax on scroll for different elements
+    gsap.to('.hero-title-block', {
+      y: -150,
+      opacity: 0,
+      ease: "none",
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "top top",
+        end: "bottom top",
+        scrub: 0.5,
+      }
+    });
+
+    gsap.to('.hero-subtitle-block', {
+      y: -80,
+      opacity: 0,
+      ease: "none",
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "top top",
+        end: "bottom top",
+        scrub: 1,
+      }
+    });
+
+    gsap.to('.hero-annotation', {
+      y: -250,
+      x: 50,
+      rotate: 15,
+      ease: "none",
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "top top",
+        end: "bottom top",
+        scrub: 1.5,
+      }
+    });
+  }, { scope: containerRef, dependencies: [shouldReduceMotion] });
+
   return (
     <motion.section 
+      ref={containerRef}
       className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20" 
       id="hero"
       initial={{ x: 0, y: 0 }}
@@ -62,7 +109,7 @@ export const Hero = () => {
           
           {/* Main Title Block */}
           <motion.div 
-            className="md:col-span-10 md:col-start-1 relative z-10"
+            className="hero-title-block md:col-span-10 md:col-start-1 relative z-10"
             style={{ x: shouldReduceMotion ? 0 : titleX, y: shouldReduceMotion ? 0 : titleY }}
             data-familiar-avoid
           >
@@ -92,7 +139,7 @@ export const Hero = () => {
 
           {/* Subtitle / Description Block */}
           <motion.div 
-            className="md:col-span-5 md:col-start-7 lg:col-start-8 mt-12 md:mt-24 relative z-20"
+            className="hero-subtitle-block md:col-span-5 md:col-start-7 lg:col-start-8 mt-12 md:mt-24 relative z-20"
             style={{ x: shouldReduceMotion ? 0 : subtitleX, y: shouldReduceMotion ? 0 : subtitleY }}
             data-familiar-avoid
           >
@@ -130,7 +177,7 @@ export const Hero = () => {
             </motion.div>
             
             {/* Hand-written style annotation */}
-            <div className="absolute -top-16 -right-4 md:-right-24 opacity-80 rotate-[8deg]">
+            <div className="hero-annotation absolute -top-16 -right-4 md:-right-24 opacity-80 rotate-[8deg]">
               <motion.span 
                 initial={{ opacity: 0, pathLength: 0 }}
                 animate={{ opacity: 1, pathLength: 1 }}

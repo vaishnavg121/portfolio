@@ -115,22 +115,75 @@ export const SelectedWork = () => {
     const projects = gsap.utils.toArray('.project-card') as HTMLElement[];
     
     projects.forEach((project) => {
+      const visual = project.querySelector('.group');
       // Fade in project content
-      gsap.fromTo(project, 
-        { opacity: 0, y: 50 },
-        {
-          opacity: 1, 
-          y: 0,
-          duration: 1,
-          ease: "power3.out",
+      if (visual) {
+        gsap.fromTo(visual, 
+          { clipPath: "inset(20% 20% 20% 20%)", scale: 0.95 },
+          {
+            clipPath: "inset(0% 0% 0% 0%)",
+            scale: 1,
+            duration: 1.2,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: project,
+              start: "top 80%",
+              end: "top 50%",
+              scrub: false,
+            }
+          }
+        );
+
+        // Parallax for the visual panel
+        gsap.to(visual, {
+          y: -100,
+          ease: "none",
           scrollTrigger: {
             trigger: project,
-            start: "top 80%",
-            end: "top 50%",
-            scrub: false,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1,
           }
-        }
-      );
+        });
+      }
+
+      // Background large number parallax
+      const bgNum = project.querySelector('.arch-bg-num');
+      if (bgNum) {
+        gsap.fromTo(bgNum,
+          { x: 200, opacity: 0 },
+          {
+            x: -50,
+            opacity: 1,
+            ease: "none",
+            scrollTrigger: {
+              trigger: project,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: 0.5,
+            }
+          }
+        );
+      }
+
+      // Title animation
+      const title = project.querySelector('.proj-title');
+      if (title) {
+        gsap.fromTo(title,
+          { x: 30, opacity: 0, clipPath: "inset(0 100% 0 0)" },
+          {
+            x: 0,
+            opacity: 1,
+            clipPath: "inset(0 0% 0 0)",
+            duration: 1,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: project,
+              start: "top 70%",
+            }
+          }
+        );
+      }
 
       // Animate architecture nodes
       const nodes = project.querySelectorAll('.arch-node');
@@ -178,16 +231,22 @@ export const SelectedWork = () => {
         </h2>
 
         <div className="flex flex-col gap-32 md:gap-48">
-          {PROJECTS.map((project) => (
-            <div key={project.id} className="project-card flex flex-col md:flex-row gap-12 md:gap-16 items-start">
+          {PROJECTS.map((project, i) => (
+            <div key={project.id} className="project-card relative flex flex-col md:flex-row gap-12 md:gap-16 items-start">
+              
+              {/* Large Background Number */}
+              <div className="absolute top-0 right-10 md:-right-20 text-[150px] md:text-[250px] font-display font-bold text-[#111] opacity-50 z-0 leading-none select-none pointer-events-none arch-bg-num">
+                0{i + 1}
+              </div>
+
               {/* Info Side */}
               <div className="flex-1 md:w-5/12 md:sticky md:top-32 relative z-20" data-familiar-avoid>
                 <div className="flex items-baseline gap-4 mb-4">
-                  <span className="font-mono text-4xl text-border opacity-50 tracking-tighter">{project.id}</span>
+                  <span className="font-mono text-4xl text-border opacity-50 tracking-tighter proj-id">{project.id}</span>
                   <div className="font-mono text-accent text-xs tracking-widest uppercase">{project.category}</div>
                 </div>
                 
-                <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-medium mb-6 uppercase tracking-tight leading-none">
+                <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-medium mb-6 uppercase tracking-tight leading-none proj-title">
                   {project.title}
                 </h3>
                 

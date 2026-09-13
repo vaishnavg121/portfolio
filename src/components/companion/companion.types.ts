@@ -1,4 +1,4 @@
-export type CompanionState = "IDLE" | "WALK" | "RUN" | "READ" | "SLEEP" | "SURPRISED" | "WIND_BLOWN" | "INSPECT" | "WAVE" | "SITTING";
+export type CompanionState = "IDLE" | "WALK" | "RUN" | "READ" | "SLEEP" | "SURPRISED" | "WIND_BLOWN" | "INSPECT" | "WAVE";
 
 export const COMPANION_STATE_INDEX: Record<CompanionState, number> = {
   IDLE: 0,
@@ -10,7 +10,6 @@ export const COMPANION_STATE_INDEX: Record<CompanionState, number> = {
   WIND_BLOWN: 6,
   INSPECT: 7,
   WAVE: 8,
-  SITTING: 9,
 };
 
 export type CompanionDirection = "left" | "right";
@@ -29,8 +28,6 @@ export type CompanionEventType =
   | "project-hover"
   | "project-open"
   | "github-cell-hover"
-  | "pipeline-hover"
-  | "anchor-hover"
   | "notes-open"
   | "command-trigger"
   | "companion-trail-start"
@@ -47,4 +44,3 @@ declare global {
     companionInteract: CustomEvent<CompanionEventDetail>;
   }
 }
-
