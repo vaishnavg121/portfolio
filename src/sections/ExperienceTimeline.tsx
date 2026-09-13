@@ -49,56 +49,83 @@ export const ExperienceTimeline = () => {
       const bgNum = chap.querySelector('.bg-num');
       const content = chap.querySelector('.chap-content');
       
-      // bg number moves up slower than scroll
-      gsap.to(bgNum, {
-        y: -100,
-        ease: "none",
-        scrollTrigger: {
-          trigger: chap,
-          start: "top bottom",
-          end: "bottom top",
-          scrub: 0.5,
-        }
-      });
-
-      // active state dims when scrolling past
-      gsap.fromTo(content, 
-        { opacity: 0.2 },
-        {
-          opacity: 1,
+      // bg number scrubs vertically, with better contrast
+      if (bgNum) {
+        gsap.fromTo(bgNum, { y: 150, opacity: 0 }, {
+          y: -100,
+          opacity: 0.1,
+          ease: "none",
           scrollTrigger: {
             trigger: chap,
-            start: "top 80%",
-            end: "top 20%",
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1.5,
+          }
+        });
+      }
+
+      // better content contrast hierarchy
+      if (content) {
+        gsap.fromTo(content, 
+          { opacity: 0.2 },
+          {
+            opacity: 1,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: chap,
+              start: "top 80%",
+              end: "top 30%",
+              scrub: true,
+            }
+          }
+        );
+        
+        gsap.to(content, {
+          opacity: 0.45,
+          ease: "power2.in",
+          scrollTrigger: {
+            trigger: chap,
+            start: "bottom 50%",
+            end: "bottom 20%",
             scrub: true,
           }
-        }
-      );
-      
-      gsap.to(content, {
-        opacity: 0.2,
+        });
+      }
+    });
+
+    // Timeline rail scrub
+    gsap.fromTo('.exp-timeline-rail-active',
+      { scaleY: 0 },
+      {
+        scaleY: 1,
+        ease: "none",
         scrollTrigger: {
-          trigger: chap,
-          start: "bottom 50%",
-          end: "bottom 20%",
+          trigger: '.exp-timeline-container',
+          start: "top 60%",
+          end: "bottom 80%",
           scrub: true,
         }
-      });
-    });
+      }
+    );
   }, { scope: containerRef });
 
   return (
     <section className="py-32 bg-background border-t border-border overflow-hidden relative" id="about" ref={containerRef}>
       <div className="container mx-auto px-6 md:px-12 max-w-5xl relative z-10">
-        <h2 className="text-sm font-mono text-text-muted mb-24 tracking-widest uppercase border-b border-border pb-4">
+        <h2 className="text-sm font-mono text-text-muted mb-24 tracking-widest uppercase border-b border-border pb-4 relative z-20">
           Experience / Chapters
         </h2>
 
-        <div className="flex flex-col gap-32 md:gap-40">
+        <div className="exp-timeline-container flex flex-col gap-32 md:gap-40 relative">
+          
+          {/* Continuous Timeline Rails */}
+          <div className="absolute left-6 md:left-[41.5%] top-0 bottom-0 w-[1px] bg-border/30 z-0 hidden md:block" />
+          <div className="exp-timeline-rail-active absolute left-6 md:left-[41.5%] top-0 bottom-0 w-[1px] bg-accent z-0 hidden md:block origin-top" />
+
           {CHAPTERS.map((chapter, i) => (
             <div key={chapter.num} className="relative group chapter-block">
               {/* Large Background Number */}
-              <div className="bg-num absolute -top-16 -left-8 md:-top-24 md:-left-16 text-[120px] md:text-[200px] font-display font-bold text-surface-elevated opacity-50 z-0 leading-none select-none transition-transform duration-700 group-hover:-translate-y-4">
+              <div className="bg-num absolute -top-16 -left-8 md:-top-24 md:-left-24 text-[120px] md:text-[220px] font-display font-bold text-surface-elevated z-0 leading-none select-none transition-transform duration-700 group-hover:-translate-y-4">
                 0{i + 1}
               </div>
               

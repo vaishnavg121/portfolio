@@ -1,14 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { fetchGithubContributions, GithubCalendarData } from "@/lib/actions/github";
 import { THEME_ASSETS } from "@/lib/assets";
 
 export const GithubActivity = () => {
   const [calendarData, setCalendarData] = useState<GithubCalendarData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const containerRef = useRef<HTMLElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     async function loadData() {
       try {
         const data = await fetchGithubContributions("vaishnavg121");
@@ -22,6 +27,23 @@ export const GithubActivity = () => {
     loadData();
   }, []);
 
+  useGSAP(() => {
+    if (!mounted) return;
+
+    // Faint bg text parallax
+    gsap.fromTo('.gh-bg-text',
+      { y: 150, opacity: 0 },
+      { y: -50, opacity: 0.05, ease: "none", scrollTrigger: { trigger: containerRef.current, start: "top bottom", end: "bottom top", scrub: 1 } }
+    );
+
+    // Panel mask reveal
+    gsap.fromTo('.gh-panel',
+      { y: 50, clipPath: "inset(10% 10% 10% 10%)", opacity: 0 },
+      { y: 0, clipPath: "inset(0% 0% 0% 0%)", opacity: 1, duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: containerRef.current, start: "top 75%" } }
+    );
+
+  }, { scope: containerRef, dependencies: [mounted] });
+
   const getColor = (level: number) => {
     if (level === 0) return "bg-[#1a1a1a]";
     if (level === 1) return "bg-[#331111]";
@@ -31,7 +53,11 @@ export const GithubActivity = () => {
   };
 
   return (
-    <section className="py-24 md:py-32 bg-[#050505] relative overflow-hidden group/section border-y border-white/[0.02]" id="github">
+    <section className="py-24 md:py-32 bg-[#050505] relative overflow-hidden group/section border-y border-white/[0.02]" id="github" ref={containerRef}>
+      {/* Large faint background text */}
+      <div className="gh-bg-text absolute top-10 left-0 right-0 text-[10vw] font-display font-bold text-white whitespace-nowrap opacity-0 pointer-events-none select-none z-0">
+        DEVELOPMENT ACTIVITY
+      </div>
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes atmosphere-breathe {
           0%, 100% { opacity: 0.6; }
@@ -50,7 +76,7 @@ export const GithubActivity = () => {
       <div className="container mx-auto px-4 md:px-8 max-w-[1100px]">
         
         {/* Panel Shell */}
-        <div className="relative rounded-[16px] md:rounded-[24px] overflow-hidden border border-white/[0.05] bg-[#0c0d0e] shadow-[0_32px_100px_rgba(0,0,0,0.5)]">
+        <div className="gh-panel relative rounded-[16px] md:rounded-[24px] overflow-hidden border border-white/[0.05] bg-[#0c0d0e] shadow-[0_32px_100px_rgba(0,0,0,0.5)]">
           
           {/* 1. Grain */}
           <div className="absolute inset-0 pointer-events-none opacity-10 mix-blend-overlay" style={{ backgroundImage: `url(${THEME_ASSETS.github.grain})`, backgroundSize: '250px' }} />

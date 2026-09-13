@@ -121,112 +121,114 @@ export const SelectedWork = () => {
     if (!mounted) return;
     const projects = gsap.utils.toArray('.project-card') as HTMLElement[];
     
-    projects.forEach((project) => {
+    projects.forEach((project, index) => {
       const visual = project.querySelector('.group');
-      // Fade in project content
-      if (visual) {
-        gsap.fromTo(visual, 
-          { clipPath: "inset(20% 20% 20% 20%)", scale: 0.95 },
-          {
-            clipPath: "inset(0% 0% 0% 0%)",
-            scale: 1,
-            duration: 1.2,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: project,
-              start: "top 80%",
-              end: "top 50%",
-              scrub: false,
-            }
-          }
-        );
-
-        // Parallax for the visual panel
-        gsap.to(visual, {
-          y: -100,
-          ease: "none",
-          scrollTrigger: {
-            trigger: project,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: 1,
-          }
-        });
-      }
-
-      // Background large number parallax
       const bgNum = project.querySelector('.arch-bg-num');
-      if (bgNum) {
-        gsap.fromTo(bgNum,
-          { x: 200, opacity: 0 },
-          {
-            x: -50,
-            opacity: 1,
-            ease: "none",
-            scrollTrigger: {
-              trigger: project,
-              start: "top bottom",
-              end: "bottom top",
-              scrub: 0.5,
-            }
-          }
-        );
-      }
-
-      // Title animation
       const title = project.querySelector('.proj-title');
-      if (title) {
-        gsap.fromTo(title,
-          { x: 30, opacity: 0, clipPath: "inset(0 100% 0 0)" },
-          {
-            x: 0,
-            opacity: 1,
-            clipPath: "inset(0 0% 0 0)",
-            duration: 1,
-            ease: "power2.out",
-            scrollTrigger: {
-              trigger: project,
-              start: "top 70%",
-            }
-          }
-        );
-      }
-
-      // Animate architecture nodes
       const nodes = project.querySelectorAll('.arch-node');
       const lines = project.querySelectorAll('.arch-line');
 
-      gsap.fromTo(nodes,
-        { opacity: 0, scale: 0.8, y: 10 },
-        {
-          opacity: 1,
-          scale: 1,
-          y: 0,
-          duration: 0.5,
-          stagger: 0.15,
-          ease: "back.out(1.7)",
-          scrollTrigger: {
-            trigger: project,
-            start: "top 60%",
-          }
+      // AlphaCouncil (0)
+      if (index === 0) {
+        if (visual) {
+          gsap.fromTo(visual, 
+            { clipPath: "inset(20% 40% 20% 0%)", scale: 0.95, y: 50 },
+            { clipPath: "inset(0% 0% 0% 0%)", scale: 1, y: 0, duration: 1.4, ease: "power3.out", scrollTrigger: { trigger: project, start: "top 85%", end: "top 40%", scrub: false } }
+          );
+          gsap.to(visual, { y: -100, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 1 } });
         }
-      );
+        if (bgNum) {
+          gsap.fromTo(bgNum,
+            { x: 250, y: 50, opacity: 0, scale: 1.2 },
+            { x: -50, y: -50, opacity: 1, scale: 1, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 0.5 } }
+          );
+        }
+        if (title) {
+          gsap.fromTo(title,
+            { x: -50, opacity: 0, clipPath: "inset(0 100% 0 0)" },
+            { x: 0, opacity: 1, clipPath: "inset(0 0% 0 0)", duration: 1.2, ease: "power2.out", scrollTrigger: { trigger: project, start: "top 75%" } }
+          );
+        }
+      } 
+      // Swa.Neeti (1)
+      else if (index === 1) {
+        if (visual) {
+          gsap.fromTo(visual, 
+            { clipPath: "inset(0% 20% 40% 20%)", y: 30 },
+            { clipPath: "inset(0% 0% 0% 0%)", y: -120, duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: project, start: "top 80%", end: "bottom top", scrub: 1 } }
+          );
+        }
+        if (bgNum) {
+          gsap.fromTo(bgNum,
+            { y: 250, opacity: 0, scale: 0.8 },
+            { y: -100, opacity: 0.6, scale: 1, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 0.8 } }
+          );
+        }
+        if (title) {
+          gsap.fromTo(title,
+            { y: 30, opacity: 0, clipPath: "inset(100% 0 0 0)" },
+            { y: 0, opacity: 1, clipPath: "inset(0% 0 0 0)", duration: 1, delay: 0.2, ease: "power2.out", scrollTrigger: { trigger: project, start: "top 70%" } }
+          );
+        }
+      }
+      // Windy (2)
+      else if (index === 2) {
+        if (visual) {
+          gsap.fromTo(visual, 
+            { clipPath: "circle(20% at 50% 50%)", scale: 1.05 },
+            { clipPath: "circle(100% at 50% 50%)", scale: 1, duration: 1.5, ease: "power2.inOut", scrollTrigger: { trigger: project, start: "top 85%", end: "top 40%", scrub: false } }
+          );
+          gsap.to(visual, { y: -80, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 1.2 } });
+        }
+        if (bgNum) {
+          gsap.fromTo(bgNum,
+            { x: -150, y: 100, opacity: 0 },
+            { x: 100, y: -50, opacity: 0.4, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 1 } }
+          );
+        }
+        if (title) {
+          gsap.fromTo(title,
+            { opacity: 0, letterSpacing: "1em" },
+            { opacity: 1, letterSpacing: "normal", duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: project, start: "top 75%" } }
+          );
+        }
+      }
+      // Spenza (3)
+      else {
+        if (visual) {
+          gsap.fromTo(visual, 
+            { clipPath: "polygon(50% 0%, 50% 0%, 50% 100%, 50% 100%)" },
+            { clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)", duration: 1, ease: "power4.inOut", scrollTrigger: { trigger: project, start: "top 80%", end: "top 50%", scrub: false } }
+          );
+          gsap.to(visual, { y: -150, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 0.8 } });
+        }
+        if (bgNum) {
+          gsap.fromTo(bgNum,
+            { scale: 2, opacity: 0 },
+            { scale: 1, opacity: 0.5, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 0.6 } }
+          );
+        }
+        if (title) {
+          gsap.fromTo(title,
+            { y: -30, opacity: 0 },
+            { y: 0, opacity: 1, duration: 1, ease: "bounce.out", scrollTrigger: { trigger: project, start: "top 75%" } }
+          );
+        }
+      }
 
-      gsap.fromTo(lines,
-        { height: 0, opacity: 0 },
-        {
-          height: 20,
-          opacity: 1,
-          duration: 0.3,
-          stagger: 0.15,
-          ease: "power1.inOut",
-          delay: 0.2,
-          scrollTrigger: {
-            trigger: project,
-            start: "top 60%",
-          }
-        }
-      );
+      // Architecture Nodes (General logic for all if they exist)
+      if (nodes.length > 0) {
+        gsap.fromTo(nodes,
+          { opacity: 0, scale: 0.8, y: 10 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.5, stagger: 0.15, ease: "back.out(1.7)", scrollTrigger: { trigger: project, start: "top 60%" } }
+        );
+      }
+      if (lines.length > 0) {
+        gsap.fromTo(lines,
+          { height: 0, opacity: 0 },
+          { height: 20, opacity: 1, duration: 0.3, stagger: 0.15, ease: "power1.inOut", delay: 0.2, scrollTrigger: { trigger: project, start: "top 60%" } }
+        );
+      }
     });
   }, { scope: containerRef, dependencies: [mounted] });
 

@@ -53,3 +53,12 @@
 - **Concrete Ideas**: 
   1. Clicking a project shouldn't play an unrelated exit; it should accelerate the user into the route.
 
+
+## RECORDING-DRIVEN LESSONS
+
+- **Continuous Composition**: The portfolio must feel like one continuous space, not a series of isolated sections. Handoffs must overlap; the outgoing section should still possess 20-30% motion energy while the incoming section begins its 20-40% entrance.
+- **Compositional Transformation**: Stop thinking 'how does this element animate?' and start thinking 'how does the composition transform?'. Layouts must change dynamically during scroll.
+- **Purposeful Negative Space**: Black gaps between sections must be eliminated. Large empty areas should be utilized dynamically (e.g., traveling chapter numbers, technical rails, intersecting background graphics).
+- **Visual Variety in Repeated Structures**: The 'Selected Work' alternating text/panel structure must break its rigidity through varied entrance directions, unbounded internal effects (e.g., ribbons escaping panels), and dynamic clipping paths.
+- **Section Integration**: Smaller/content-dense areas (GitHub, Engineering Notes) must not feel like isolated cards floating in the void. They need integrating elements like large faint typography, extending technical rails, and unified entrance/exit choreography.
+

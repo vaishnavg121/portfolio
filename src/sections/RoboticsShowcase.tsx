@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 
 const STAGES = ["CAD", "COMPONENTS", "MANUFACTURE", "ASSEMBLY", "COMPETITION"];
 
@@ -13,11 +15,53 @@ const ROBOTS = [
 export const RoboticsShowcase = () => {
   const [activeBot, setActiveBot] = useState(ROBOTS[0].id);
   const [activeStage, setActiveStage] = useState(0);
+  const containerRef = useRef<HTMLElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const activeBotData = ROBOTS.find(b => b.id === activeBot);
 
+  useGSAP(() => {
+    if (!mounted) return;
+
+    // Grid reveal
+    gsap.fromTo('.blueprint-grid', 
+      { opacity: 0 },
+      { opacity: 0.2, duration: 1, ease: "power2.out", scrollTrigger: { trigger: containerRef.current, start: "top 70%" } }
+    );
+
+    // Construction lines
+    gsap.fromTo('.const-line',
+      { strokeDasharray: "0 200", opacity: 0 },
+      { strokeDasharray: "200 0", opacity: 1, duration: 1.5, stagger: 0.1, ease: "power3.out", scrollTrigger: { trigger: containerRef.current, start: "top 60%" } }
+    );
+
+    // Crosshair traverse
+    gsap.fromTo('.traverse-crosshair',
+      { x: -50, opacity: 0 },
+      { x: 150, opacity: 0.5, duration: 2, ease: "power1.inOut", scrollTrigger: { trigger: containerRef.current, start: "top 50%" } }
+    );
+
+    // Exit handoff into GitHub
+    gsap.to('.const-line', {
+      scaleX: 2,
+      x: 100,
+      opacity: 0,
+      ease: "power2.inOut",
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "bottom 60%",
+        end: "bottom top",
+        scrub: 1
+      }
+    });
+  }, { scope: containerRef, dependencies: [mounted] });
+
   return (
-    <section className="py-32 bg-[#050505]" id="robotics">
+    <section className="py-32 bg-[#050505]" id="robotics" ref={containerRef}>
       <div className="container mx-auto px-6 md:px-12">
         <h2 className="text-sm font-mono text-text-muted mb-16 tracking-widest uppercase border-b border-[#222] pb-4">
           Robotics / Hardware
@@ -75,7 +119,7 @@ export const RoboticsShowcase = () => {
           {/* Visualization Area */}
           <div className="w-full lg:w-2/3 aspect-video bg-[#0a1128] border border-[#1d2d50] relative overflow-hidden rounded-sm cursor-crosshair group" data-cursor="VIEW">
             {/* Blueprint Grid Background */}
-            <div className="absolute inset-0 opacity-20" 
+            <div className="blueprint-grid absolute inset-0 opacity-20" 
               style={{
                 backgroundImage: 'linear-gradient(rgba(59, 130, 246, 0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.5) 1px, transparent 1px)',
                 backgroundSize: '20px 20px'
@@ -95,14 +139,15 @@ export const RoboticsShowcase = () => {
                 <svg width="100%" height="100%" viewBox="0 0 200 150" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                   
                   {/* Grid / Frame */}
-                  <rect x="5" y="5" width="190" height="140" stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
-                  <line x1="5" y1="20" x2="195" y2="20" stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
-                  <line x1="160" y1="5" x2="160" y2="145" stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
+                  <rect className="const-line" x="5" y="5" width="190" height="140" stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
+                  <line className="const-line" x1="5" y1="20" x2="195" y2="20" stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
+                  <line className="const-line" x1="160" y1="5" x2="160" y2="145" stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
+                  <line className="traverse-crosshair" x1="0" y1="0" x2="0" y2="150" stroke="#3b82f6" strokeWidth="0.2" opacity="0.5" />
                   
                   {/* Measurements */}
-                  <line x1="20" y1="130" x2="140" y2="130" stroke="#3b82f6" strokeWidth="0.5" />
-                  <line x1="20" y1="128" x2="20" y2="132" stroke="#3b82f6" strokeWidth="0.5" />
-                  <line x1="140" y1="128" x2="140" y2="132" stroke="#3b82f6" strokeWidth="0.5" />
+                  <line className="const-line" x1="20" y1="130" x2="140" y2="130" stroke="#3b82f6" strokeWidth="0.5" />
+                  <line className="const-line" x1="20" y1="128" x2="20" y2="132" stroke="#3b82f6" strokeWidth="0.5" />
+                  <line className="const-line" x1="140" y1="128" x2="140" y2="132" stroke="#3b82f6" strokeWidth="0.5" />
                   <text x="80" y="127" fill="#3b82f6" fontSize="4" fontFamily="monospace">TBD_DIMENSION</text>
 
                   {/* Stage-specific graphics */}

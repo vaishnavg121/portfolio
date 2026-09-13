@@ -47,6 +47,7 @@ export const SkillsConstellation = () => {
       {
         strokeDasharray: "100 0",
         duration: 2,
+        delay: 0.5,
         ease: "power2.out",
         scrollTrigger: {
           trigger: containerRef.current,
@@ -57,15 +58,31 @@ export const SkillsConstellation = () => {
 
     // Animate nodes expanding outward from center
     gsap.fromTo('.constellation-node',
-      { scale: 0, opacity: 0, x: 50, y: 50, transformOrigin: "center" },
+      { scale: 0.8, opacity: 0, x: 50, y: 50, transformOrigin: "center" },
       {
         scale: 1,
         opacity: 1,
         x: (index, target) => target.getAttribute('data-x'),
         y: (index, target) => target.getAttribute('data-y'),
-        stagger: 0.05,
+        stagger: 0.03,
         duration: 1.5,
-        ease: "back.out(1.5)",
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top 60%",
+        }
+      }
+    );
+    
+    // Animate labels last
+    gsap.fromTo('.constellation-label',
+      { opacity: 0 },
+      {
+        opacity: 1,
+        duration: 1,
+        delay: 1,
+        stagger: 0.03,
+        ease: "power2.out",
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top 60%",
@@ -119,9 +136,9 @@ export const SkillsConstellation = () => {
                 y2={nodeB.y}
                 stroke={isActive ? "var(--accent)" : "var(--border)"}
                 strokeWidth={isActive ? 0.3 : 0.1}
-                opacity={isFaded ? 0.1 : isActive ? 1 : 0.5}
+                opacity={isFaded ? 0.2 : isActive ? 1 : 0.5}
                 animate={{
-                  opacity: isFaded ? 0.1 : isActive ? 1 : 0.5,
+                  opacity: isFaded ? 0.2 : isActive ? 1 : 0.5,
                   strokeWidth: isActive ? 0.3 : 0.1
                 }}
                 transition={{ duration: 0.3 }}
@@ -155,10 +172,10 @@ export const SkillsConstellation = () => {
                   cy={0}
                   r={isHovered ? 2 : 1}
                   fill={isHovered || isConnected ? "var(--accent)" : "var(--text-muted)"}
-                  opacity={isFaded ? 0.2 : 1}
+                  opacity={isFaded ? 0.4 : 1}
                   animate={{
                     r: isHovered ? 2 : 1,
-                    opacity: isFaded ? 0.2 : 1
+                    opacity: isFaded ? 0.4 : 1
                   }}
                   transition={{ duration: 0.3 }}
                 />
@@ -168,10 +185,10 @@ export const SkillsConstellation = () => {
                   fontSize="2.5"
                   fill={isHovered || isConnected ? "var(--text-primary)" : "var(--text-muted)"}
                   textAnchor="middle"
-                  opacity={isFaded ? 0.1 : isHovered ? 1 : 0.7}
-                  className="font-mono tracking-wider select-none pointer-events-none"
+                  opacity={isFaded ? 0.4 : isHovered ? 1 : 0.7}
+                  className="constellation-label font-mono tracking-wider select-none pointer-events-none"
                   animate={{
-                    opacity: isFaded ? 0.1 : isHovered ? 1 : 0.7,
+                    opacity: isFaded ? 0.4 : isHovered ? 1 : 0.7,
                     y: isHovered ? -4 : -3
                   }}
                   transition={{ duration: 0.3 }}
