@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 // using GSAP instead of framer-motion here
 import gsap from "gsap";
@@ -80,38 +80,45 @@ const PROJECTS = [
 ];
 
 export const SelectedWork = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLElement>(null);
   const router = useRouter();
-  
   const shouldReduceMotion = useReducedMotion();
   const { sNX, sNY } = usePointer();
-  
-  // Parallax layers (subtle)
-  const layer1X = useTransform(sNX, [-1, 1], [-8, 8]);
-  const layer1Y = useTransform(sNY, [-1, 1], [-8, 8]);
-  const layer2X = useTransform(sNX, [-1, 1], [-15, 15]);
-  const layer2Y = useTransform(sNY, [-1, 1], [-15, 15]);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Motion values
+  const layer1X = useTransform(sNX, [-1, 1], [-15, 15]);
+  const layer1Y = useTransform(sNY, [-1, 1], [-15, 15]);
+  const layer2X = useTransform(sNX, [-1, 1], [-5, 5]);
+  const layer2Y = useTransform(sNY, [-1, 1], [-5, 5]);
 
   const handleProjectClick = (slug: string, e: React.MouseEvent) => {
     e.preventDefault();
     const card = (e.target as HTMLElement).closest('.project-card');
+    const visual = card?.querySelector('.group');
+    
     if (!card) {
       router.push(`/work/${slug}`);
       return;
     }
-    
-    const visual = card.querySelector('.group');
+
     if (visual) {
       gsap.to(visual, { scale: 0.95, opacity: 0, duration: 0.4, ease: "power2.inOut" });
     }
+    
     gsap.to(card, { opacity: 0, x: -20, duration: 0.3, ease: "power2.in" });
-
+    
     setTimeout(() => {
       router.push(`/work/${slug}`);
-    }, 350);
+    }, 400);
   };
 
   useGSAP(() => {
+    if (!mounted) return;
     const projects = gsap.utils.toArray('.project-card') as HTMLElement[];
     
     projects.forEach((project) => {
@@ -221,7 +228,7 @@ export const SelectedWork = () => {
         }
       );
     });
-  }, { scope: containerRef });
+  }, { scope: containerRef, dependencies: [mounted] });
 
   return (
     <section className="py-32 relative bg-background" id="work" ref={containerRef}>
@@ -235,7 +242,10 @@ export const SelectedWork = () => {
             <div key={project.id} className="project-card relative flex flex-col md:flex-row gap-12 md:gap-16 items-start">
               
               {/* Large Background Number */}
-              <div className="absolute top-0 right-10 md:-right-20 text-[150px] md:text-[250px] font-display font-bold text-[#111] opacity-50 z-0 leading-none select-none pointer-events-none arch-bg-num">
+              <div 
+                className="absolute top-0 right-10 md:-right-20 text-[150px] md:text-[250px] font-display font-bold text-[#111] opacity-50 z-0 leading-none select-none pointer-events-none arch-bg-num"
+                style={{ transform: "translateX(200px)", opacity: 0 }}
+              >
                 0{i + 1}
               </div>
 

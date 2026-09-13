@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useReducedMotion, useTransform } from "framer-motion";
 import { MoveRight } from "lucide-react";
 import gsap from "gsap";
@@ -12,6 +12,11 @@ export const Hero = () => {
   const containerRef = useRef<HTMLElement>(null);
   const shouldReduceMotion = useReducedMotion();
   const { sNX, sNY } = usePointer();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Create subtle pointer-based motion values (only applies if reduced motion is false)
   const titleX = useTransform(sNX, [-1, 1], [-10, 10]);
@@ -71,8 +76,8 @@ export const Hero = () => {
       className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20" 
       id="hero"
       initial={{ x: 0, y: 0 }}
-      animate={{ x: shouldReduceMotion ? 0 : [0, 3, -2, 0], y: shouldReduceMotion ? 0 : [0, -2, 1, 0] }}
-      transition={{ duration: 0.1, delay: shouldReduceMotion ? 0 : 0.92, ease: "linear" }}
+      animate={{ x: (!mounted || shouldReduceMotion) ? 0 : [0, 3, -2, 0], y: (!mounted || shouldReduceMotion) ? 0 : [0, -2, 1, 0] }}
+      transition={{ duration: 0.1, delay: (!mounted || shouldReduceMotion) ? 0 : 0.92, ease: "linear" }}
     >
       {/* Global Grain */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: `url(${THEME_ASSETS.global.paperGrain})`, backgroundSize: "300px" }} />
@@ -80,7 +85,7 @@ export const Hero = () => {
       {/* Background Graphic */}
       <motion.div 
         className="absolute inset-0 z-0 opacity-20 pointer-events-none flex items-center justify-center"
-        style={{ x: shouldReduceMotion ? 0 : bgX, y: shouldReduceMotion ? 0 : bgY }}
+        style={{ x: mounted && !shouldReduceMotion ? bgX : 0, y: mounted && !shouldReduceMotion ? bgY : 0 }}
       >
         <svg viewBox="0 0 100 100" className="w-full h-full max-w-4xl" preserveAspectRatio="xMidYMid slice">
             <motion.path
@@ -90,7 +95,7 @@ export const Hero = () => {
             strokeWidth="0.2"
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{ pathLength: 1, opacity: 0.5 }}
-            transition={{ duration: shouldReduceMotion ? 0 : 3, ease: "easeInOut", delay: shouldReduceMotion ? 0 : 1 }}
+            transition={{ duration: (!mounted || shouldReduceMotion) ? 0 : 3, ease: "easeInOut", delay: (!mounted || shouldReduceMotion) ? 0 : 1 }}
           />
           <motion.path
             d="M 10 70 Q 40 20, 60 70 T 90 30"
@@ -99,7 +104,7 @@ export const Hero = () => {
             strokeWidth="0.1"
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{ pathLength: 1, opacity: 0.3 }}
-            transition={{ duration: shouldReduceMotion ? 0 : 4, ease: "easeInOut", delay: shouldReduceMotion ? 0 : 1.5 }}
+            transition={{ duration: (!mounted || shouldReduceMotion) ? 0 : 4, ease: "easeInOut", delay: (!mounted || shouldReduceMotion) ? 0 : 1.5 }}
           />
         </svg>
       </motion.div>

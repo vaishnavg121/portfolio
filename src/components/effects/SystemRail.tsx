@@ -9,8 +9,10 @@ export const SystemRail = () => {
   const [activeLabel, setActiveLabel] = useState("INIT");
 
   const [railState, setRailState] = useState({ height: 128, opacity: 0.5 });
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => {
       const active = document.querySelector("section.is-active");
       if (active && active.id) {
@@ -40,11 +42,11 @@ export const SystemRail = () => {
       {/* Moving Marker */}
       <motion.div 
         className="absolute top-0 w-full flex items-center justify-center transition-all duration-1000 ease-out"
-        style={{ y: yPos, opacity: railState.opacity }}
+        style={{ y: mounted ? yPos : "0%", opacity: railState.opacity }}
       >
         <motion.div 
           className="w-[1px] bg-accent transition-all duration-1000 ease-out" 
-          animate={{ height: railState.height }}
+          animate={mounted ? { height: railState.height } : { height: 128 }}
         />
         <div className="absolute left-4 opacity-50 transform -rotate-90 origin-left whitespace-nowrap text-[9px] font-mono tracking-widest text-text-muted transition-all duration-500">
           SYS // {activeLabel}
