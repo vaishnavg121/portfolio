@@ -1,11 +1,23 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, useTransform } from "framer-motion";
 import { MoveRight } from "lucide-react";
 import { THEME_ASSETS } from "@/lib/assets";
+import { usePointer, MagneticEffect } from "@/components/effects";
 
 export const Hero = () => {
   const shouldReduceMotion = useReducedMotion();
+  const { sNX, sNY } = usePointer();
+
+  // Create subtle pointer-based motion values (only applies if reduced motion is false)
+  const titleX = useTransform(sNX, [-1, 1], [-10, 10]);
+  const titleY = useTransform(sNY, [-1, 1], [-10, 10]);
+  
+  const subtitleX = useTransform(sNX, [-1, 1], [-4, 4]);
+  const subtitleY = useTransform(sNY, [-1, 1], [-4, 4]);
+
+  const bgX = useTransform(sNX, [-1, 1], [-15, 15]);
+  const bgY = useTransform(sNY, [-1, 1], [-15, 15]);
 
   return (
     <motion.section 
@@ -19,7 +31,10 @@ export const Hero = () => {
       <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: `url(${THEME_ASSETS.global.paperGrain})`, backgroundSize: "300px" }} />
       
       {/* Background Graphic */}
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none flex items-center justify-center">
+      <motion.div 
+        className="absolute inset-0 z-0 opacity-20 pointer-events-none flex items-center justify-center"
+        style={{ x: shouldReduceMotion ? 0 : bgX, y: shouldReduceMotion ? 0 : bgY }}
+      >
         <svg viewBox="0 0 100 100" className="w-full h-full max-w-4xl" preserveAspectRatio="xMidYMid slice">
             <motion.path
             d="M 10 50 Q 30 10, 50 50 T 90 50"
@@ -40,13 +55,16 @@ export const Hero = () => {
             transition={{ duration: shouldReduceMotion ? 0 : 4, ease: "easeInOut", delay: shouldReduceMotion ? 0 : 1.5 }}
           />
         </svg>
-      </div>
+      </motion.div>
 
       <div className="container mx-auto px-6 md:px-12 z-10 w-full h-full flex flex-col justify-center pb-20">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 relative">
           
           {/* Main Title Block */}
-          <div className="md:col-span-10 md:col-start-1 relative z-10">
+          <motion.div 
+            className="md:col-span-10 md:col-start-1 relative z-10"
+            style={{ x: shouldReduceMotion ? 0 : titleX, y: shouldReduceMotion ? 0 : titleY }}
+          >
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
@@ -68,10 +86,14 @@ export const Hero = () => {
               <br />
               <span className="text-text-muted">Gadamsetty</span>
             </motion.h1>
-          </div>
+            <div data-familiar-anchor className="absolute -bottom-8 left-12 w-4 h-4 pointer-events-none" />
+          </motion.div>
 
           {/* Subtitle / Description Block */}
-          <div className="md:col-span-5 md:col-start-7 lg:col-start-8 mt-12 md:mt-24 relative z-20">
+          <motion.div 
+            className="md:col-span-5 md:col-start-7 lg:col-start-8 mt-12 md:mt-24 relative z-20"
+            style={{ x: shouldReduceMotion ? 0 : subtitleX, y: shouldReduceMotion ? 0 : subtitleY }}
+          >
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -89,15 +111,19 @@ export const Hero = () => {
 
               {/* Links */}
               <div className="flex flex-wrap items-center gap-6 text-xs font-mono tracking-widest uppercase pl-6">
-                <button 
-                  onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" })}
-                  className="flex items-center gap-2 text-text-primary hover:text-accent transition-colors group"
-                  data-cursor="VIEW"
-                >
-                  Explore Work 
-                  <MoveRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-                <a href="https://github.com/vaishnav" target="_blank" rel="noreferrer" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">GitHub</a>
+                <MagneticEffect intensity={0.4}>
+                  <button 
+                    onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" })}
+                    className="flex items-center gap-2 text-text-primary hover:text-accent transition-colors group"
+                    data-cursor="VIEW"
+                  >
+                    Explore Work 
+                    <MoveRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </MagneticEffect>
+                <MagneticEffect intensity={0.2}>
+                  <a href="https://github.com/vaishnav" target="_blank" rel="noreferrer" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">GitHub</a>
+                </MagneticEffect>
               </div>
             </motion.div>
             
@@ -107,12 +133,12 @@ export const Hero = () => {
                 initial={{ opacity: 0, pathLength: 0 }}
                 animate={{ opacity: 1, pathLength: 1 }}
                 transition={{ delay: shouldReduceMotion ? 0.2 : 1.1, duration: shouldReduceMotion ? 0.2 : 0.6 }}
-                className="text-accent text-xl md:text-2xl font-hand"
+                className="text-accent text-xl md:text-2xl font-hand inline-block"
               >
                 {`// curiosity usually gets out of hand`}
               </motion.span>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </motion.section>
