@@ -10,7 +10,7 @@ import { MoveRight } from "lucide-react";
 import { EmberField, FlowLines, GridEffect, BlueprintEffect, SwaNeetiInk, MagneticEffect, usePointer } from "@/components/effects";
 import { PROJECT_ASSETS } from "@/lib/assets";
 import { useRouter } from "next/navigation";
-import { motion, useTransform, useReducedMotion } from "framer-motion";
+import { motion, useTransform, useReducedMotion, AnimatePresence } from "framer-motion";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -86,6 +86,8 @@ export const SelectedWork = () => {
   const { sNX, sNY } = usePointer();
 
   const [mounted, setMounted] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
@@ -120,12 +122,20 @@ export const SelectedWork = () => {
 
   useGSAP(() => {
     if (!mounted) return;
-    const projects = gsap.utils.toArray('.project-card') as HTMLElement[];
+    const projects = gsap.utils.toArray('.project-scene') as HTMLElement[];
     
     projects.forEach((project, index) => {
+      // Update active functional UI based on scroll position
+      ScrollTrigger.create({
+        trigger: project,
+        start: "top 55%",
+        end: "bottom 55%",
+        onEnter: () => setActiveIndex(index),
+        onEnterBack: () => setActiveIndex(index),
+      });
+
       const visual = project.querySelector('.group');
       const bgNum = project.querySelector('.arch-bg-num');
-      const title = project.querySelector('.proj-title');
       const nodes = project.querySelectorAll('.arch-node');
       const lines = project.querySelectorAll('.arch-line');
 
@@ -144,12 +154,6 @@ export const SelectedWork = () => {
             { x: -50, y: -50, opacity: 1, scale: 1, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 0.5 } }
           );
         }
-        if (title) {
-          gsap.fromTo(title,
-            { x: -50, opacity: 0, clipPath: "inset(0 100% 0 0)" },
-            { x: 0, opacity: 1, clipPath: "inset(0 0% 0 0)", duration: 1.2, ease: "power2.out", scrollTrigger: { trigger: project, start: "top 75%" } }
-          );
-        }
       } 
       // Swa.Neeti (1)
       else if (index === 1) {
@@ -163,12 +167,6 @@ export const SelectedWork = () => {
           gsap.fromTo(bgNum,
             { y: 250, opacity: 0, scale: 0.8 },
             { y: -100, opacity: 0.6, scale: 1, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 0.8 } }
-          );
-        }
-        if (title) {
-          gsap.fromTo(title,
-            { y: 30, opacity: 0, clipPath: "inset(100% 0 0 0)" },
-            { y: 0, opacity: 1, clipPath: "inset(0% 0 0 0)", duration: 1, delay: 0.2, ease: "power2.out", scrollTrigger: { trigger: project, start: "top 70%" } }
           );
         }
       }
@@ -187,12 +185,6 @@ export const SelectedWork = () => {
             { x: 100, y: -50, opacity: 0.4, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 1 } }
           );
         }
-        if (title) {
-          gsap.fromTo(title,
-            { opacity: 0, letterSpacing: "1em" },
-            { opacity: 1, letterSpacing: "normal", duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: project, start: "top 75%" } }
-          );
-        }
       }
       // Spenza (3)
       else {
@@ -209,15 +201,9 @@ export const SelectedWork = () => {
             { scale: 1, opacity: 0.5, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 0.6 } }
           );
         }
-        if (title) {
-          gsap.fromTo(title,
-            { y: -30, opacity: 0 },
-            { y: 0, opacity: 1, duration: 1, ease: "bounce.out", scrollTrigger: { trigger: project, start: "top 75%" } }
-          );
-        }
       }
 
-      // Architecture Nodes (General logic for all if they exist)
+      // Architecture Nodes
       if (nodes.length > 0) {
         gsap.fromTo(nodes,
           { opacity: 0, scale: 0.8, y: 10 },
@@ -230,41 +216,6 @@ export const SelectedWork = () => {
           { height: 20, opacity: 1, duration: 0.3, stagger: 0.15, ease: "power1.inOut", delay: 0.2, scrollTrigger: { trigger: project, start: "top 60%" } }
         );
       }
-
-      // ----------------------------------------------------
-      // FUNCTIONAL UI LIFECYCLE
-      // ----------------------------------------------------
-      const desc = project.querySelector('.proj-desc');
-      const tags = project.querySelector('.proj-tags');
-      const cta = project.querySelector('.proj-cta');
-
-      // Entry Sequence (staggered)
-      const tlIn = gsap.timeline({
-        scrollTrigger: {
-          trigger: project,
-          start: "top 60%", // Enters after project visual/title
-        }
-      });
-
-      if (desc) tlIn.fromTo(desc, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "+=0.1");
-      if (tags) tlIn.fromTo(tags, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.4");
-      if (cta) tlIn.fromTo(cta, { opacity: 0, y: 10, pointerEvents: "none" }, { opacity: 1, y: 0, pointerEvents: "auto", duration: 0.6, ease: "power2.out" }, "-=0.4");
-
-      // Exit Sequence (Functional UI leaves EARLY so it doesn't overlap next project)
-      const tlOut = gsap.timeline({
-        scrollTrigger: {
-          trigger: project,
-          start: "bottom 80%", // Starts fading out when bottom of project is still in view
-          end: "bottom 60%", 
-          scrub: true
-        }
-      });
-      
-      // We fade the CTA first to prevent accidental clicks
-      if (cta) tlOut.to(cta, { opacity: 0, y: -10, pointerEvents: "none", ease: "power2.in" });
-      if (tags) tlOut.to(tags, { opacity: 0, y: -10, ease: "power2.in" }, "<0.1");
-      if (desc) tlOut.to(desc, { opacity: 0, y: -10, ease: "power2.in" }, "<0.1");
-      if (title) tlOut.to(title, { opacity: 0, y: -10, ease: "power2.in" }, "<0.1");
     });
   }, { scope: containerRef, dependencies: [mounted] });
 
@@ -275,61 +226,109 @@ export const SelectedWork = () => {
           Selected Work
         </h2>
 
-        <div className="flex flex-col gap-32 md:gap-48">
-          {PROJECTS.map((project, i) => (
-            <div key={project.id} className="project-card relative flex flex-col md:flex-row gap-12 md:gap-16 items-start">
-              
-              {/* Large Background Number */}
-              <div 
-                className="absolute top-0 right-10 md:-right-20 text-[150px] md:text-[250px] font-display font-bold text-[#111] opacity-50 z-0 leading-none select-none pointer-events-none arch-bg-num"
-                style={{ transform: "translateX(200px)", opacity: 0 }}
-              >
-                0{i + 1}
-              </div>
-
-              {/* Info Side */}
-              <div className="proj-info flex-1 md:w-5/12 md:sticky md:top-32 relative z-20" data-familiar-avoid>
-                <div className="flex items-baseline gap-4 mb-4">
-                  <span className="font-mono text-4xl text-border opacity-50 tracking-tighter proj-id">{project.id}</span>
-                  <div className="font-mono text-accent text-xs tracking-widest uppercase">{project.category}</div>
-                </div>
-                
-                <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-medium mb-6 uppercase tracking-tight leading-none proj-title">
-                  {project.title}
-                </h3>
-                
-                <p className="proj-desc text-text-muted text-base md:text-lg mb-8 max-w-sm leading-relaxed border-l border-border pl-4">
-                  {project.description}
-                </p>
-                
-                <div className="proj-tags flex flex-wrap gap-2 mb-10">
-                  {project.tags.map(tag => (
-                    <span key={tag} className="text-[10px] font-mono border border-[#333] px-2 py-1 text-text-muted uppercase tracking-wider">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                
-                <div className="proj-cta relative z-40">
-                  <MagneticEffect intensity={0.3}>
-                    <button 
-                      onClick={(e) => handleProjectClick(project.slug, e)}
-                      data-cursor="VIEW"
-                      className="flex items-center gap-3 text-xs font-mono uppercase tracking-widest text-text-primary hover:text-accent transition-colors group"
-                    >
-                      <span className="relative pb-1 transform group-hover:translate-x-1 transition-transform duration-300">
-                        View Project
-                        <span className="absolute bottom-0 left-0 w-full h-[1px] bg-accent origin-left scale-x-50 group-hover:scale-x-100 transition-transform duration-300" />
+        <div className="flex flex-col md:flex-row items-start relative gap-12 md:gap-16">
+          
+          {/* Shared Functional Info Column (Sticky) */}
+          <div className="w-full md:w-5/12 md:sticky md:top-32 relative z-40 min-h-[350px]" data-familiar-avoid>
+            <AnimatePresence mode="wait">
+              {mounted && (
+                <motion.div
+                  key={activeIndex}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+                    exit: { opacity: 0, transition: { duration: 0.2 } }
+                  }}
+                  className="flex flex-col w-full"
+                >
+                  <motion.div 
+                    variants={{
+                      hidden: { opacity: 0, y: 12 },
+                      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+                    }}
+                    className="flex items-baseline gap-4 mb-4"
+                  >
+                    <span className="font-mono text-4xl text-border opacity-50 tracking-tighter">{PROJECTS[activeIndex].id}</span>
+                    <div className="font-mono text-accent text-xs tracking-widest uppercase">{PROJECTS[activeIndex].category}</div>
+                  </motion.div>
+                  
+                  <motion.h3 
+                    variants={{
+                      hidden: { opacity: 0, y: 12 },
+                      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+                    }}
+                    className="text-4xl md:text-5xl lg:text-6xl font-display font-medium mb-6 uppercase tracking-tight leading-none"
+                  >
+                    {PROJECTS[activeIndex].title}
+                  </motion.h3>
+                  
+                  <motion.p 
+                    variants={{
+                      hidden: { opacity: 0, y: 12 },
+                      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+                    }}
+                    className="text-text-muted text-base md:text-lg mb-8 max-w-sm leading-relaxed border-l border-border pl-4"
+                  >
+                    {PROJECTS[activeIndex].description}
+                  </motion.p>
+                  
+                  <motion.div 
+                    variants={{
+                      hidden: { opacity: 0, y: 12 },
+                      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+                    }}
+                    className="flex flex-wrap gap-2 mb-10"
+                  >
+                    {PROJECTS[activeIndex].tags.map(tag => (
+                      <span key={tag} className="text-[10px] font-mono border border-[#333] px-2 py-1 text-text-muted uppercase tracking-wider">
+                        {tag}
                       </span>
-                      <MoveRight className="w-4 h-4 group-hover:translate-x-3 transition-transform duration-300 text-accent" />
-                    </button>
-                  </MagneticEffect>
-                </div>
-              </div>
+                    ))}
+                  </motion.div>
+                  
+                  <motion.div 
+                    variants={{
+                      hidden: { opacity: 0, y: 12 },
+                      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+                    }}
+                    className="relative z-40"
+                  >
+                    <MagneticEffect intensity={0.3}>
+                      <button 
+                        onClick={(e) => handleProjectClick(PROJECTS[activeIndex].slug, e)}
+                        data-cursor="VIEW"
+                        className="flex items-center gap-3 text-xs font-mono uppercase tracking-widest text-text-primary hover:text-accent transition-colors group"
+                        tabIndex={0}
+                      >
+                        <span className="relative pb-1 transform group-hover:translate-x-1 transition-transform duration-300">
+                          View Project
+                          <span className="absolute bottom-0 left-0 w-full h-[1px] bg-accent origin-left scale-x-50 group-hover:scale-x-100 transition-transform duration-300" />
+                        </span>
+                        <MoveRight className="w-4 h-4 group-hover:translate-x-3 transition-transform duration-300 text-accent" />
+                      </button>
+                    </MagneticEffect>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
-              {/* Visual Side */}
-              <div className="flex-1 md:w-7/12 w-full bg-[#0a0a0a] min-h-[500px] flex items-center justify-center p-8 border border-border relative overflow-hidden group" data-cursor="VIEW">
+          {/* Scrolling Visual Scenes Column */}
+          <div className="w-full md:w-7/12 flex flex-col gap-32 md:gap-48 relative z-20">
+            {PROJECTS.map((project, i) => (
+              <div key={project.id} className="project-scene relative min-h-[500px] flex items-center justify-center p-8 border border-border overflow-hidden group bg-[#0a0a0a]" data-cursor="VIEW">
                 
+                {/* Large Background Number */}
+                <div 
+                  className="absolute top-0 right-10 md:-right-20 text-[150px] md:text-[250px] font-display font-bold text-[#111] opacity-50 z-0 leading-none select-none pointer-events-none arch-bg-num"
+                  style={{ transform: "translateX(200px)", opacity: 0 }}
+                >
+                  0{i + 1}
+                </div>
+
                 {/* Hero Asset Background */}
                 {project.assets?.hero && (
                   <motion.div 
@@ -361,7 +360,7 @@ export const SelectedWork = () => {
                   </motion.div>
                 )}
 
-                {/* Visual Effects (Procedural fallback if no hard assets, or complementary overlay) */}
+                {/* Visual Effects */}
                 <motion.div 
                   className="absolute inset-0 z-10"
                   style={{ x: shouldReduceMotion ? 0 : layer1X, y: shouldReduceMotion ? 0 : layer1Y }}
@@ -390,7 +389,7 @@ export const SelectedWork = () => {
                         <div className="w-2 h-2 bg-accent" /> System Pipeline
                       </div>
                       <div className="group/pipeline flex flex-col gap-1 pointer-events-auto">
-                        {project.architecture.map((node, i) => (
+                        {project.architecture.map((node, nIdx) => (
                           <div 
                             key={node} 
                             className="flex flex-col group/node transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.02]"
@@ -398,9 +397,9 @@ export const SelectedWork = () => {
                           >
                             <div className="arch-node bg-[#111] border-l-2 border-accent/30 group-hover/node:border-accent text-text-primary px-4 py-3 font-mono text-xs shadow-xl tracking-wider flex justify-between items-center transition-all duration-300 group-hover/pipeline:opacity-50 group-hover/node:!opacity-100 group-hover/node:bg-[#151515]">
                               <span>{node}</span>
-                              <span className="text-[#444] text-[10px] group-hover/node:text-accent/70 transition-colors">{`0${i + 1}`}</span>
+                              <span className="text-[#444] text-[10px] group-hover/node:text-accent/70 transition-colors">{`0${nIdx + 1}`}</span>
                             </div>
-                            {i < project.architecture.length - 1 && (
+                            {nIdx < project.architecture.length - 1 && (
                               <div className="arch-line w-[1px] h-4 bg-[#333] ml-4 opacity-50 group-hover/node:h-5 group-hover/node:bg-accent/40 transition-all duration-300" />
                             )}
                           </div>
@@ -410,8 +409,8 @@ export const SelectedWork = () => {
                   )}
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>
