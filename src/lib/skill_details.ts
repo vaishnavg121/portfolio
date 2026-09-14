@@ -18,7 +18,7 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
     description: "Primary language across machine-learning pipelines, RAG systems and agentic applications.",
     usedIn: [
       { label: "AlphaCouncil", href: "/work/alphacouncil" },
-      { label: "Swa.Neeti", href: "/work/swaneeti" },
+      { label: "Swa.Neeti", href: "/work/swa-neeti" },
       { label: "Windy", href: "/work/windy" },
       { label: "IMD forecasting" }
     ]
@@ -43,7 +43,7 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
     title: "RETRIEVAL-AUGMENTED GENERATION",
     description: "Used to ground LLM reasoning against retrieved evidence rather than relying only on model knowledge.",
     usedIn: [
-      { label: "Swa.Neeti", href: "/work/swaneeti" },
+      { label: "Swa.Neeti", href: "/work/swa-neeti" },
       { label: "Windy", href: "/work/windy" }
     ]
   },
@@ -53,7 +53,7 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
     description: "Designed multi-stage systems where specialized reasoning, retrieval, validation and execution components cooperate under explicit state and control flows.",
     usedIn: [
       { label: "AlphaCouncil", href: "/work/alphacouncil" },
-      { label: "Swa.Neeti", href: "/work/swaneeti" },
+      { label: "Swa.Neeti", href: "/work/swa-neeti" },
       { label: "Windy", href: "/work/windy" }
     ]
   },
@@ -72,7 +72,7 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
     description: "Used for persistent structured data in financial-software and research systems.",
     usedIn: [
       { label: "Spenza", href: "/work/spenza" },
-      { label: "Swa.Neeti", href: "/work/swaneeti" }
+      { label: "Swa.Neeti", href: "/work/swa-neeti" }
     ]
   },
   "fastapi": {
@@ -81,7 +81,7 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
     description: "Used for typed backend interfaces and streaming AI workflows across several agentic systems.",
     usedIn: [
       { label: "AlphaCouncil", href: "/work/alphacouncil" },
-      { label: "Swa.Neeti", href: "/work/swaneeti" },
+      { label: "Swa.Neeti", href: "/work/swa-neeti" },
       { label: "Windy", href: "/work/windy" }
     ]
   },
