@@ -68,7 +68,21 @@ export const Hero = () => {
         scrub: 1.5,
       }
     });
-  }, { scope: containerRef, dependencies: [shouldReduceMotion] });
+
+    // Functional links fade out early
+    gsap.to('.hero-links', {
+      opacity: 0,
+      y: -20,
+      pointerEvents: "none",
+      ease: "power2.in",
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "top top",
+        end: "bottom 70%",
+        scrub: true,
+      }
+    });
+  }, { scope: containerRef, dependencies: [mounted, shouldReduceMotion] });
 
   return (
     <motion.section 
@@ -164,7 +178,7 @@ export const Hero = () => {
               </p>
 
               {/* Links */}
-              <div className="flex flex-wrap items-center gap-6 text-xs font-mono tracking-widest uppercase pl-6">
+              <div className="hero-links flex flex-wrap items-center gap-6 text-xs font-mono tracking-widest uppercase pl-6 relative z-30">
                 <MagneticEffect intensity={0.4}>
                   <button 
                     onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" })}

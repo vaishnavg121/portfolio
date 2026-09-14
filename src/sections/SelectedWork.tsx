@@ -229,6 +229,41 @@ export const SelectedWork = () => {
           { height: 20, opacity: 1, duration: 0.3, stagger: 0.15, ease: "power1.inOut", delay: 0.2, scrollTrigger: { trigger: project, start: "top 60%" } }
         );
       }
+
+      // ----------------------------------------------------
+      // FUNCTIONAL UI LIFECYCLE
+      // ----------------------------------------------------
+      const desc = project.querySelector('.proj-desc');
+      const tags = project.querySelector('.proj-tags');
+      const cta = project.querySelector('.proj-cta');
+
+      // Entry Sequence (staggered)
+      const tlIn = gsap.timeline({
+        scrollTrigger: {
+          trigger: project,
+          start: "top 60%", // Enters after project visual/title
+        }
+      });
+
+      if (desc) tlIn.fromTo(desc, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "+=0.1");
+      if (tags) tlIn.fromTo(tags, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.4");
+      if (cta) tlIn.fromTo(cta, { opacity: 0, y: 10, pointerEvents: "none" }, { opacity: 1, y: 0, pointerEvents: "auto", duration: 0.6, ease: "power2.out" }, "-=0.4");
+
+      // Exit Sequence (Functional UI leaves EARLY so it doesn't overlap next project)
+      const tlOut = gsap.timeline({
+        scrollTrigger: {
+          trigger: project,
+          start: "bottom 80%", // Starts fading out when bottom of project is still in view
+          end: "bottom 60%", 
+          scrub: true
+        }
+      });
+      
+      // We fade the CTA first to prevent accidental clicks
+      if (cta) tlOut.to(cta, { opacity: 0, y: -10, pointerEvents: "none", ease: "power2.in" });
+      if (tags) tlOut.to(tags, { opacity: 0, y: -10, ease: "power2.in" }, "<0.1");
+      if (desc) tlOut.to(desc, { opacity: 0, y: -10, ease: "power2.in" }, "<0.1");
+      if (title) tlOut.to(title, { opacity: 0, y: -10, ease: "power2.in" }, "<0.1");
     });
   }, { scope: containerRef, dependencies: [mounted] });
 
@@ -252,7 +287,7 @@ export const SelectedWork = () => {
               </div>
 
               {/* Info Side */}
-              <div className="flex-1 md:w-5/12 md:sticky md:top-32 relative z-20" data-familiar-avoid>
+              <div className="proj-info flex-1 md:w-5/12 md:sticky md:top-32 relative z-20" data-familiar-avoid>
                 <div className="flex items-baseline gap-4 mb-4">
                   <span className="font-mono text-4xl text-border opacity-50 tracking-tighter proj-id">{project.id}</span>
                   <div className="font-mono text-accent text-xs tracking-widest uppercase">{project.category}</div>
@@ -262,11 +297,11 @@ export const SelectedWork = () => {
                   {project.title}
                 </h3>
                 
-                <p className="text-text-muted text-base md:text-lg mb-8 max-w-sm leading-relaxed border-l border-border pl-4">
+                <p className="proj-desc text-text-muted text-base md:text-lg mb-8 max-w-sm leading-relaxed border-l border-border pl-4">
                   {project.description}
                 </p>
                 
-                <div className="flex flex-wrap gap-2 mb-12">
+                <div className="proj-tags flex flex-wrap gap-2 mb-10">
                   {project.tags.map(tag => (
                     <span key={tag} className="text-[10px] font-mono border border-[#333] px-2 py-1 text-text-muted uppercase tracking-wider">
                       {tag}
@@ -274,19 +309,21 @@ export const SelectedWork = () => {
                   ))}
                 </div>
                 
-                <MagneticEffect intensity={0.3}>
-                  <button 
-                    onClick={(e) => handleProjectClick(project.slug, e)}
-                    data-cursor="VIEW"
-                    className="flex items-center gap-3 text-xs font-mono uppercase tracking-widest text-text-primary hover:text-accent transition-colors group"
-                  >
-                    <span className="relative pb-1 transform group-hover:translate-x-1 transition-transform duration-300">
-                      View Project
-                      <span className="absolute bottom-0 left-0 w-full h-[1px] bg-accent origin-left scale-x-50 group-hover:scale-x-100 transition-transform duration-300" />
-                    </span>
-                    <MoveRight className="w-4 h-4 group-hover:translate-x-3 transition-transform duration-300 text-accent" />
-                  </button>
-                </MagneticEffect>
+                <div className="proj-cta relative z-40">
+                  <MagneticEffect intensity={0.3}>
+                    <button 
+                      onClick={(e) => handleProjectClick(project.slug, e)}
+                      data-cursor="VIEW"
+                      className="flex items-center gap-3 text-xs font-mono uppercase tracking-widest text-text-primary hover:text-accent transition-colors group"
+                    >
+                      <span className="relative pb-1 transform group-hover:translate-x-1 transition-transform duration-300">
+                        View Project
+                        <span className="absolute bottom-0 left-0 w-full h-[1px] bg-accent origin-left scale-x-50 group-hover:scale-x-100 transition-transform duration-300" />
+                      </span>
+                      <MoveRight className="w-4 h-4 group-hover:translate-x-3 transition-transform duration-300 text-accent" />
+                    </button>
+                  </MagneticEffect>
+                </div>
               </div>
 
               {/* Visual Side */}
