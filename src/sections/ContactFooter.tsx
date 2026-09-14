@@ -5,6 +5,8 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { MagneticEffect } from "@/components/effects";
 
+import { profile, socials } from "@/lib/profile";
+
 export const ContactFooter = () => {
   const containerRef = useRef<HTMLElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -48,6 +50,11 @@ export const ContactFooter = () => {
     );
   }, { scope: containerRef, dependencies: [mounted] });
 
+  const LINKS = [
+    { name: "GitHub", display: "github.com/vaishnavg121", url: socials.github },
+    { name: "LinkedIn", display: "Venkatanaga Vaishnav Gadamsetty", url: socials.linkedin }
+  ];
+
   return (
     <footer className="py-32 bg-surface relative overflow-hidden" id="contact" ref={containerRef}>
       <div className="container mx-auto px-6 md:px-12 relative z-10 flex flex-col items-center text-center">
@@ -82,15 +89,19 @@ export const ContactFooter = () => {
         <div className="contact-line w-24 h-[1px] bg-border mb-16 origin-center scale-x-0" />
 
         <div className="flex flex-wrap justify-center gap-8 md:gap-16 mb-32" data-familiar-avoid>
-          {["GitHub", "LinkedIn", "Email", "Resume"].map((link) => (
-            <div key={link} className="contact-link opacity-0">
+          {LINKS.map((link) => (
+            <div key={link.name} className="contact-link opacity-0">
               <MagneticEffect intensity={0.4}>
                 <a 
-                  href="#" 
-                  className="text-text-primary hover:text-accent text-sm md:text-base font-mono tracking-wider transition-colors relative group block py-2 px-4"
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${link.name} Profile`}
+                  className="text-text-primary hover:text-accent text-sm md:text-base font-mono tracking-wider transition-colors relative group block py-2 px-4 flex flex-col items-center gap-2"
                   data-cursor="VIEW"
                 >
-                  {link}
+                  <span className="font-bold text-lg">{link.name} ↗</span>
+                  <span className="text-xs text-text-muted">{link.display}</span>
                   <span className="absolute -bottom-0 left-0 w-full h-[1px] bg-accent scale-x-0 origin-left group-hover:scale-x-100 transition-transform" />
                 </a>
               </MagneticEffect>
@@ -99,7 +110,7 @@ export const ContactFooter = () => {
         </div>
 
         <div className="w-full border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between font-mono text-xs text-text-muted tracking-widest uppercase">
-          <div>Vaishnav Gadamsetty</div>
+          <div>{profile.displayName}</div>
           <div className="mt-4 md:mt-0">2026 // ALL SYSTEMS NOMINAL</div>
         </div>
       </div>

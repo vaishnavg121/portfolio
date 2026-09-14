@@ -6,6 +6,7 @@ import { MoveRight } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { THEME_ASSETS } from "@/lib/assets";
+import { profile, socials } from "@/lib/profile";
 import { usePointer, MagneticEffect } from "@/components/effects";
 
 export const Hero = () => {
@@ -141,7 +142,7 @@ export const Hero = () => {
             >
               <span>SYS_INIT</span>
               <div className="h-[1px] w-12 bg-border" />
-              <span>CS + Finance @ BITS Pilani</span>
+              <span>{profile.positioning.split(" interested in ")[0]}</span>
             </motion.div>
 
             <motion.h1
@@ -150,9 +151,9 @@ export const Hero = () => {
               transition={{ duration: shouldReduceMotion ? 0.2 : 0.4, delay: shouldReduceMotion ? 0.1 : 0.88, ease: [0.11, 0, 0.5, 0] }}
               className="text-[12vw] md:text-[8vw] lg:text-[7rem] font-display font-medium tracking-tighter leading-[0.85] uppercase"
             >
-              Vaishnav
+              {profile.shortName}
               <br />
-              <span className="text-text-muted">Gadamsetty</span>
+              <span className="text-text-muted">{profile.name.split(" ")[2]}</span>
             </motion.h1>
             <div data-familiar-anchor className="absolute -bottom-8 left-12 w-4 h-4 pointer-events-none" />
           </motion.div>
@@ -169,13 +170,12 @@ export const Hero = () => {
               transition={{ duration: shouldReduceMotion ? 0.2 : 0.6, delay: shouldReduceMotion ? 0.15 : 0.91, ease: "easeOut" }}
             >
               <h2 className="text-xl md:text-2xl text-text-primary font-light leading-snug mb-6 border-l-2 border-accent pl-6">
-                I build things around <br />
-                <span className="italic font-serif">intelligence, markets & machines.</span>
+                Building at the intersection of <br />
+                <span className="italic font-serif">INTELLIGENCE, MARKETS & MACHINES.</span>
               </h2>
 
-              <p className="text-text-muted text-sm leading-relaxed pl-6 mb-10 max-w-sm">
-                I&apos;m interested in AI/ML, finance, RAG & agentic systems, C++, and robotics. 
-                Most of my projects begin with something I want to understand and evolve into systems I can experiment with and use.
+              <p className="text-text-muted text-sm leading-relaxed pl-6 mb-10 max-w-sm whitespace-pre-line">
+                {profile.about}
               </p>
 
               {/* Links */}
@@ -191,7 +191,7 @@ export const Hero = () => {
                   </button>
                 </MagneticEffect>
                 <MagneticEffect intensity={0.2}>
-                  <a href="https://github.com/vaishnav" target="_blank" rel="noreferrer" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">GitHub</a>
+                  <a href={socials.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub Profile" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">GitHub ↗</a>
                 </MagneticEffect>
               </div>
             </motion.div>

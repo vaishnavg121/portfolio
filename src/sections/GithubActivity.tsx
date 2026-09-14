@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { fetchGithubContributions, GithubCalendarData } from "@/lib/actions/github";
+import { socials } from "@/lib/profile";
 import { THEME_ASSETS } from "@/lib/assets";
 
 export const GithubActivity = () => {
@@ -176,7 +177,16 @@ export const GithubActivity = () => {
                 </h3>
               </div>
               <div className="text-xs font-mono mt-6 md:mt-0 flex flex-col items-start md:items-end border-l md:border-l-0 md:border-r border-[#cc3333]/20 pl-4 md:pl-0 md:pr-4">
-                <span className="text-text-primary">@vaishnavg121</span>
+                <a 
+                  href={socials.github} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  aria-label="GitHub Profile" 
+                  className="text-text-primary hover:text-accent transition-colors"
+                  data-cursor="VIEW"
+                >
+                  @vaishnavg121 ↗
+                </a>
                 {calendarData && (
                   <span className="text-[#cc3333] mt-1 tracking-widest">
                     {calendarData.totalContributions} <span className="text-text-muted">CONTRIBUTIONS</span>

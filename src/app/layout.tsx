@@ -28,8 +28,8 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  title: "Vaishnav Gadamsetty // Portfolio",
-  description: "I build things around intelligence, markets & machines.",
+  title: "Vaishnav Gadamsetty — AI, Finance & Systems",
+  description: "Computer Science and Finance student at BITS Pilani Hyderabad building across AI/ML, RAG & agentic systems, quantitative finance, systems and robotics.",
 };
 
 export const viewport: Viewport = {

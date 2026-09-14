@@ -1,17 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
-import { MoveLeft, ExternalLink } from "lucide-react";
+import { MoveLeft } from "lucide-react";
 import { PROJECT_ASSETS } from "@/lib/assets";
+import { projects } from "@/lib/profile";
 
 export default function ProjectDetail({ params }: { params: { slug: string } }) {
-  // Mock data, in a real app fetch from data based on params.slug
-  const project = {
+  const project = projects.find(p => p.slug === params.slug) || {
     title: params.slug.toUpperCase(),
     category: "SYSTEMS / ARCHITECTURE",
     description: "This is a placeholder description for the project detail page. It explains the high level overview.",
     tags: ["React", "TypeScript", "Next.js"],
-    assets: PROJECT_ASSETS[params.slug],
+    github: "",
   };
+  
+  const assets = PROJECT_ASSETS[params.slug];
 
   return (
     <main className="min-h-screen bg-background pt-32 pb-24 selection:bg-accent-soft selection:text-accent">
@@ -30,20 +32,19 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
             {project.description}
           </p>
           <div className="flex flex-wrap gap-4 font-mono text-sm">
-            <a href="#" className="flex items-center gap-2 border border-border px-4 py-2 hover:bg-surface-elevated transition-colors">
-               [GITHUB] Repository
-            </a>
-            <a href="#" className="flex items-center gap-2 bg-text-primary text-background px-4 py-2 hover:bg-white transition-colors">
-              <ExternalLink className="w-4 h-4" /> Live Demo
-            </a>
+            {project.github ? (
+              <a href={project.github} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 border border-border px-4 py-2 hover:bg-surface-elevated transition-colors">
+                 [GITHUB] View Source ↗
+              </a>
+            ) : null}
           </div>
         </div>
 
         {/* Visual Header Placeholder */}
-        {project.assets?.hero ? (
+        {assets?.hero ? (
           <div className="w-full aspect-video mb-24 border border-border overflow-hidden relative">
             <Image 
-              src={project.assets.hero} 
+              src={assets.hero} 
               alt={`${project.title} Hero`} 
               fill 
               className="object-cover" 
@@ -69,10 +70,10 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
 
           <section>
             <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">System Architecture</h2>
-            {project.assets?.diagram ? (
+            {assets?.diagram ? (
               <div className="w-full mb-8 relative aspect-video">
                 <Image 
-                  src={project.assets.diagram} 
+                  src={assets.diagram} 
                   alt={`${project.title} Architecture Diagram`} 
                   fill 
                   className="object-contain drop-shadow-2xl" 
@@ -91,9 +92,9 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
               </div>
             )}
             
-            {project.assets?.gallery && project.assets.gallery.length > 0 && (
+            {assets?.gallery && assets.gallery.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-                {project.assets.gallery.map((img, i) => (
+                {assets.gallery.map((img: string, i: number) => (
                   <div key={i} className="relative aspect-video border border-border">
                     <Image 
                       src={img} 

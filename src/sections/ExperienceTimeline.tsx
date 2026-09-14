@@ -6,36 +6,32 @@ import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
+import { education, experience, extracurricular } from "@/lib/profile";
+
 const CHAPTERS = [
   {
     num: "CH.01",
-    title: "BITS PILANI HYDERABAD",
-    subtitle: "Computer Science + Finance",
-    details: "Focusing on algorithmic thinking, data structures, and financial engineering."
+    title: education.university.name.toUpperCase(),
+    subtitle: `${education.university.degree} / ${education.university.minor}`,
+    details: `${education.university.timeline} | ${education.university.gpa}`
   },
   {
     num: "CH.02",
-    title: "THRIVEFORCE",
-    subtitle: "Combat Robotics",
-    details: "Designing and engineering high-impact combat robots with rigorous physical constraints."
+    title: extracurricular.team.toUpperCase(),
+    subtitle: extracurricular.role,
+    details: extracurricular.description
   },
   {
     num: "CH.03",
-    title: "IMD PUNE",
-    subtitle: "Machine Learning / Weather",
-    details: "Applying predictive modeling to meteorological datasets."
+    title: experience[0].company.toUpperCase(),
+    subtitle: experience[0].role,
+    details: `${experience[0].timeline} — ${experience[0].description}`
   },
   {
     num: "CH.04",
-    title: "BHARATIYA ANTARIKSH HACKATHON",
-    subtitle: "Space / Geospatial",
-    details: "Developing geospatial data processing pipelines."
-  },
-  {
-    num: "CH.05",
-    title: "WHAT'S NEXT?",
-    subtitle: "Building the future.",
-    details: "Always exploring new frontiers in AI, markets, and intelligent systems."
+    title: "PREVIOUS EDUCATION",
+    subtitle: "High School & Secondary",
+    details: `${education.previous[0].name} (${education.previous[0].score}) | ${education.previous[1].name} (${education.previous[1].score})`
   }
 ];
 

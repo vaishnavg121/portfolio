@@ -10,74 +10,26 @@ import { MoveRight } from "lucide-react";
 import { EmberField, FlowLines, GridEffect, BlueprintEffect, SwaNeetiInk, MagneticEffect, usePointer } from "@/components/effects";
 import { PROJECT_ASSETS } from "@/lib/assets";
 import { useRouter } from "next/navigation";
+import { projects as profileProjects } from "@/lib/profile";
 import { motion, useTransform, useReducedMotion, AnimatePresence } from "framer-motion";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
 }
 
-const PROJECTS = [
-  {
-    slug: "alphacouncil",
-    id: "01",
-    title: "AlphaCouncil",
-    category: "FINANCE / AI / SYSTEMS",
-    description: "An agentic system for market discovery, risk analysis, and execution reasoning.",
-    tags: ["Python", "Agents", "Finance", "LLMs"],
-    theme: "red / ember / market-line",
-    architecture: ["MARKET", "DISCOVERY", "COMMITTEE", "RISK", "EXECUTION"],
-    EffectComponent: EmberField,
-    assets: PROJECT_ASSETS["alphacouncil"],
-  },
-  {
-    slug: "swaneeti",
-    id: "02",
-    title: "Swa.Neeti",
-    category: "RAG / AGENTS / REASONING",
-    description: "A legal policy retrieval and reasoning engine using structured authorities.",
-    tags: ["RAG", "Next.js", "PostgreSQL", "Reasoning"],
-    theme: "ink / paper spread",
-    architecture: ["QUERY", "RETRIEVAL", "AUTHORITIES", "REASONING", "VALIDATION"],
-    EffectComponent: SwaNeetiInk,
-    assets: PROJECT_ASSETS["swaneeti"],
-  },
-  {
-    slug: "windy",
-    id: "03",
-    title: "Windy",
-    category: "ML / DATA / AVIATION",
-    description: "Predictive aviation wind modelling using historical flight and weather data.",
-    tags: ["ML", "Data", "Aviation"],
-    theme: "wind / flowing-line motion",
-    architecture: ["DATA INGESTION", "FEATURE ENG", "MODEL", "PREDICTION"],
-    EffectComponent: FlowLines,
-    assets: PROJECT_ASSETS["windy"],
-  },
-  {
-    slug: "spenza",
-    id: "04",
-    title: "Spenza",
-    category: "PRODUCT / FINANCE / SOFTWARE",
-    description: "A robust financial tracking and split-management product.",
-    tags: ["TypeScript", "React", "PostgreSQL"],
-    theme: "clean grid / balance",
-    architecture: ["USER", "TRANSACTION", "SPLIT LOGIC", "LEDGER"],
-    EffectComponent: GridEffect,
-    assets: PROJECT_ASSETS["spenza"],
-  },
-  {
-    slug: "thriveforce",
-    id: "05",
-    title: "ThriveForce",
-    category: "ROBOTICS / CAD / HARDWARE",
-    description: "Combat robotics systems engineered for high-impact forces.",
-    tags: ["Hardware", "CAD", "C++"],
-    theme: "blueprint / structural",
-    architecture: ["CHASSIS", "DRIVETRAIN", "WEAPON SYSTEM", "ELECTRONICS"],
-    EffectComponent: BlueprintEffect,
-    assets: PROJECT_ASSETS["thriveforce"],
-  },
-];
+const EFFECTS_MAP: Record<string, React.ElementType> = {
+  alphacouncil: EmberField,
+  swaneeti: SwaNeetiInk,
+  windy: FlowLines,
+  spenza: GridEffect,
+  thriveforce: BlueprintEffect,
+};
+
+const PROJECTS = profileProjects.map((p) => ({
+  ...p,
+  EffectComponent: EFFECTS_MAP[p.slug],
+  assets: PROJECT_ASSETS[p.slug as keyof typeof PROJECT_ASSETS],
+}));
 
 export const SelectedWork = () => {
   const containerRef = useRef<HTMLElement>(null);

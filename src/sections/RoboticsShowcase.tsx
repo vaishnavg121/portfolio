@@ -93,9 +93,13 @@ export const RoboticsShowcase = () => {
                 className="mb-12"
               >
                 <div className="text-accent font-mono text-xs mb-2 uppercase">{activeBotData?.weight} CLASS</div>
-                <p className="text-text-muted text-lg leading-relaxed">
+                <p className="text-text-muted text-lg leading-relaxed mb-6">
                   {activeBotData?.desc}
                 </p>
+                <div className="text-xs font-mono text-text-muted opacity-80 border-l border-border pl-3 flex flex-col gap-2">
+                  <p className="text-accent">Designed and filed a patent application for a custom combat-robotics Kill Switch.</p>
+                  <p>Sponsors / Suppliers: PCBWay, OnlyScrews, Technobotix</p>
+                </div>
               </motion.div>
             </div>
 
@@ -194,9 +198,9 @@ export const RoboticsShowcase = () => {
                   )}
 
                   {/* Tech specs block */}
-                  <text x="165" y="30" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">MAT: TBD_MATERIAL</text>
-                  <text x="165" y="35" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">TOL: TBD_TOLERANCE</text>
-                  <text x="165" y="45" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">DIM: TBD_DIMENSION</text>
+                  <text x="165" y="30" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">MAT: AL7075-T6</text>
+                  <text x="165" y="35" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">TOL: +/- 0.05MM</text>
+                  <text x="165" y="45" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">DIM: CUSTOM</text>
                   <text x="165" y="50" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">REV: 02.B</text>
                 </svg>
               </motion.div>

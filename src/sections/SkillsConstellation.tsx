@@ -5,36 +5,7 @@ import { motion } from "framer-motion";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
-const NODES = [
-  { id: "ai", label: "AI", x: 50, y: 30 },
-  { id: "ml", label: "ML", x: 20, y: 50 },
-  { id: "rag", label: "RAG", x: 80, y: 20 },
-  { id: "agents", label: "Agents", x: 70, y: 45 },
-  { id: "finance", label: "Finance", x: 30, y: 75 },
-  { id: "markets", label: "Markets", x: 50, y: 85 },
-  { id: "cpp", label: "C++", x: 80, y: 75 },
-  { id: "algorithms", label: "Algorithms", x: 90, y: 55 },
-  { id: "python", label: "Python", x: 45, y: 55 },
-  { id: "robotics", label: "Robotics", x: 15, y: 25 },
-  { id: "ros2", label: "ROS2", x: 10, y: 40 },
-  { id: "cad", label: "CAD", x: 25, y: 15 },
-  { id: "data", label: "Data", x: 40, y: 40 },
-];
-
-const CONNECTIONS = [
-  ["rag", "agents"],
-  ["agents", "ai"],
-  ["ml", "ai"],
-  ["data", "ml"],
-  ["python", "data"],
-  ["python", "ai"],
-  ["finance", "markets"],
-  ["markets", "python"],
-  ["cpp", "algorithms"],
-  ["cpp", "robotics"],
-  ["robotics", "ros2"],
-  ["cad", "robotics"],
-];
+import { NODES, CONNECTIONS } from "@/lib/skills_data";
 
 export const SkillsConstellation = () => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
@@ -181,8 +152,8 @@ export const SkillsConstellation = () => {
                 />
                 <motion.text
                   x={0}
-                  y={-3}
-                  fontSize="2.5"
+                  y={-2}
+                  fontSize="1.5"
                   fill={isHovered || isConnected ? "var(--text-primary)" : "var(--text-muted)"}
                   textAnchor="middle"
                   opacity={isFaded ? 0.4 : isHovered ? 1 : 0.7}
