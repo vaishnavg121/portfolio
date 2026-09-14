@@ -1,19 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
 import { MoveLeft } from "lucide-react";
+import { notFound } from "next/navigation";
 import { PROJECT_ASSETS } from "@/lib/assets";
 import { projects } from "@/lib/profile";
 
-export default function ProjectDetail({ params }: { params: { slug: string } }) {
-  const project = projects.find(p => p.slug === params.slug) || {
-    title: params.slug.toUpperCase(),
-    category: "SYSTEMS / ARCHITECTURE",
-    description: "This is a placeholder description for the project detail page. It explains the high level overview.",
-    tags: ["React", "TypeScript", "Next.js"],
-    github: "",
-  };
+export default async function ProjectDetail({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   
-  const assets = PROJECT_ASSETS[params.slug];
+  const project = projects.find(p => p.slug === slug);
+  if (!project) {
+    notFound();
+  }
+  
+  const assets = PROJECT_ASSETS[slug];
 
   return (
     <main className="min-h-screen bg-background pt-32 pb-24 selection:bg-accent-soft selection:text-accent">
@@ -26,7 +26,8 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
 
         {/* Hero */}
         <div className="mb-24">
-          <div className="font-mono text-accent text-sm mb-4 tracking-widest">{project.category}</div>
+          
+          <div className="font-mono text-accent text-sm mb-4 tracking-widest">{project.category} {"//"} {project.year} {"//"} {project.status}</div>
           <h1 className="text-5xl md:text-7xl font-display font-medium mb-8 uppercase tracking-tighter">{project.title}</h1>
           <p className="text-xl md:text-2xl text-text-muted font-light leading-relaxed mb-12">
             {project.description}
@@ -59,14 +60,27 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
 
         {/* Content Structure */}
         <div className="space-y-24">
-          <section>
-            <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">The Problem</h2>
-            <div className="prose prose-invert prose-p:text-text-primary prose-p:leading-relaxed prose-p:font-light">
-              <p>
-                A detailed explanation of the core problem. This section sets the context for why the system was necessary and what constraints existed initially.
-              </p>
-            </div>
-          </section>
+          
+          {project.problem && (
+            <section>
+              <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">The Problem</h2>
+              <div className="prose prose-invert prose-p:text-text-primary prose-p:leading-relaxed prose-p:font-light">
+                
+                <p>{project.problem}</p>
+              </div>
+            </section>
+          )}
+
+          
+          {project.idea && (
+            <section>
+              <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">The Idea</h2>
+              <div className="prose prose-invert prose-p:text-text-primary prose-p:leading-relaxed prose-p:font-light">
+                
+                <p>{project.idea}</p>
+              </div>
+            </section>
+          )}
 
           <section>
             <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">System Architecture</h2>
@@ -81,13 +95,14 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
               </div>
             ) : (
               <div className="w-full h-64 bg-surface border border-border flex flex-col items-center justify-center gap-4 mb-8">
-                 <div className="font-mono text-xs text-text-muted">[ ARCHITECTURE DIAGRAM PLACEHOLDER ]</div>
-                 <div className="flex items-center gap-4 text-xs font-mono">
-                   <div className="px-3 py-1 border border-accent text-accent">CLIENT</div>
-                   <div className="w-8 h-[1px] bg-border" />
-                   <div className="px-3 py-1 border border-text-muted">API</div>
-                   <div className="w-8 h-[1px] bg-border" />
-                   <div className="px-3 py-1 border border-text-muted">DATABASE</div>
+                 <div className="font-mono text-xs text-text-muted">[ ARCHITECTURE DIAGRAM ]</div>
+                 <div className="flex items-center gap-4 text-xs font-mono flex-wrap justify-center px-4">
+                   {project.architecture.map((archNode, idx) => (
+                     <div key={idx} className="flex items-center gap-4">
+                       <div className="px-3 py-1 border border-text-muted text-text-muted whitespace-nowrap">{archNode}</div>
+                       {idx < project.architecture.length - 1 && <div className="w-8 h-[1px] bg-border hidden sm:block" />}
+                     </div>
+                   ))}
                  </div>
               </div>
             )}
@@ -108,12 +123,33 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
             )}
           </section>
 
+          
+          {project.engineering && (
+            <section>
+              <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">Engineering Decisions</h2>
+              <div className="prose prose-invert prose-p:text-text-primary prose-p:leading-relaxed prose-p:font-light">
+                
+                <p>{project.engineering}</p>
+              </div>
+            </section>
+          )}
+
+          
+          {project.challenges && (
+            <section>
+              <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">Challenges & Learnings</h2>
+              <div className="prose prose-invert prose-p:text-text-primary prose-p:leading-relaxed prose-p:font-light">
+                
+                <p>{project.challenges}</p>
+              </div>
+            </section>
+          )}
+
           <section>
-            <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">Engineering Decisions</h2>
+            <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">Current State</h2>
             <div className="prose prose-invert prose-p:text-text-primary prose-p:leading-relaxed prose-p:font-light">
-              <p>
-                Discussing the trade-offs, tech stack selection, and interesting technical hurdles encountered during implementation.
-              </p>
+              
+              <p>{project.currentState || project.description}</p>
             </div>
           </section>
 
@@ -127,6 +163,17 @@ export default function ProjectDetail({ params }: { params: { slug: string } }) 
               ))}
             </div>
           </section>
+          
+          <div className="pt-24 pb-8 flex justify-end border-t border-border">
+            <Link 
+              
+              href={`/work/${projects[(projects.findIndex(p => p.slug === project.slug) + 1) % projects.length]?.slug || ''}`}
+              className="group flex items-center gap-4 text-xl font-mono uppercase tracking-widest hover:text-accent transition-colors"
+            >
+              <span>Next Project</span>
+              <MoveLeft className="w-6 h-6 rotate-180 group-hover:translate-x-2 transition-transform" />
+            </Link>
+          </div>
         </div>
 
       </div>
