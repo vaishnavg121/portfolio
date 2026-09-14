@@ -24,9 +24,10 @@ const RULES = [
 export const EngineeringNotes = () => {
   const containerRef = useRef<HTMLElement>(null);
   const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
   useGSAP(() => {
     if (!mounted) return;
 
