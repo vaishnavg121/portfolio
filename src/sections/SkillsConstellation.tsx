@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSectionVisibility } from "@/lib/visibility";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import Link from "next/link";
@@ -21,6 +22,8 @@ export const SkillsConstellation = () => {
   const worldRef = useRef<SVGGElement>(null);
   const nodeRefs = useRef<{ [key: string]: SVGGElement | null }>({});
   const cursorGradRef = useRef<SVGRadialGradientElement>(null);
+  const { ref: visibilityRef, isVisible } = useSectionVisibility("200px");
+  const cachedRect = useRef({ width: 0, height: 0, left: 0, top: 0, svgWidth: 0 });
   
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [pinnedNode, setPinnedNode] = useState<string | null>(null);
@@ -36,6 +39,21 @@ export const SkillsConstellation = () => {
   const lastPan = useRef({ x: 0, y: 0 });
 
   const activeNode = pinnedNode || hoveredNode;
+
+  useEffect(() => {
+    const updateRects = () => {
+      if (svgWrapperRef.current) {
+        const r = svgWrapperRef.current.getBoundingClientRect();
+        cachedRect.current = { width: r.width, height: r.height, left: r.left, top: r.top, svgWidth: cachedRect.current.svgWidth };
+      }
+      if (svgRef.current) {
+        cachedRect.current.svgWidth = svgRef.current.getBoundingClientRect().width;
+      }
+    };
+    updateRects();
+    window.addEventListener("resize", updateRects);
+    return () => window.removeEventListener("resize", updateRects);
+  }, []);
   
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -111,6 +129,7 @@ export const SkillsConstellation = () => {
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
+    if (!isVisible) return;
     if (svgRef.current && cursorGradRef.current) {
        const pt = svgRef.current.createSVGPoint();
        pt.x = e.clientX; pt.y = e.clientY;
@@ -120,7 +139,7 @@ export const SkillsConstellation = () => {
     }
 
     if (svgWrapperRef.current && !isDragging) {
-      const rect = svgWrapperRef.current.getBoundingClientRect();
+      const rect = cachedRect.current;
       const nx = (e.clientX - rect.left) / rect.width - 0.5;
       const ny = (e.clientY - rect.top) / rect.height - 0.5;
       gsap.to(svgWrapperRef.current, {
@@ -136,8 +155,7 @@ export const SkillsConstellation = () => {
     const dy = e.clientY - lastPan.current.y;
     lastPan.current = { x: e.clientX, y: e.clientY };
 
-    const svgRect = svgRef.current!.getBoundingClientRect();
-    const ratio = 2400 / svgRect.width;
+    const ratio = 2400 / (cachedRect.current.svgWidth || 2400);
 
     camera.current.x += dx * ratio;
     camera.current.y += dy * ratio;
@@ -338,7 +356,8 @@ export const SkillsConstellation = () => {
   useEffect(() => {
     if (pinnedNode && activeNodeData && containerRef.current && nodeRefs.current[pinnedNode]) {
       let rafId: number;
-      const updatePos = () => {
+      let lastCx = -999; let lastCy = -999;
+        const updatePos = () => {
          const el = nodeRefs.current[pinnedNode];
          if (!el || !containerRef.current) return;
          const rect = el.getBoundingClientRect();
@@ -355,7 +374,11 @@ export const SkillsConstellation = () => {
             px = cx - 48;
          }
 
-         setPopupPos({ x: px, y: cy, align });
+         if (Math.abs(cx - lastCx) > 0.5 || Math.abs(cy - lastCy) > 0.5) {
+             setPopupPos({ x: px, y: cy, align });
+             lastCx = cx;
+             lastCy = cy;
+           }
          rafId = requestAnimationFrame(updatePos);
       };
       updatePos();
