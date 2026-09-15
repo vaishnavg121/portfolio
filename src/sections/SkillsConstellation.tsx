@@ -11,6 +11,9 @@ import { NODES, CONNECTIONS, DOMAINS } from "@/lib/skills_data";
 import { SKILL_DETAILS } from "@/lib/skill_details";
 import { projects } from "@/lib/profile";
 
+// Keep server-rendered SVG attributes byte-for-byte stable across runtimes.
+const formatSvgNumber = (value: number) => Number(value.toFixed(3));
+
 export const SkillsConstellation = () => {
   const containerRef = useRef<HTMLElement>(null);
   const svgWrapperRef = useRef<HTMLDivElement>(null);
@@ -232,12 +235,23 @@ export const SkillsConstellation = () => {
     
     const nData = NODES.map(n => {
        const z = getZ(n.x, n.y);
-       return { ...n, proj: project(n.x, n.y, z), originalY: n.y, z };
+       const projection = project(n.x, n.y, z);
+       return {
+         ...n,
+         proj: { x: formatSvgNumber(projection.x), y: formatSvgNumber(projection.y) },
+         originalY: n.y,
+         z,
+       };
     });
 
     const dData = DOMAINS.map(d => {
        const z = getZ(d.x, d.y);
-       return { ...d, proj: project(d.x, d.y, z), originalY: d.y };
+       const projection = project(d.x, d.y, z);
+       return {
+         ...d,
+         proj: { x: formatSvgNumber(projection.x), y: formatSvgNumber(projection.y) },
+         originalY: d.y,
+       };
     });
 
     const eData = CONNECTIONS.map(([a, b]) => {
