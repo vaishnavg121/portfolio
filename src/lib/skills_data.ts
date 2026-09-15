@@ -5,31 +5,31 @@ export const DOMAINS: Domain[] = [
   {
     "id": "cs",
     "label": "DOMAIN_01 // COMPUTER SCIENCE",
-    "x": -400,
-    "y": -250
+    "x": -500,
+    "y": -100
   },
   {
     "id": "ai",
     "label": "DOMAIN_02 // AI / ML & DATA",
     "x": 0,
-    "y": 0
+    "y": -400
   },
   {
     "id": "finance",
     "label": "DOMAIN_03 // FINANCE & MARKETS",
-    "x": 400,
-    "y": -250
-  },
-  {
-    "id": "web",
-    "label": "DOMAIN_04 // WEB & INFRASTRUCTURE",
     "x": -400,
     "y": 300
   },
   {
+    "id": "web",
+    "label": "DOMAIN_04 // WEB & INFRASTRUCTURE",
+    "x": 0,
+    "y": 350
+  },
+  {
     "id": "robotics",
     "label": "DOMAIN_05 // ROBOTICS & ENGINEERING",
-    "x": 400,
+    "x": 450,
     "y": 300
   }
 ];
@@ -37,408 +37,408 @@ export const NODES: Node[] = [
   {
     "id": "c__",
     "label": "C++",
-    "x": -386,
-    "y": -249,
+    "x": -529,
+    "y": -150,
     "level": "A",
     "domainId": "cs"
   },
   {
     "id": "dsa",
     "label": "DSA",
-    "x": -468,
-    "y": -203,
+    "x": -495,
+    "y": -200,
     "level": "B",
     "domainId": "cs"
   },
   {
     "id": "c",
     "label": "C",
-    "x": -343,
-    "y": -409,
+    "x": -458,
+    "y": -45,
     "level": "C",
     "domainId": "cs"
   },
   {
     "id": "java",
     "label": "Java",
-    "x": -370,
-    "y": -112,
+    "x": -579,
+    "y": -150,
     "level": "C",
     "domainId": "cs"
   },
   {
     "id": "oop",
     "label": "OOP",
-    "x": -519,
-    "y": -340,
+    "x": -425,
+    "y": -148,
     "level": "C",
     "domainId": "cs"
   },
   {
     "id": "operating_systems",
     "label": "Operating Systems",
-    "x": -255,
-    "y": -327,
+    "x": -525,
+    "y": -5,
     "level": "C",
     "domainId": "cs"
   },
   {
     "id": "database_systems",
     "label": "Database Systems",
-    "x": -436,
-    "y": -199,
+    "x": -549,
+    "y": -194,
     "level": "B",
     "domainId": "cs"
   },
   {
     "id": "discrete_structures",
     "label": "Discrete Structures",
-    "x": -424,
-    "y": -400,
+    "x": -394,
+    "y": -200,
     "level": "C",
     "domainId": "cs"
   },
   {
     "id": "logic_in_cs",
     "label": "Logic in CS",
-    "x": -253,
-    "y": -183,
+    "x": -611,
+    "y": -200,
     "level": "C",
     "domainId": "cs"
   },
   {
     "id": "microprocessors",
     "label": "Microprocessors",
-    "x": -550,
-    "y": -213,
+    "x": -446,
+    "y": 0,
     "level": "C",
     "domainId": "cs"
   },
   {
     "id": "assembly",
     "label": "Assembly",
-    "x": -312,
-    "y": -384,
+    "x": -460,
+    "y": 50,
     "level": "C",
     "domainId": "cs"
   },
   {
     "id": "digital_design",
     "label": "Digital Design",
-    "x": -410,
-    "y": -113,
+    "x": -620,
+    "y": -50,
     "level": "C",
     "domainId": "cs"
   },
   {
     "id": "python",
     "label": "Python",
-    "x": -12,
-    "y": -9,
+    "x": -29,
+    "y": -480,
     "level": "A",
     "domainId": "ai"
   },
   {
     "id": "machine_learning",
     "label": "Machine Learning",
-    "x": 4,
-    "y": -1,
+    "x": 5,
+    "y": -550,
     "level": "A",
     "domainId": "ai"
   },
   {
     "id": "rag",
     "label": "RAG",
-    "x": 10,
-    "y": -12,
+    "x": 42,
+    "y": -600,
     "level": "A",
     "domainId": "ai"
   },
   {
     "id": "agentic_systems",
     "label": "Agentic Systems",
-    "x": 18,
-    "y": -72,
+    "x": -79,
+    "y": -600,
     "level": "B",
     "domainId": "ai"
   },
   {
     "id": "embeddings",
     "label": "Embeddings",
-    "x": 108,
-    "y": 120,
+    "x": 75,
+    "y": -448,
     "level": "C",
     "domainId": "ai"
   },
   {
     "id": "semantic_search",
     "label": "Semantic Search",
-    "x": -70,
-    "y": -2,
+    "x": -25,
+    "y": -305,
     "level": "B",
     "domainId": "ai"
   },
   {
     "id": "vector_retrieval",
     "label": "Vector Retrieval",
-    "x": 137,
-    "y": -55,
+    "x": -49,
+    "y": -494,
     "level": "C",
     "domainId": "ai"
   },
   {
     "id": "llms",
     "label": "LLMs",
-    "x": -35,
-    "y": 58,
+    "x": 106,
+    "y": -361,
     "level": "B",
     "domainId": "ai"
   },
   {
     "id": "data_analysis",
     "label": "Data Analysis",
-    "x": -23,
-    "y": -86,
+    "x": -111,
+    "y": -354,
     "level": "B",
     "domainId": "ai"
   },
   {
     "id": "numpy",
     "label": "NumPy",
-    "x": 145,
-    "y": 55,
+    "x": 54,
+    "y": -515,
     "level": "C",
     "domainId": "ai"
   },
   {
     "id": "pandas",
     "label": "Pandas",
-    "x": -128,
-    "y": 34,
+    "x": 40,
+    "y": -273,
     "level": "C",
     "domainId": "ai"
   },
   {
     "id": "feature_engineering",
     "label": "Feature Engineering",
-    "x": 49,
-    "y": -155,
+    "x": -120,
+    "y": -470,
     "level": "C",
     "domainId": "ai"
   },
   {
     "id": "time_series",
     "label": "Time-Series",
-    "x": 37,
-    "y": 91,
+    "x": 141,
+    "y": -431,
     "level": "B",
     "domainId": "ai"
   },
   {
     "id": "quant_finance",
     "label": "Quant Finance",
-    "x": 405,
-    "y": -245,
+    "x": -429,
+    "y": 100,
     "level": "A",
     "domainId": "finance"
   },
   {
     "id": "derivatives",
     "label": "Derivatives",
-    "x": 462,
-    "y": -272,
+    "x": -395,
+    "y": 200,
     "level": "B",
     "domainId": "finance"
   },
   {
     "id": "risk_management",
     "label": "Risk Management",
-    "x": 367,
-    "y": -193,
+    "x": -358,
+    "y": 355,
     "level": "B",
     "domainId": "finance"
   },
   {
     "id": "financial_markets",
     "label": "Financial Markets",
-    "x": 419,
-    "y": -399,
+    "x": -479,
+    "y": 150,
     "level": "C",
     "domainId": "finance"
   },
   {
     "id": "fundamentals",
     "label": "Fundamentals",
-    "x": 490,
-    "y": -146,
+    "x": -325,
+    "y": 252,
     "level": "C",
     "domainId": "finance"
   },
   {
     "id": "fastapi",
     "label": "FastAPI",
-    "x": -462,
-    "y": 310,
+    "x": -29,
+    "y": 350,
     "level": "B",
     "domainId": "web"
   },
   {
     "id": "next_js",
     "label": "Next.js",
-    "x": -321,
-    "y": 257,
+    "x": 5,
+    "y": 400,
     "level": "B",
     "domainId": "web"
   },
   {
     "id": "react",
     "label": "React",
-    "x": -447,
-    "y": 445,
+    "x": 42,
+    "y": 350,
     "level": "C",
     "domainId": "web"
   },
   {
     "id": "typescript",
     "label": "TypeScript",
-    "x": -433,
-    "y": 239,
+    "x": -79,
+    "y": 336,
     "level": "B",
     "domainId": "web"
   },
   {
     "id": "express",
     "label": "Express",
-    "x": -259,
-    "y": 290,
+    "x": 75,
+    "y": 302,
     "level": "C",
     "domainId": "web"
   },
   {
     "id": "prisma",
     "label": "Prisma",
-    "x": -554,
-    "y": 364,
+    "x": -25,
+    "y": 445,
     "level": "C",
     "domainId": "web"
   },
   {
     "id": "postgresql",
     "label": "PostgreSQL",
-    "x": -391,
-    "y": 231,
+    "x": -49,
+    "y": 350,
     "level": "B",
     "domainId": "web"
   },
   {
     "id": "git",
     "label": "Git",
-    "x": -326,
-    "y": 442,
+    "x": 106,
+    "y": 450,
     "level": "C",
     "domainId": "web"
   },
   {
     "id": "github_actions",
     "label": "GitHub Actions",
-    "x": -524,
-    "y": 228,
+    "x": -111,
+    "y": 450,
     "level": "C",
     "domainId": "web"
   },
   {
     "id": "linux",
     "label": "Linux",
-    "x": -328,
-    "y": 268,
+    "x": 54,
+    "y": 235,
     "level": "B",
     "domainId": "web"
   },
   {
     "id": "docker",
     "label": "Docker",
-    "x": -440,
-    "y": 390,
+    "x": 40,
+    "y": 500,
     "level": "B",
     "domainId": "web"
   },
   {
     "id": "duckdb",
     "label": "DuckDB",
-    "x": -428,
-    "y": 233,
+    "x": -120,
+    "y": 400,
     "level": "B",
     "domainId": "web"
   },
   {
     "id": "sqlite",
     "label": "SQLite",
-    "x": -282,
-    "y": 357,
+    "x": 141,
+    "y": 400,
     "level": "C",
     "domainId": "web"
   },
   {
     "id": "vector_dbs",
     "label": "Vector DBs",
-    "x": -469,
-    "y": 319,
+    "x": -86,
+    "y": 472,
     "level": "B",
     "domainId": "web"
   },
   {
     "id": "robotic_systems",
     "label": "Robotics",
-    "x": 406,
-    "y": 289,
+    "x": 421,
+    "y": 327,
     "level": "A",
     "domainId": "robotics"
   },
   {
     "id": "ros_2",
     "label": "ROS 2",
-    "x": 391,
-    "y": 383,
+    "x": 455,
+    "y": 244,
     "level": "B",
     "domainId": "robotics"
   },
   {
     "id": "gazebo",
     "label": "Gazebo",
-    "x": 293,
-    "y": 181,
+    "x": 492,
+    "y": 355,
     "level": "C",
     "domainId": "robotics"
   },
   {
     "id": "px4",
     "label": "PX4",
-    "x": 538,
-    "y": 315,
+    "x": 371,
+    "y": 300,
     "level": "C",
     "domainId": "robotics"
   },
   {
     "id": "qgroundcontrol",
     "label": "QGroundControl",
-    "x": 317,
-    "y": 427,
+    "x": 525,
+    "y": 400,
     "level": "C",
     "domainId": "robotics"
   },
   {
     "id": "fusion_360",
     "label": "Fusion 360",
-    "x": 417,
-    "y": 241,
+    "x": 425,
+    "y": 395,
     "level": "B",
     "domainId": "robotics"
   },
   {
     "id": "fea",
     "label": "FEA",
-    "x": 509,
-    "y": 388,
+    "x": 401,
+    "y": 350,
     "level": "C",
     "domainId": "robotics"
   }
