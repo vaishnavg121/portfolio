@@ -800,7 +800,7 @@ export const SkillsConstellation = () => {
             animate={{ opacity: 1, clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)" }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: "circOut" }}
-            className="absolute z-50 interactive-ui no-pan drop-shadow-2xl right-12 md:right-24 top-1/2 -translate-y-1/2"
+            className="absolute z-50 interactive-ui no-pan drop-shadow-2xl" style={{ left: Math.min(Math.max((stateRef.current?.camera?.x || 0) + (activeNodeData.proj.x * (stateRef.current?.camera?.z || 1)) + 40, 20), (typeof window !== "undefined" ? window.innerWidth : 1000) - 380), top: Math.min(Math.max((stateRef.current?.camera?.y || 0) + (activeNodeData.proj.y * (stateRef.current?.camera?.z || 1)) - 100, 20), (typeof window !== "undefined" ? window.innerHeight : 800) - 300) }}
           >
             <div className="w-[320px] md:w-[360px] bg-[#080808]/90 backdrop-blur-md relative">
               <div className="absolute inset-0 border-l border-t border-b border-border/50" style={{ clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)" }} />
