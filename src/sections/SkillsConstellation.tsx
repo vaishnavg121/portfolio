@@ -572,7 +572,7 @@ export const SkillsConstellation = () => {
     if (actN && popRect && st.flowProgress > 0.5) {
       const cx = cam.x + actN.proj.x * cam.z;
       const cy = cam.y + actN.proj.y * cam.z;
-      let px = (popRect.left < cx ? popRect.right : popRect.left);
+      const px = (popRect.left < cx ? popRect.right : popRect.left);
       const py = popRect.top + popRect.height / 2;
 
       ctx.beginPath();
