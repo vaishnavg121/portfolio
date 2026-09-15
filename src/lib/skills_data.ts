@@ -444,7 +444,7 @@ export const NODES: Node[] = [
   }
 ];
 export const CONNECTIONS: [string, string][] = [
-  [
+[
     "python",
     "machine_learning"
   ],
@@ -590,6 +590,82 @@ export const CONNECTIONS: [string, string][] = [
   ],
   [
     "rag",
+    "agentic_systems"
+  ],
+  [
+    "java",
+    "oop"
+  ],
+  [
+    "c__",
+    "oop"
+  ],
+  [
+    "discrete_structures",
+    "logic_in_cs"
+  ],
+  [
+    "discrete_structures",
+    "dsa"
+  ],
+  [
+    "microprocessors",
+    "assembly"
+  ],
+  [
+    "digital_design",
+    "microprocessors"
+  ],
+  [
+    "assembly",
+    "c"
+  ],
+  [
+    "feature_engineering",
+    "machine_learning"
+  ],
+  [
+    "financial_markets",
+    "quant_finance"
+  ],
+  [
+    "fundamentals",
+    "financial_markets"
+  ],
+  [
+    "express",
+    "next_js"
+  ],
+  [
+    "git",
+    "github_actions"
+  ],
+  [
+    "sqlite",
+    "database_systems"
+  ],
+  [
+    "qgroundcontrol",
+    "px4"
+  ],
+  [
+    "fea",
+    "fusion_360"
+  ],
+  [
+    "feature_engineering",
+    "time_series"
+  ],
+  [
+    "sqlite",
+    "python"
+  ],
+  [
+    "java",
+    "database_systems"
+  ],
+  [
+    "logic_in_cs",
     "agentic_systems"
   ]
 ];

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence,  } from "framer-motion";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import Link from "next/link";
-import { ArrowUpRight, Maximize, Minus, Plus } from "lucide-react";
+import { ArrowUpRight, Maximize, Minus, Plus, X } from "lucide-react";
 
 import { NODES, CONNECTIONS, DOMAINS } from "@/lib/skills_data";
 import { SKILL_DETAILS } from "@/lib/skill_details";
@@ -15,79 +15,79 @@ export const SkillsConstellation = () => {
   const containerRef = useRef<HTMLElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const worldRef = useRef<SVGGElement>(null);
+  const nodeRefs = useRef<{ [key: string]: SVGGElement | null }>({});
   
-  // Interaction states
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [pinnedNode, setPinnedNode] = useState<string | null>(null);
   const [activeDomain, setActiveDomain] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isMac, setIsMac] = useState(false);
+  const [showHint, setShowHint] = useState(false);
   
-  // Camera state (Refs for performance, not React state)
-  const camera = useRef({ x: 0, y: 0, z: 1 });
+  const camera = useRef({ x: 0, y: 0, z: 0.9 });
   const isPanning = useRef(false);
   const lastPan = useRef({ x: 0, y: 0 });
 
   const activeNode = pinnedNode || hoveredNode;
   
-  // Update transform without React render
-  const applyCamera = (animate = false, duration = 0.5) => {
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
+    }
+  }, []);
+
+  const applyCamera = useCallback((animate = false, duration = 0.5) => {
     if (!worldRef.current) return;
     const { x, y, z } = camera.current;
     if (animate) {
       gsap.to(worldRef.current, { x, y, scale: z, duration, ease: "power3.inOut" });
-      // Also update minimap indicator
       gsap.to('.minimap-view', { x: -x * 0.1, y: -y * 0.1, scale: 1/z, duration, ease: "power3.inOut" });
     } else {
       gsap.set(worldRef.current, { x, y, scale: z });
       gsap.set('.minimap-view', { x: -x * 0.1, y: -y * 0.1, scale: 1/z });
     }
-  };
+  }, []);
 
-  const clampCamera = () => {
-    const minZ = 0.5;
+  const clampCamera = useCallback(() => {
+    const minZ = 0.65;
     const maxZ = 2.5;
     camera.current.z = Math.max(minZ, Math.min(maxZ, camera.current.z));
-    // Soft clamp limits
     const limitX = 1500 * camera.current.z;
     const limitY = 1500 * camera.current.z;
     camera.current.x = Math.max(-limitX, Math.min(limitX, camera.current.x));
     camera.current.y = Math.max(-limitY, Math.min(limitY, camera.current.y));
-  };
+  }, []);
 
-  // Zoom logic
   const handleWheel = useCallback((e: WheelEvent) => {
-    e.preventDefault(); // Stop page scroll
+    // Only intercept if Ctrl or Meta is held
+    if (!e.ctrlKey && !e.metaKey) {
+      return; 
+    }
     
-    // Zoom around cursor
+    e.preventDefault(); 
+    setShowHint(false);
+    
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
     const svgRect = svgRef.current?.getBoundingClientRect();
     if (!svgRect) return;
 
-    // Pointer position relative to SVG center (our 0,0 is center of viewBox if we set it up that way)
-    // Actually, viewBox is e.g. -500 -500 1000 1000
-    // Let's get logical coordinates
     const pt = svgRef.current!.createSVGPoint();
     pt.x = e.clientX;
     pt.y = e.clientY;
     const svgP = pt.matrixTransform(svgRef.current!.getScreenCTM()!.inverse());
 
-    // svgP is the coordinate in the unscaled SVG viewBox. 
-    // We want to scale around svgP.
-    
-    // xs, ys is distance from pointer to current camera position (in world space)
     const xs = (svgP.x - camera.current.x) / camera.current.z;
     const ys = (svgP.y - camera.current.y) / camera.current.z;
 
-    
     camera.current.z *= zoomFactor;
     clampCamera();
 
-    // Adjust camera x/y so pointer stays in same world position
     camera.current.x = svgP.x - xs * camera.current.z;
     camera.current.y = svgP.y - ys * camera.current.z;
 
     applyCamera(false);
-  }, []);
+  }, [applyCamera, clampCamera]);
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -97,27 +97,22 @@ export const SkillsConstellation = () => {
     }
   }, [handleWheel]);
 
-  // Pan logic
   const onPointerDown = (e: React.PointerEvent) => {
-    if ((e.target as Element).closest('.no-pan')) return;
+    if ((e.target as Element).closest('.no-pan') || (e.target as Element).closest('.interactive-ui')) return;
     isPanning.current = true;
     lastPan.current = { x: e.clientX, y: e.clientY };
     setIsDragging(true);
-    // kill any active camera tweens
     gsap.killTweensOf(worldRef.current);
+    setShowHint(true);
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!isPanning.current) return;
     
-    // Calculate SVG coordinate delta
     const dx = e.clientX - lastPan.current.x;
     const dy = e.clientY - lastPan.current.y;
     lastPan.current = { x: e.clientX, y: e.clientY };
 
-    // Approximation of pixel-to-SVG unit mapping
-    // Since viewBox is e.g. 1500 wide, and window might be 1500 wide...
-    // Let's use a scale factor
     const svgRect = svgRef.current!.getBoundingClientRect();
     const viewBoxWidth = 1500;
     const ratio = viewBoxWidth / svgRect.width;
@@ -131,44 +126,51 @@ export const SkillsConstellation = () => {
 
   const onPointerUp = () => {
     isPanning.current = false;
-    setTimeout(() => setIsDragging(false), 50); // slight delay to prevent click firing
+    setTimeout(() => {
+       setIsDragging(false);
+       setShowHint(false);
+    }, 50);
   };
 
-  // Camera Focus
-  const focusOn = (x: number, y: number, z: number) => {
+  const focusOn = useCallback((x: number, y: number, z: number) => {
     camera.current = { x: -x * z, y: -y * z, z };
     clampCamera();
     applyCamera(true, 0.8);
-  };
+  }, [applyCamera, clampCamera]);
 
-  const resetCamera = () => {
+  const resetCamera = useCallback(() => {
     setActiveDomain(null);
     setPinnedNode(null);
     camera.current = { x: 0, y: 0, z: 0.9 };
     applyCamera(true, 1.2);
-  };
+  }, [applyCamera]);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPinnedNode(null);
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, []);
 
   useGSAP(() => {
-    // Authored entry animation
     gsap.set(worldRef.current, { scale: 0.5, opacity: 0 });
     gsap.to(worldRef.current, { scale: 0.9, opacity: 1, duration: 1.5, ease: "power3.out", onComplete: () => {
       camera.current.z = 0.9;
       applyCamera(false);
     }});
     
-    // Animate lines drawing
     gsap.fromTo('.constellation-line',
       { strokeDasharray: "0 1500", opacity: 0 },
       {
         strokeDasharray: "1500 0",
-        opacity: (i, target) => target.dataset.defaultOpacity || 0.15,
+        opacity: (i, target) => parseFloat(target.dataset.opacity || "0.15"),
         duration: 2,
         delay: 0.5,
         ease: "power2.out"
       }
     );
     
-    // Animate nodes resolving
     gsap.fromTo('.constellation-node',
       { opacity: 0, scale: 0 },
       {
@@ -191,11 +193,54 @@ export const SkillsConstellation = () => {
     return connected;
   };
 
-  const activeConnections = activeNode ? getConnectedNodes(activeNode) : new Set<string>();
-  const detail = activeNode ? SKILL_DETAILS[activeNode] : null;
+  const { firstOrder, secondOrder } = useMemo(() => {
+    const first = activeNode ? getConnectedNodes(activeNode) : new Set<string>();
+    const second = new Set<string>();
+    if (activeNode) {
+      first.forEach(f => {
+        getConnectedNodes(f).forEach(s => {
+          if (s !== activeNode && !first.has(s)) second.add(s);
+        });
+      });
+    }
+    return { firstOrder: first, secondOrder: second };
+  }, [activeNode]);
 
-  // Resolve projects
+  const detail = activeNode ? SKILL_DETAILS[activeNode] : null;
+  const activeNodeData = NODES.find(n => n.id === activeNode);
   const getProject = (slug: string) => projects.find(p => p.slug === slug);
+
+  // Popup Positioning Logic
+  const [popupPos, setPopupPos] = useState({ x: 0, y: 0, align: 'right' });
+  
+  useEffect(() => {
+    if (pinnedNode && activeNodeData && containerRef.current && nodeRefs.current[pinnedNode]) {
+      // Create a fast RAF loop to track the node position while camera moves
+      let rafId: number;
+      const updatePos = () => {
+         const el = nodeRefs.current[pinnedNode];
+         if (!el || !containerRef.current) return;
+         const rect = el.getBoundingClientRect();
+         const containerRect = containerRef.current.getBoundingClientRect();
+         
+         // Center of node relative to container
+         const cx = rect.left - containerRect.left + rect.width / 2;
+         const cy = rect.top - containerRect.top + rect.height / 2;
+         
+         let align = 'right';
+         let px = cx + 24;
+         if (cx > containerRect.width * 0.6) {
+            align = 'left';
+            px = cx - 24;
+         }
+
+         setPopupPos({ x: px, y: cy, align });
+         rafId = requestAnimationFrame(updatePos);
+      };
+      updatePos();
+      return () => cancelAnimationFrame(rafId);
+    }
+  }, [pinnedNode, activeNodeData]);
 
   return (
     <section className="relative bg-background border-t border-border overflow-hidden select-none" ref={containerRef}>
@@ -209,13 +254,24 @@ export const SkillsConstellation = () => {
         <p className="text-xl font-light text-text-primary leading-relaxed mb-4">
           Domains of interest and their intersections.
         </p>
-        <p className="text-sm font-light text-text-muted leading-relaxed">
+        <p className="text-sm font-light text-text-muted leading-relaxed hidden md:block">
           A living map of the technologies, concepts and domains I work with — and how they connect across projects, research and engineering.
         </p>
-        <div className="mt-8 font-mono text-[10px] text-text-muted uppercase tracking-widest opacity-60">
-          Scroll to Zoom // Drag to Pan // Click to Pin
-        </div>
       </div>
+
+      {/* Focus Hint */}
+      <AnimatePresence>
+        {showHint && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="absolute top-8 right-12 z-40 bg-[#111]/80 backdrop-blur-md px-4 py-2 border border-border font-mono text-[10px] tracking-widest text-text-muted rounded-full pointer-events-none"
+          >
+            DRAG TO PAN | {isMac ? '⌘' : 'CTRL'} + SCROLL TO ZOOM
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Viewport */}
       <div 
@@ -224,6 +280,11 @@ export const SkillsConstellation = () => {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerLeave={onPointerUp}
+        onClick={(e) => {
+          if (!isDragging && !(e.target as Element).closest('.no-pan') && !(e.target as Element).closest('.interactive-ui')) {
+            setPinnedNode(null);
+          }
+        }}
       >
         <svg 
           ref={svgRef}
@@ -244,10 +305,6 @@ export const SkillsConstellation = () => {
                 opacity="0.1"
                 textAnchor="middle"
                 className="font-mono tracking-widest pointer-events-none uppercase no-pan"
-                onClick={() => {
-                   setActiveDomain(d.id);
-                   focusOn(d.x, d.y, 1.2);
-                }}
               >
                 {d.label}
               </text>
@@ -259,19 +316,31 @@ export const SkillsConstellation = () => {
               const nodeB = NODES.find(n => n.id === b);
               if (!nodeA || !nodeB) return null;
 
-              const isDirectActive = activeNode === a || activeNode === b;
+              const isDirectActive = activeNode && (
+                 (activeNode === a && firstOrder.has(b)) || 
+                 (activeNode === b && firstOrder.has(a))
+              );
+              
+              const isSecondActive = activeNode && !isDirectActive && (
+                 (firstOrder.has(a) && secondOrder.has(b)) || 
+                 (firstOrder.has(b) && secondOrder.has(a)) ||
+                 (firstOrder.has(a) && firstOrder.has(b))
+              );
+
               const isDomainActive = activeDomain && (nodeA.domainId === activeDomain || nodeB.domainId === activeDomain);
               
-              // Edge visibility logic
               let opacity = 0.15;
               let stroke = "var(--border)";
               let strokeWidth = 1;
               
               if (activeNode) {
                 if (isDirectActive) {
-                  opacity = 0.8;
-                  stroke = "var(--accent)";
+                  opacity = 0.9;
+                  stroke = "var(--text-primary)";
                   strokeWidth = 2;
+                } else if (isSecondActive) {
+                  opacity = 0.3;
+                  stroke = "var(--text-muted)";
                 } else {
                   opacity = 0.05;
                 }
@@ -288,7 +357,7 @@ export const SkillsConstellation = () => {
                 <line
                   key={`line-${idx}`}
                   className="constellation-line transition-all duration-300"
-                  data-default-opacity={0.15}
+                  data-opacity={opacity}
                   x1={nodeA.x}
                   y1={nodeA.y}
                   x2={nodeB.x}
@@ -303,17 +372,18 @@ export const SkillsConstellation = () => {
             {/* Nodes */}
             {NODES.map((node) => {
               const isHovered = activeNode === node.id;
-              const isConnected = activeConnections.has(node.id);
+              const isFirstOrder = firstOrder.has(node.id);
+              const isSecondOrder = secondOrder.has(node.id);
               const inActiveDomain = activeDomain === node.domainId;
               
               let opacity = 1;
               if (activeNode) {
-                opacity = (isHovered || isConnected) ? 1 : 0.3;
+                opacity = isHovered ? 1 : isFirstOrder ? 0.85 : isSecondOrder ? 0.45 : 0.2;
               } else if (activeDomain) {
-                opacity = inActiveDomain ? 1 : 0.3;
+                opacity = inActiveDomain ? 1 : 0.2;
               }
 
-              const hasDetail = !!SKILL_DETAILS[node.id];
+              
               const isHub = node.level === 'A';
               const isCore = node.level === 'B';
               
@@ -323,11 +393,12 @@ export const SkillsConstellation = () => {
               return (
                 <g
                   key={node.id}
-                  className={`constellation-node transition-all duration-300 no-pan ${hasDetail ? 'cursor-pointer' : 'cursor-default'}`}
+                  ref={(el) => { nodeRefs.current[node.id] = el; }}
+                  className={`constellation-node transition-all duration-300 no-pan cursor-pointer`}
                   transform={`translate(${node.x}, ${node.y})`}
                   opacity={opacity}
                   onMouseEnter={() => {
-                    if (hasDetail && !pinnedNode && !isDragging) {
+                    if (!pinnedNode && !isDragging) {
                       setHoveredNode(node.id);
                     }
                   }}
@@ -337,27 +408,25 @@ export const SkillsConstellation = () => {
                   onClick={(e) => {
                     if (isDragging) return;
                     e.stopPropagation();
-                    if (hasDetail) {
-                      setPinnedNode(pinnedNode === node.id ? null : node.id);
-                      setHoveredNode(null);
-                      if (pinnedNode !== node.id) {
-                         focusOn(node.x, node.y, 1.5);
-                      }
-                    } else if (isHub) {
-                       focusOn(node.x, node.y, 1.2);
+                    
+                    setPinnedNode(pinnedNode === node.id ? null : node.id);
+                    setHoveredNode(null);
+                    
+                    if (pinnedNode !== node.id) {
+                      focusOn(node.x, node.y, 1.2);
                     }
                   }}
                 >
                   {/* Halo */}
                   {isHovered && (
-                    <circle r={radius + 8} fill="none" stroke="var(--accent)" strokeWidth="1" opacity="0.5" />
+                    <circle r={radius + 8} fill="none" stroke="var(--accent)" strokeWidth="1.5" opacity="0.6" />
                   )}
                   
                   {/* Core */}
                   <circle
                     r={radius}
                     fill={isHovered ? "var(--text-primary)" : "var(--background)"}
-                    stroke={isHovered || isConnected ? "var(--accent)" : "var(--text-muted)"}
+                    stroke={isHovered ? "var(--accent)" : isFirstOrder ? "var(--text-primary)" : "var(--text-muted)"}
                     strokeWidth={isHovered ? 3 : 1.5}
                     className="transition-colors duration-300"
                   />
@@ -367,9 +436,9 @@ export const SkillsConstellation = () => {
                     x={isHub ? 0 : (node.x > 0 ? radius + 6 : -(radius + 6))}
                     y={isHub ? radius + 18 : 3}
                     fontSize={fontSize}
-                    fill={isHovered ? "var(--text-primary)" : "var(--text-muted)"}
+                    fill={isHovered ? "var(--text-primary)" : isFirstOrder ? "var(--text-primary)" : "var(--text-muted)"}
                     textAnchor={isHub ? "middle" : (node.x > 0 ? "start" : "end")}
-                    className={`font-mono tracking-wider pointer-events-none transition-colors duration-300 ${isHub ? 'font-bold' : ''}`}
+                    className={`font-mono tracking-wider pointer-events-none transition-colors duration-300 ${isHub || isHovered ? 'font-bold' : ''}`}
                     style={{ textShadow: "0 2px 10px rgba(0,0,0,0.8)" }}
                   >
                     {node.label}
@@ -381,17 +450,17 @@ export const SkillsConstellation = () => {
         </svg>
 
         {/* DOMAIN FILTER BAR */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 md:gap-4 px-6 py-3 bg-[#0a0a0a]/80 backdrop-blur-md border border-border rounded-full overflow-x-auto max-w-[90vw] no-scrollbar">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 md:gap-4 px-6 py-3 bg-[#0a0a0a]/80 backdrop-blur-md border border-border rounded-full overflow-x-auto max-w-[90vw] no-scrollbar interactive-ui">
           <button 
             onClick={() => resetCamera()}
-            className={`font-mono text-[10px] tracking-widest px-3 py-1 uppercase whitespace-nowrap transition-colors ${!activeDomain ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+            className={`font-mono text-[10px] tracking-widest px-3 py-1 uppercase whitespace-nowrap transition-colors ${!activeDomain && !activeNode ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
           >
             ALL
           </button>
           {DOMAINS.map(d => (
             <button 
               key={d.id}
-              onClick={() => { setActiveDomain(d.id); focusOn(d.x, d.y, 1.2); }}
+              onClick={() => { setActiveDomain(d.id); setPinnedNode(null); focusOn(d.x, d.y, 1.0); }}
               className={`font-mono text-[10px] tracking-widest px-3 py-1 uppercase whitespace-nowrap transition-colors ${activeDomain === d.id ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
             >
               {d.label.split('// ')[1]}
@@ -400,21 +469,19 @@ export const SkillsConstellation = () => {
         </div>
 
         {/* CONTROLS & MINIMAP */}
-        <div className="absolute bottom-6 left-6 z-30 hidden md:flex items-end gap-4">
-          <div className="bg-[#0a0a0a]/80 backdrop-blur-md border border-border p-2 flex flex-col gap-2">
-            <button onClick={() => focusOn(0, 0, camera.current.z * 1.2)} className="p-2 text-text-muted hover:text-white" aria-label="Zoom In"><Plus className="w-4 h-4" /></button>
-            <button onClick={() => focusOn(0, 0, camera.current.z * 0.8)} className="p-2 text-text-muted hover:text-white" aria-label="Zoom Out"><Minus className="w-4 h-4" /></button>
+        <div className="absolute bottom-6 left-6 z-30 hidden md:flex items-end gap-4 interactive-ui">
+          <div className="bg-[#0a0a0a]/80 backdrop-blur-md border border-border flex flex-col gap-1 p-1">
+            <button onClick={() => { camera.current.z *= 1.2; clampCamera(); applyCamera(true); }} className="p-2 text-text-muted hover:text-white" aria-label="Zoom In"><Plus className="w-4 h-4" /></button>
+            <button onClick={() => { camera.current.z *= 0.8; clampCamera(); applyCamera(true); }} className="p-2 text-text-muted hover:text-white" aria-label="Zoom Out"><Minus className="w-4 h-4" /></button>
             <button onClick={resetCamera} className="p-2 text-text-muted hover:text-white" aria-label="Reset"><Maximize className="w-4 h-4" /></button>
           </div>
           
-          <div className="w-32 h-24 bg-[#050505] border border-border relative overflow-hidden opacity-50 hover:opacity-100 transition-opacity">
-            {/* Tiny Map */}
+          <div className="w-24 h-16 bg-[#050505] border border-border relative overflow-hidden opacity-40 hover:opacity-100 transition-opacity cursor-pointer" onClick={resetCamera}>
             <svg width="100%" height="100%" viewBox="-750 -500 1500 1000" preserveAspectRatio="xMidYMid slice" className="absolute inset-0">
                {NODES.map(n => (
-                 <circle key={n.id} cx={n.x} cy={n.y} r={15} fill="var(--text-muted)" opacity={n.level === 'A' ? 0.8 : 0.3} />
+                 <circle key={n.id} cx={n.x} cy={n.y} r={15} fill={activeNode === n.id ? "var(--accent)" : "var(--text-muted)"} opacity={n.level === 'A' ? 0.8 : 0.3} />
                ))}
             </svg>
-            {/* Viewport Indicator */}
             <div className="minimap-view absolute border border-accent bg-accent/10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full transform-origin-center pointer-events-none" />
           </div>
         </div>
@@ -434,92 +501,106 @@ export const SkillsConstellation = () => {
           )}
         </AnimatePresence>
 
-        {/* FULL DOSSIER (Pinned) */}
+        {/* CONTEXTUAL POPUP DOSSIER (Pinned) */}
         <AnimatePresence>
-          {pinnedNode && detail && (
+          {pinnedNode && (
             <motion.div
-              className="absolute top-0 right-0 h-full w-full md:w-[400px] z-50 bg-[#0a0a0a]/95 backdrop-blur-xl border-l border-border shadow-2xl flex flex-col"
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: "tween", duration: 0.3, ease: "easeOut" }}
+              className={`absolute z-50 interactive-ui hidden md:flex flex-col shadow-2xl ${popupPos.align === 'left' ? '-translate-x-full' : ''}`}
+              style={{
+                left: popupPos.x,
+                top: popupPos.y,
+              }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+              transition={{ duration: 0.2 }}
             >
-              <div className="flex-1 overflow-y-auto p-8 no-scrollbar">
+              {/* Connector line graphic */}
+              <div className={`absolute top-1/2 -translate-y-1/2 w-6 h-[1px] bg-border flex items-center ${popupPos.align === 'left' ? 'left-full flex-row-reverse' : 'right-full'}`}>
+                <div className="w-1 h-1 bg-accent rounded-full absolute -left-[2px]" />
+              </div>
+
+              <div className="w-[320px] bg-[#0a0a0a]/95 backdrop-blur-xl border border-border p-6 flex flex-col relative">
                 <button 
                   onClick={() => setPinnedNode(null)}
-                  className="absolute top-6 right-6 p-2 text-text-muted hover:text-white"
+                  className="absolute top-4 right-4 p-1 text-text-muted hover:text-white transition-colors"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
                 
-                <div className="flex items-center gap-2 mb-8">
+                <div className="flex items-center gap-2 mb-4">
                   <div className="w-1.5 h-1.5 bg-accent" />
-                  <span className="font-mono text-xs tracking-widest text-text-muted">
-                    {detail.id.toUpperCase()} {"//"} ACTIVE
+                  <span className="font-mono text-[10px] tracking-widest text-text-muted uppercase">
+                    {activeNodeData?.id.replace(/_/g, ' ')}
                   </span>
                 </div>
                 
-                <h3 className="text-3xl font-display font-medium text-text-primary mb-2 uppercase">
-                  {NODES.find(n => n.id === detail.id)?.label}
+                <h3 className="text-xl font-display font-medium text-text-primary mb-1 uppercase">
+                  {activeNodeData?.label}
                 </h3>
-                <div className="font-mono text-xs text-accent tracking-widest mb-8 uppercase">
-                  {DOMAINS.find(d => d.id === NODES.find(n => n.id === detail.id)?.domainId)?.label.split('// ')[1]}
+                
+                <div className="font-mono text-[10px] text-accent tracking-widest mb-4 uppercase">
+                  {DOMAINS.find(d => d.id === activeNodeData?.domainId)?.label.split('// ')[1]}
                 </div>
                 
-                <p className="text-text-muted text-base font-light leading-relaxed mb-12">
-                  {detail.description}
-                </p>
-                
-                <div className="border-t border-white/5 pt-8 mb-12">
-                  <div className="font-mono text-[10px] text-text-muted tracking-widest mb-6">USED IN</div>
-                  <div className="flex flex-col gap-3">
-                    {detail.usedIn.map((u, i) => {
-                      if (u.href) {
-                        // Attempt to lookup canonical project to verify
-                        const slug = u.href.split('/').pop();
-                        const proj = getProject(slug || '');
-                        
-                        return (
-                          <Link 
-                            key={i} 
-                            href={proj ? `/work/${proj.slug}` : u.href} 
-                            className="group flex items-center justify-between p-4 bg-surface border border-border hover:border-accent transition-colors"
-                          >
-                            <span className="font-mono text-xs text-text-primary uppercase tracking-widest">{u.label}</span>
-                            <ArrowUpRight className="w-4 h-4 text-text-muted group-hover:text-accent transition-colors" />
-                          </Link>
-                        );
-                      }
-                      return (
-                        <div key={i} className="flex items-center gap-3 p-4 bg-[#111] border border-white/5">
-                          <div className="w-1 h-1 bg-text-muted rounded-full" />
-                          <span className="font-mono text-xs text-text-muted uppercase tracking-widest">
-                            {u.label}
-                          </span>
-                        </div>
-                      );
-                    })}
+                {detail ? (
+                  <>
+                    <p className="text-text-muted text-xs font-light leading-relaxed mb-6">
+                      {detail.description}
+                    </p>
+                    
+                    <div className="border-t border-white/5 pt-4 mb-6">
+                      <div className="font-mono text-[9px] text-text-muted tracking-widest mb-3">USED IN</div>
+                      <div className="flex flex-col gap-2">
+                        {detail.usedIn.map((u, i) => {
+                          if (u.href) {
+                            const slug = u.href.split('/').pop();
+                            const proj = getProject(slug || '');
+                            return (
+                              <Link 
+                                key={i} 
+                                href={proj ? `/work/${proj.slug}` : u.href} 
+                                className="group flex items-center justify-between p-2.5 bg-surface border border-border hover:border-accent transition-colors"
+                              >
+                                <span className="font-mono text-[10px] text-text-primary uppercase tracking-widest">{u.label}</span>
+                                <ArrowUpRight className="w-3 h-3 text-text-muted group-hover:text-accent transition-colors" />
+                              </Link>
+                            );
+                          }
+                          return (
+                            <div key={i} className="flex items-center gap-2 p-2.5 bg-[#111] border border-white/5">
+                              <div className="w-1 h-1 bg-text-muted rounded-full" />
+                              <span className="font-mono text-[10px] text-text-muted uppercase tracking-widest">
+                                {u.label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="py-4">
+                    <p className="text-text-muted text-xs font-light italic">
+                      Active connection node.
+                    </p>
                   </div>
-                </div>
+                )}
 
-                <div className="border-t border-white/5 pt-8">
-                  <div className="font-mono text-[10px] text-text-muted tracking-widest mb-6">RELATED SKILLS</div>
-                  <div className="flex flex-wrap gap-2">
-                    {Array.from(activeConnections).map(relId => {
+                <div className="border-t border-white/5 pt-4">
+                  <div className="font-mono text-[9px] text-text-muted tracking-widest mb-3">CONNECTED TO</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Array.from(firstOrder).slice(0, 8).map(relId => {
                       const n = NODES.find(x => x.id === relId);
                       if (!n) return null;
                       return (
                         <button
                           key={relId}
                           onClick={() => {
-                            if (SKILL_DETAILS[relId]) {
-                              setPinnedNode(relId);
-                              focusOn(n.x, n.y, 1.5);
-                            } else {
-                              focusOn(n.x, n.y, 1.5);
-                            }
+                            setPinnedNode(relId);
+                            focusOn(n.x, n.y, 1.2);
                           }}
-                          className={`px-3 py-1.5 font-mono text-xs tracking-widest border transition-colors ${SKILL_DETAILS[relId] ? 'border-border text-text-primary hover:border-text-muted cursor-pointer' : 'border-transparent bg-surface text-text-muted cursor-default'}`}
+                          className="px-2 py-1 font-mono text-[9px] tracking-widest border border-transparent bg-surface text-text-muted hover:border-border hover:text-text-primary transition-colors cursor-pointer"
                         >
                           {n.label}
                         </button>
@@ -527,6 +608,7 @@ export const SkillsConstellation = () => {
                     })}
                   </div>
                 </div>
+
               </div>
             </motion.div>
           )}

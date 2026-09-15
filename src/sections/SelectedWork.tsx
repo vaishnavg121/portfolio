@@ -98,12 +98,12 @@ export const SelectedWork = () => {
             { clipPath: "inset(20% 40% 20% 0%)", scale: 0.95, y: 50 },
             { clipPath: "inset(0% 0% 0% 0%)", scale: 1, y: 0, duration: 1.4, ease: "power3.out", scrollTrigger: { trigger: project, start: "top 85%", end: "top 40%", scrub: false } }
           );
-          gsap.to(visual, { y: -100, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 1 } });
+          gsap.to(visual, { y: -80, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 1 } });
         }
         if (bgNum) {
           gsap.fromTo(bgNum,
-            { x: 250, y: 50, opacity: 0, scale: 1.2 },
-            { x: -50, y: -50, opacity: 1, scale: 1, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 0.5 } }
+            { x: 150, y: -100, opacity: 0.08 },
+            { x: -100, y: 50, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 1.5 } }
           );
         }
       } 
@@ -117,8 +117,8 @@ export const SelectedWork = () => {
         }
         if (bgNum) {
           gsap.fromTo(bgNum,
-            { y: 250, opacity: 0, scale: 0.8 },
-            { y: -100, opacity: 0.6, scale: 1, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 0.8 } }
+            { x: -250, y: 300, opacity: 0.05, rotation: -5 },
+            { x: 50, y: -50, rotation: 0, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 2.0 } }
           );
         }
       }
@@ -133,8 +133,8 @@ export const SelectedWork = () => {
         }
         if (bgNum) {
           gsap.fromTo(bgNum,
-            { x: -150, y: 100, opacity: 0 },
-            { x: 100, y: -50, opacity: 0.4, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 1 } }
+            { x: 50, y: 250, scale: 1.2, opacity: 0.025 },
+            { x: -50, y: -150, scale: 1.4, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 2.5 } }
           );
         }
       }
@@ -149,8 +149,8 @@ export const SelectedWork = () => {
         }
         if (bgNum) {
           gsap.fromTo(bgNum,
-            { scale: 2, opacity: 0 },
-            { scale: 1, opacity: 0.5, ease: "none", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 0.6 } }
+            { clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)", scale: 0.8, y: -200, opacity: 0.05 },
+            { clipPath: "polygon(0 0, 100% 0, 100% 30%, 0 30%)", scale: 1, y: 150, ease: "power1.inOut", scrollTrigger: { trigger: project, start: "top bottom", end: "bottom top", scrub: 1.8 } }
           );
         }
       }
@@ -275,8 +275,13 @@ export const SelectedWork = () => {
                 
                 {/* Large Background Number */}
                 <div 
-                  className="absolute top-0 right-10 md:-right-20 text-[150px] md:text-[250px] font-display font-bold text-[#111] opacity-50 z-0 leading-none select-none pointer-events-none arch-bg-num"
-                  style={{ transform: "translateX(200px)", opacity: 0 }}
+                  className={`absolute z-0 leading-none select-none pointer-events-none arch-bg-num text-white ${
+                    i === 0 ? "top-[-10%] -right-[15%] text-[200px] md:text-[400px] font-thin" :
+                    i === 1 ? "bottom-[-15%] -left-[10%] text-[250px] md:text-[350px] font-light" :
+                    i === 2 ? "bottom-[-30%] -right-[10%] text-[300px] md:text-[500px] font-medium" :
+                    "top-[10%] left-[15%] text-[200px] md:text-[300px] font-bold tracking-widest"
+                  }`}
+                  style={{ opacity: 0 }}
                 >
                   0{i + 1}
                 </div>
