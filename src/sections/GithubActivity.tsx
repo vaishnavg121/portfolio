@@ -6,15 +6,16 @@ import { useGSAP } from "@gsap/react";
 import { fetchGithubContributions, GithubCalendarData } from "@/lib/actions/github";
 import { socials } from "@/lib/profile";
 import { THEME_ASSETS } from "@/lib/assets";
+import { useSectionVisibility } from "@/lib/visibility";
 
 export const GithubActivity = () => {
   const [calendarData, setCalendarData] = useState<GithubCalendarData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLElement>(null);
   const [mounted, setMounted] = useState(false);
+  const { ref: visibilityRef, isVisible } = useSectionVisibility("300px");
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     async function loadData() {
       try {
@@ -30,33 +31,33 @@ export const GithubActivity = () => {
   }, []);
 
   useGSAP(() => {
-    if (!mounted) return;
+    if (!mounted || !isVisible) return;
 
-    // Faint bg text parallax
-    gsap.fromTo('.gh-bg-text',
-      { y: 150, opacity: 0 },
-      { y: -50, opacity: 0.05, ease: "none", scrollTrigger: { trigger: containerRef.current, start: "top bottom", end: "bottom top", scrub: 1 } }
-    );
+    const ctx = gsap.context(() => {
+      gsap.fromTo('.gh-bg-text',
+        { y: 150, opacity: 0 },
+        { y: -50, opacity: 0.05, ease: "none", scrollTrigger: { trigger: containerRef.current, start: "top bottom", end: "bottom top", scrub: 1 } }
+      );
 
-    // Panel mask reveal
-    gsap.fromTo('.gh-panel',
-      { y: 50, clipPath: "inset(10% 10% 10% 10%)", opacity: 0 },
-      { y: 0, clipPath: "inset(0% 0% 0% 0%)", opacity: 1, duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: containerRef.current, start: "top 75%" } }
-    );
+      gsap.fromTo('.gh-panel',
+        { y: 50, clipPath: "inset(10% 10% 10% 10%)", opacity: 0 },
+        { y: 0, clipPath: "inset(0% 0% 0% 0%)", opacity: 1, duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: containerRef.current, start: "top 75%" } }
+      );
+    }, containerRef);
 
-  }, { scope: containerRef, dependencies: [mounted] });
+    return () => ctx.revert();
+  }, { scope: containerRef, dependencies: [mounted, isVisible] });
 
   const getColor = (level: number) => {
     if (level === 0) return "bg-[#1a1a1a]";
     if (level === 1) return "bg-[#331111]";
     if (level === 2) return "bg-[#661a1a]";
     if (level === 3) return "bg-[#992626]";
-    return "bg-[#cc3333]"; // accent color
+    return "bg-[#cc3333]";
   };
 
   return (
-    <section className="py-24 md:py-32 bg-[#050505] relative overflow-hidden group/section border-y border-white/[0.02]" id="github" ref={containerRef}>
-      {/* Large faint background text */}
+    <section className="py-24 md:py-32 bg-[#050505] relative overflow-hidden group/section border-y border-white/[0.02]" id="github" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
       <div className="gh-bg-text absolute top-10 left-0 right-0 text-[10vw] font-display font-bold text-white whitespace-nowrap opacity-0 pointer-events-none select-none z-0">
         DEVELOPMENT ACTIVITY
       </div>
@@ -76,19 +77,15 @@ export const GithubActivity = () => {
         }
       `}} />
       <div className="container mx-auto px-4 md:px-8 max-w-[1100px]">
-        
-        {/* Panel Shell */}
+
         <div className="gh-panel relative rounded-[16px] md:rounded-[24px] overflow-hidden border border-white/[0.05] bg-[#0c0d0e] shadow-[0_32px_100px_rgba(0,0,0,0.5)]">
-          
-          {/* 1. Grain */}
+
           <div className="absolute inset-0 pointer-events-none opacity-10 mix-blend-overlay" style={{ backgroundImage: `url(${THEME_ASSETS.github.grain})`, backgroundSize: '250px' }} />
 
-          {/* 2. Atmospheric crimson gradient */}
           <div className="absolute inset-0 pointer-events-none anim-atmosphere" style={{
              background: 'radial-gradient(circle at 80% 20%, rgba(204,51,51,0.05), transparent 55%), radial-gradient(circle at 10% 80%, rgba(255,255,255,0.02), transparent 45%)'
           }} />
 
-          {/* 3. Left ink artwork */}
           <div className="absolute bottom-0 left-0 w-[40%] h-[90%] pointer-events-none opacity-90" style={{
              backgroundImage: `url(${THEME_ASSETS.github.inkLeft})`,
              backgroundPosition: 'left bottom', backgroundRepeat: 'no-repeat', backgroundSize: 'contain',
@@ -96,7 +93,6 @@ export const GithubActivity = () => {
              WebkitMaskImage: 'linear-gradient(to right, black 30%, transparent 100%)'
           }} />
 
-          {/* 4. Right ink artwork */}
           <div className="absolute top-[10%] right-0 w-[30%] h-[70%] pointer-events-none opacity-60 hidden md:block" style={{
              backgroundImage: `url(${THEME_ASSETS.github.inkRight})`,
              backgroundPosition: 'right center', backgroundRepeat: 'no-repeat', backgroundSize: 'contain',
@@ -104,7 +100,6 @@ export const GithubActivity = () => {
              WebkitMaskImage: 'linear-gradient(to left, black 40%, transparent 100%)'
           }} />
 
-          {/* 5. Crescent artwork */}
           <div className="absolute top-[-15%] right-[-10%] w-[55%] h-[70%] pointer-events-none opacity-35 hidden md:block" style={{
              backgroundImage: `url(${THEME_ASSETS.github.crescent})`,
              backgroundPosition: 'top right', backgroundRepeat: 'no-repeat', backgroundSize: 'contain',
@@ -112,7 +107,6 @@ export const GithubActivity = () => {
              WebkitMaskImage: 'linear-gradient(to bottom left, black 40%, transparent 100%)'
           }} />
 
-          {/* 6. Bottom brush artwork (Familiar path) */}
           <div className="absolute bottom-0 right-[5%] w-[60%] h-[50%] pointer-events-none opacity-90" style={{
              backgroundImage: `url(${THEME_ASSETS.github.bottomBrush})`,
              backgroundPosition: 'right bottom', backgroundRepeat: 'no-repeat', backgroundSize: 'contain',
@@ -120,7 +114,6 @@ export const GithubActivity = () => {
              WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)'
           }} />
 
-          {/* 7. Speckles */}
           <div className="absolute inset-0 pointer-events-none opacity-15 hidden md:block" style={{
              backgroundImage: `url(${THEME_ASSETS.github.speckles})`,
              backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundSize: 'cover',
@@ -128,19 +121,17 @@ export const GithubActivity = () => {
              WebkitMaskImage: 'radial-gradient(circle at center, transparent 40%, black 100%)'
           }} />
 
-          {/* Vignette Shadow */}
           <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_120px_rgba(0,0,0,0.8)]" />
 
-          {/* Microcopy & Corners */}
           <div className="absolute top-5 left-5 w-3 h-[1px] bg-[#cc3333]/60 pointer-events-none" />
           <div className="absolute top-5 left-5 w-[1px] h-3 bg-[#cc3333]/60 pointer-events-none" />
-          
+
           <div className="absolute bottom-5 left-5 w-3 h-[1px] bg-[#cc3333]/60 pointer-events-none" />
           <div className="absolute bottom-5 left-5 w-[1px] h-3 bg-[#cc3333]/60 pointer-events-none" />
 
           <div className="absolute top-5 right-5 w-3 h-[1px] bg-[#cc3333]/60 pointer-events-none" />
           <div className="absolute top-5 right-5 w-[1px] h-3 bg-[#cc3333]/60 pointer-events-none" />
-          
+
           <div className="absolute bottom-5 right-5 w-3 h-[1px] bg-[#cc3333]/60 pointer-events-none" />
           <div className="absolute bottom-5 right-5 w-[1px] h-3 bg-[#cc3333]/60 pointer-events-none" />
 
@@ -151,7 +142,6 @@ export const GithubActivity = () => {
             [SYS_LOG]
           </div>
 
-          {/* Editorial Rail */}
           <div className="hidden lg:flex absolute left-6 top-1/2 -translate-y-1/2 flex-col items-center gap-10 pointer-events-none opacity-30">
              <div className="w-[1px] h-20 bg-gradient-to-b from-transparent via-white to-transparent" />
              <div className="text-[8px] font-mono tracking-[0.5em] rotate-180" style={{ writingMode: 'vertical-rl' }}>
@@ -160,9 +150,8 @@ export const GithubActivity = () => {
              <div className="w-[1px] h-20 bg-gradient-to-b from-transparent via-[#cc3333] to-transparent" />
           </div>
 
-          {/* 8. Content Layer */}
           <div className="relative z-10 px-5 py-10 md:pl-28 md:pr-16 md:py-16">
-            
+
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-16">
               <div>
                 <div className="flex items-center gap-3 mb-3">
@@ -177,11 +166,11 @@ export const GithubActivity = () => {
                 </h3>
               </div>
               <div className="text-xs font-mono mt-6 md:mt-0 flex flex-col items-start md:items-end border-l md:border-l-0 md:border-r border-[#cc3333]/20 pl-4 md:pl-0 md:pr-4">
-                <a 
-                  href={socials.github} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  aria-label="GitHub Profile" 
+                <a
+                  href={socials.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GitHub Profile"
                   className="text-text-primary hover:text-accent transition-colors"
                   data-cursor="VIEW"
                 >
@@ -206,8 +195,7 @@ export const GithubActivity = () => {
                 </div>
               ) : (
                 <div className="min-w-max flex flex-col">
-                  
-                  {/* Month Labels */}
+
                   <div className="flex relative text-[10px] font-mono text-text-muted mb-3 h-4 ml-[30px]">
                     {(() => {
                       const m: { label: string, colIndex: number }[] = [];
@@ -233,15 +221,13 @@ export const GithubActivity = () => {
                   <div className="flex gap-[3px] relative">
                     <div className="absolute left-0 bottom-[-30px] w-4 h-4" data-anchor="github-calendar-start" />
                     <div className="absolute right-0 bottom-[-30px] w-4 h-4" data-anchor="github-calendar-end" />
-                    
-                    {/* Weekday Labels */}
+
                     <div className="flex flex-col gap-[3px] text-[9px] font-mono text-text-muted/50 w-[27px] mr-[3px] pt-[12px]">
                        <div className="h-[12px] flex items-center">MON</div>
                        <div className="h-[12px] flex items-center mt-[27px]">WED</div>
                        <div className="h-[12px] flex items-center mt-[27px]">FRI</div>
                     </div>
 
-                    {/* Grid */}
                     {calendarData.grid.map((week, wIdx) => (
                       <div key={wIdx} className="flex flex-col gap-[3px] relative">
                         {week.map((day, dIdx) => (
@@ -252,7 +238,7 @@ export const GithubActivity = () => {
                             data-level={day.level}
                             data-cursor="INSPECT"
                             onMouseEnter={(e) => {
-                              window.dispatchEvent(new CustomEvent("companionInteract", { 
+                              window.dispatchEvent(new CustomEvent("companionInteract", {
                                 detail: { type: "github-cell-hover", data: day, target: e.currentTarget }
                               }));
                             }}
@@ -270,7 +256,7 @@ export const GithubActivity = () => {
                 </div>
               )}
             </div>
-            
+
             <div className="flex items-center justify-between border-t border-white/[0.04] pt-8 mt-2 relative z-20">
               <div className="text-[9px] font-mono text-text-muted/40 uppercase tracking-widest flex items-center gap-2">
                 365D TRACE <span className="opacity-30">{"///"}</span> <span className="text-text-muted/20">CODE {"//"} BUILD {"//"} ITERATE</span>
@@ -287,7 +273,7 @@ export const GithubActivity = () => {
                 <span className="opacity-40">MORE</span>
               </div>
             </div>
-            
+
           </div>
         </div>
       </div>

@@ -5,8 +5,7 @@ import { motion, useMotionValue, useSpring } from "framer-motion";
 
 export const CustomCursor = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [cursorState, setCursorState] = useState<"default" | "VIEW" | "DRAG" | "CODE" | "INSPECT">("default");
-  
+
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
 
@@ -15,13 +14,9 @@ export const CustomCursor = () => {
   const cursorYSpring = useSpring(cursorY, springConfig);
 
   useEffect(() => {
-    // Disable on touch devices
     if ("ontouchstart" in window || navigator.maxTouchPoints > 0) return;
-    
-    // Disable if reduced motion is preferred
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsVisible(true);
 
     const moveCursor = (e: MouseEvent) => {
@@ -29,23 +24,10 @@ export const CustomCursor = () => {
       cursorY.set(e.clientY);
     };
 
-    const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      
-      const customCursorData = target.getAttribute("data-cursor") || target.closest("[data-cursor]")?.getAttribute("data-cursor");
-      if (customCursorData === "VIEW" || customCursorData === "DRAG" || customCursorData === "CODE" || customCursorData === "INSPECT") {
-        setCursorState(customCursorData);
-      } else {
-        setCursorState("default");
-      }
-    };
-
-    window.addEventListener("mousemove", moveCursor);
-    window.addEventListener("mouseover", handleMouseOver);
+    window.addEventListener("mousemove", moveCursor, { passive: true });
 
     return () => {
       window.removeEventListener("mousemove", moveCursor);
-      window.removeEventListener("mouseover", handleMouseOver);
     };
   }, [cursorX, cursorY]);
 
@@ -61,27 +43,16 @@ export const CustomCursor = () => {
         translateY: "-50%",
       }}
     >
-      {/* Default small dot */}
       <motion.div
         className="bg-white rounded-full flex items-center justify-center overflow-hidden"
         initial={false}
         animate={{
-          width: cursorState === "default" ? 12 : 70,
-          height: cursorState === "default" ? 12 : 70,
-          opacity: cursorState === "default" ? 1 : 0.8,
+          width: 12,
+          height: 12,
+          opacity: 1,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      >
-        {cursorState !== "default" && (
-          <motion.span
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-black text-[10px] font-mono font-bold tracking-widest uppercase"
-          >
-            {cursorState}
-          </motion.span>
-        )}
-      </motion.div>
+      />
     </motion.div>
   );
 };

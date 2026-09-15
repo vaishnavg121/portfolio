@@ -1,22 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { THEME_ASSETS } from "@/lib/assets";
+import { useSectionVisibility, useReducedMotion } from "@/lib/visibility";
 
 export const EmberField = () => {
-  const [shouldAnimate, setShouldAnimate] = useState(true);
+  const shouldReduceMotion = useReducedMotion();
+  const { ref, isVisible } = useSectionVisibility();
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (shouldReduceMotion) return;
+    if (isVisible) {
+      setShouldAnimate(true);
+    } else {
       setShouldAnimate(false);
     }
-  }, []);
+  }, [isVisible, shouldReduceMotion]);
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 transition-all duration-700">
-      {/* Background large fainter fragment */}
+    <div ref={ref} className="absolute inset-0 pointer-events-none overflow-hidden z-0 transition-all duration-700">
       <motion.div
         className="absolute bottom-[-10%] right-[-5%] w-[80%] h-[80%] max-w-[800px] transition-opacity duration-500 group-hover:opacity-60"
         style={{
@@ -39,7 +43,6 @@ export const EmberField = () => {
         }}
       />
 
-      {/* Mid layer, slightly faster, higher opacity peak */}
       <motion.div
         className="absolute bottom-[-5%] right-[10%] w-[60%] h-[60%] max-w-[600px] transition-opacity duration-500 group-hover:opacity-80"
         style={{
@@ -65,7 +68,6 @@ export const EmberField = () => {
         }}
       />
 
-      {/* Foreground tiny fast fragment */}
       <motion.div
         className="absolute top-[20%] right-[30%] w-[30%] h-[30%] max-w-[300px] transition-opacity duration-500 group-hover:opacity-100"
         style={{
@@ -92,4 +94,3 @@ export const EmberField = () => {
     </div>
   );
 };
-

@@ -8,22 +8,22 @@ import { useGSAP } from "@gsap/react";
 import { THEME_ASSETS } from "@/lib/assets";
 import { profile, socials } from "@/lib/profile";
 import { usePointer, MagneticEffect } from "@/components/effects";
+import { useSectionVisibility } from "@/lib/visibility";
 
 export const Hero = () => {
   const containerRef = useRef<HTMLElement>(null);
   const shouldReduceMotion = useReducedMotion();
   const { sNX, sNY } = usePointer();
   const [mounted, setMounted] = useState(false);
+  const { ref: visibilityRef, isVisible } = useSectionVisibility("200px");
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
-  // Create subtle pointer-based motion values (only applies if reduced motion is false)
   const titleX = useTransform(sNX, [-1, 1], [-10, 10]);
   const titleY = useTransform(sNY, [-1, 1], [-10, 10]);
-  
+
   const subtitleX = useTransform(sNX, [-1, 1], [-4, 4]);
   const subtitleY = useTransform(sNY, [-1, 1], [-4, 4]);
 
@@ -32,79 +32,79 @@ export const Hero = () => {
 
   useGSAP(() => {
     if (shouldReduceMotion) return;
-    
-    // Parallax on scroll for different elements
-    gsap.to('.hero-title-block', {
-      y: -150,
-      opacity: 0,
-      ease: "none",
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top top",
-        end: "bottom top",
-        scrub: 0.5,
-      }
-    });
 
-    gsap.to('.hero-subtitle-block', {
-      y: -80,
-      opacity: 0,
-      ease: "none",
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top top",
-        end: "bottom top",
-        scrub: 1,
-      }
-    });
+    const ctx = gsap.context(() => {
+      gsap.to('.hero-title-block', {
+        y: -150,
+        opacity: 0,
+        ease: "none",
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: 0.5,
+        }
+      });
 
-    gsap.to('.hero-annotation', {
-      y: -250,
-      x: 50,
-      rotate: 15,
-      ease: "none",
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top top",
-        end: "bottom top",
-        scrub: 1.5,
-      }
-    });
+      gsap.to('.hero-subtitle-block', {
+        y: -80,
+        opacity: 0,
+        ease: "none",
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: 1,
+        }
+      });
 
-    // Functional links fade out early
-    gsap.to('.hero-links', {
-      opacity: 0,
-      y: -20,
-      pointerEvents: "none",
-      ease: "power2.in",
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top top",
-        end: "bottom 70%",
-        scrub: true,
-      }
-    });
+      gsap.to('.hero-annotation', {
+        y: -250,
+        x: 50,
+        rotate: 15,
+        ease: "none",
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: 1.5,
+        }
+      });
+
+      gsap.to('.hero-links', {
+        opacity: 0,
+        y: -20,
+        pointerEvents: "none",
+        ease: "power2.in",
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top top",
+          end: "bottom 70%",
+          scrub: true,
+        }
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
   }, { scope: containerRef, dependencies: [mounted, shouldReduceMotion] });
 
   return (
-    <motion.section 
-      ref={containerRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20" 
+    <motion.section
+      ref={(el) => { containerRef.current = el; visibilityRef(el); }}
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
       id="hero"
       initial={{ x: 0, y: 0 }}
       animate={{ x: (!mounted || shouldReduceMotion) ? 0 : [0, 3, -2, 0], y: (!mounted || shouldReduceMotion) ? 0 : [0, -2, 1, 0] }}
       transition={{ duration: 0.1, delay: (!mounted || shouldReduceMotion) ? 0 : 0.92, ease: "linear" }}
     >
-      {/* Global Grain */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: `url(${THEME_ASSETS.global.paperGrain})`, backgroundSize: "300px" }} />
-      
-      {/* Background Graphic */}
-      <motion.div 
+
+      <motion.div
         className="absolute inset-0 z-0 opacity-20 pointer-events-none flex items-center justify-center"
         style={{ x: mounted && !shouldReduceMotion ? bgX : 0, y: mounted && !shouldReduceMotion ? bgY : 0 }}
       >
         <svg viewBox="0 0 100 100" className="w-full h-full max-w-4xl" preserveAspectRatio="xMidYMid slice">
-            <motion.path
+          <motion.path
             d="M 10 50 Q 30 10, 50 50 T 90 50"
             fill="transparent"
             stroke="var(--accent)"
@@ -127,9 +127,8 @@ export const Hero = () => {
 
       <div className="container mx-auto px-6 md:px-12 z-10 w-full h-full flex flex-col justify-center pb-20">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 relative">
-          
-          {/* Main Title Block */}
-          <motion.div 
+
+          <motion.div
             className="hero-title-block md:col-span-10 md:col-start-1 relative z-10"
             style={{ x: shouldReduceMotion ? 0 : titleX, y: shouldReduceMotion ? 0 : titleY }}
             data-familiar-avoid
@@ -158,8 +157,7 @@ export const Hero = () => {
             <div data-familiar-anchor className="absolute -bottom-8 left-12 w-4 h-4 pointer-events-none" />
           </motion.div>
 
-          {/* Subtitle / Description Block */}
-          <motion.div 
+          <motion.div
             className="hero-subtitle-block md:col-span-5 md:col-start-7 lg:col-start-8 mt-12 md:mt-24 relative z-20"
             style={{ x: shouldReduceMotion ? 0 : subtitleX, y: shouldReduceMotion ? 0 : subtitleY }}
             data-familiar-avoid
@@ -178,15 +176,14 @@ export const Hero = () => {
                 {profile.about}
               </p>
 
-              {/* Links */}
               <div className="hero-links flex flex-wrap items-center gap-6 text-xs font-mono tracking-widest uppercase pl-6 relative z-30">
                 <MagneticEffect intensity={0.4}>
-                  <button 
+                  <button
                     onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" })}
                     className="flex items-center gap-2 text-text-primary hover:text-accent transition-colors group"
                     data-cursor="VIEW"
                   >
-                    Explore Work 
+                    Explore Work
                     <MoveRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </MagneticEffect>
@@ -198,10 +195,9 @@ export const Hero = () => {
                 </MagneticEffect>
               </div>
             </motion.div>
-            
-            {/* Hand-written style annotation */}
+
             <div className="hero-annotation absolute -top-16 -right-4 md:-right-24 opacity-80 rotate-[8deg]">
-              <motion.span 
+              <motion.span
                 initial={{ opacity: 0, pathLength: 0 }}
                 animate={{ opacity: 1, pathLength: 1 }}
                 transition={{ delay: shouldReduceMotion ? 0.2 : 1.1, duration: shouldReduceMotion ? 0.2 : 0.6 }}
@@ -216,4 +212,3 @@ export const Hero = () => {
     </motion.section>
   );
 };
-

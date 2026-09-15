@@ -1,21 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { THEME_ASSETS } from "@/lib/assets";
+import { useSectionVisibility, useReducedMotion } from "@/lib/visibility";
 
 export const SwaNeetiInk = () => {
-  const [shouldAnimate, setShouldAnimate] = useState(true);
+  const shouldReduceMotion = useReducedMotion();
+  const { ref, isVisible } = useSectionVisibility();
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (shouldReduceMotion) return;
+    if (isVisible) {
+      setShouldAnimate(true);
+    } else {
       setShouldAnimate(false);
     }
-  }, []);
+  }, [isVisible, shouldReduceMotion]);
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+    <div ref={ref} className="absolute inset-0 pointer-events-none overflow-hidden z-0">
       <motion.div
         className="absolute top-[10%] left-[-20%] w-[120%] h-[120%] origin-left"
         style={{
@@ -24,20 +29,17 @@ export const SwaNeetiInk = () => {
           backgroundPosition: "left center",
           backgroundRepeat: "no-repeat",
         }}
-        initial={{ x: "-40%", scaleX: 0.8, opacity: 0 }}
-        whileInView={shouldAnimate ? { 
-          x: ["-40%", "10%", "0%"], 
+        animate={shouldAnimate ? {
+          x: ["-40%", "10%", "0%"],
           scaleX: [0.8, 1.1, 1],
           opacity: [0, 0.8, 0.25]
         } : { x: "0%", scaleX: 1, opacity: 0.25 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ 
+        transition={{
           duration: 1.8,
           times: [0, 0.5, 1],
-          ease: "easeOut"
+          ease: "easeOut",
         }}
       />
     </div>
   );
 };
-
