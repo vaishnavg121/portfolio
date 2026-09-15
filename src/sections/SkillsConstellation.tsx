@@ -223,14 +223,9 @@ export const SkillsConstellation = () => {
     const minZ = 0.85, maxZ = 3.0;
     target.z = Math.max(minZ, Math.min(maxZ, target.z));
 
-    const vpW = st.width / target.z;
-    const vpH = st.height / target.z;
-    const halfW = vpW / 2;
-    const halfH = vpH / 2;
-
     const safe = st.safeBounds;
-    target.x = Math.max(safe.minX * target.z + halfW, Math.min(safe.maxX * target.z + halfW, target.x));
-    target.y = Math.max(safe.minY * target.z + halfH, Math.min(safe.maxY * target.z + halfH, target.y));
+    target.x = Math.max(st.width - safe.maxX * target.z, Math.min(-safe.minX * target.z, target.x));
+    target.y = Math.max(st.height - safe.maxY * target.z, Math.min(-safe.minY * target.z, target.y));
   }, []);
 
   const focusOn = useCallback((x: number, y: number, z: number) => {
@@ -255,7 +250,7 @@ export const SkillsConstellation = () => {
     const offH = Math.ceil(geometry.yMax - geometry.yMin);
 
     const createLayer = (paths: Path2D, strokeStyle: string, lineWidth: number) => {
-      const off = new OffscreenCanvas(offW, offH);
+      const off = new OffscreenCanvas(offW * dpr, offH * dpr);
       const octx = off.getContext("2d")!;
       octx.scale(dpr, dpr);
       octx.translate(-geometry.xMin, -geometry.yMin);
@@ -345,8 +340,8 @@ export const SkillsConstellation = () => {
 
   useEffect(() => {
     const st = stateRef.current;
-    st.width = window.innerWidth;
-    st.height = window.innerHeight;
+    st.width = containerRef.current ? containerRef.current.clientWidth : window.innerWidth;
+    st.height = containerRef.current ? containerRef.current.clientHeight : window.innerHeight;
     st.dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
     const canvas = canvasRef.current;
@@ -366,8 +361,8 @@ export const SkillsConstellation = () => {
     computeLabelLayout();
 
     const handleResize = () => {
-      st.width = window.innerWidth;
-      st.height = window.innerHeight;
+      st.width = containerRef.current ? containerRef.current.clientWidth : window.innerWidth;
+      st.height = containerRef.current ? containerRef.current.clientHeight : window.innerHeight;
       const newDpr = Math.min(window.devicePixelRatio || 1, 1.5);
       if (newDpr !== st.dpr) {
         st.dpr = newDpr;
@@ -458,17 +453,23 @@ export const SkillsConstellation = () => {
 
     st.rafId = requestAnimationFrame(animationLoopRef.current);
 
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.scale(st.dpr, st.dpr);
     ctx.fillStyle = "#030303";
     ctx.fillRect(0, 0, st.width, st.height);
 
     const cache = terrainCacheRef.current;
+    const cw = cache.width;
+    const ch = cache.height;
     ctx.save();
     ctx.translate(cam.x, cam.y);
     ctx.scale(cam.z, cam.z);
 
-    if (cache.bg) ctx.drawImage(cache.bg, geometry.xMin, geometry.yMin);
-    if (cache.mid) ctx.drawImage(cache.mid, geometry.xMin, geometry.yMin);
-    if (cache.fg) ctx.drawImage(cache.fg, geometry.xMin, geometry.yMin);
+    if (cache.bg) ctx.drawImage(cache.bg, geometry.xMin, geometry.yMin, cw, ch);
+    if (cache.mid) ctx.drawImage(cache.mid, geometry.xMin, geometry.yMin, cw, ch);
+    if (cache.fg) ctx.drawImage(cache.fg, geometry.xMin, geometry.yMin, cw, ch);
 
     if (st.pointer.active && !st.isDragging) {
       ctx.restore();
@@ -555,8 +556,9 @@ export const SkillsConstellation = () => {
       const cx = cam.x + actN.proj.x * cam.z;
       const cy = cam.y + actN.proj.y * cam.z;
       const popRect = popupRef.current.getBoundingClientRect();
-      let px = popRect.left < cx ? popRect.right : popRect.left;
-      const py = popRect.top + popRect.height / 2;
+      const containerRect = canvas.getBoundingClientRect();
+      let px = (popRect.left < cx ? popRect.right : popRect.left) - containerRect.left;
+      const py = popRect.top - containerRect.top + popRect.height / 2;
 
       ctx.beginPath();
       ctx.moveTo(cx, cy);
