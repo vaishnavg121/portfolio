@@ -1,111 +1,99 @@
 "use client";
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
-import gsap from 'gsap';
 import { thriveforceData } from '../../data/thriveforce';
 import { velociraptorAssets } from '../../data/velociraptorAssets';
 
 export const ThriveForceTeam = () => {
-  const roleRef = useRef<HTMLDivElement>(null);
-  
-  // For the split role interaction
-  const handleRolePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-      if (!roleRef.current) return;
-      const rect = roleRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const pct = (x / rect.width) * 100;
-      // Clamp between 45% and 55%
-      const clamped = Math.max(45, Math.min(55, pct));
-      gsap.to(roleRef.current, { '--split-pos': `${clamped}%`, duration: 0.3, ease: "power2.out", overwrite: "auto" });
-  };
-
-  const handleRoleLeave = () => {
-      if (!roleRef.current) return;
-      gsap.to(roleRef.current, { '--split-pos': `50%`, duration: 0.5, ease: "power2.out", overwrite: "auto" });
-  };
-
-  useEffect(() => {
-      if (roleRef.current) {
-          roleRef.current.style.setProperty('--split-pos', '50%');
-      }
-  }, []);
-
   return (
     <section className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 pb-32">
         
-        {/* 07 - TEAM INTRO */}
-        <div className="w-full px-6 lg:px-16 pt-32 pb-24">
+        {/* COMBINED TEAM SPREAD */}
+        <div className="w-full px-6 lg:px-16 pt-32 pb-24 border-b border-white/5">
             <h2 className="font-display text-[clamp(30px,3.5vw,52px)] uppercase tracking-tighter leading-none mb-4">
                 Team ThriveForce
             </h2>
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between border-t border-white/10 pt-8 mt-8">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between pt-8 mb-16">
                 <div className="font-mono text-sm tracking-widest text-text-muted uppercase">Combat Robotics</div>
                 <div className="font-mono text-xs tracking-widest text-accent uppercase mt-4 lg:mt-0">
                     Design &bull; Simulation &bull; Fabrication
                 </div>
             </div>
-            <div className="w-full h-[1px] bg-accent/30 mb-8 mt-8" />
             
-            <div className="flex flex-col border-t border-white/5">
-                {thriveforceData.robots.map((robot, i) => (
-                    <div key={i} className="group relative w-full border-b border-white/5 py-6 lg:py-8 px-4 hover:bg-[#080808] transition-colors duration-500 overflow-hidden">
-                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between transition-transform duration-500 group-hover:translate-x-2">
-                            <div className="flex items-center gap-6">
-                                <div className="font-mono text-[10px] text-accent tracking-widest uppercase">0{i+1}</div>
-                                <h4 className="font-display text-3xl lg:text-5xl uppercase tracking-tighter text-[#e0e0e0] group-hover:text-white transition-colors">
-                                    {robot.name}
-                                </h4>
+            <div className="flex flex-col lg:flex-row gap-16 lg:gap-8">
+                
+                {/* OUR MACHINES (Left) */}
+                <div className="w-full lg:w-1/2 flex flex-col">
+                    <h3 className="font-mono text-xs tracking-widest text-text-muted uppercase mb-8 pb-4 border-b border-white/10">Our Machines</h3>
+                    <div className="flex flex-col border-t border-white/5">
+                        {thriveforceData.robots.map((robot, i) => (
+                            <div key={i} className="group relative w-full border-b border-white/5 py-6 px-4 hover:bg-[#080808] transition-colors duration-500 overflow-hidden">
+                                <div className="absolute left-0 top-0 bottom-0 w-0 bg-accent transition-all duration-500 group-hover:w-[2px]" />
+                                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between transition-transform duration-500 group-hover:translate-x-2">
+                                    <div className="flex items-center gap-6">
+                                        <div className="font-mono text-[10px] text-accent tracking-widest uppercase">0{i+1}</div>
+                                        <h4 className="font-display text-[clamp(24px,3vw,36px)] uppercase tracking-tighter text-[#e0e0e0] group-hover:text-white transition-colors">
+                                            {robot.name}
+                                        </h4>
+                                    </div>
+                                    <div className="mt-4 md:mt-0 text-left md:text-right flex flex-row items-center gap-6 md:flex-col md:items-end md:gap-1">
+                                        <div className="font-mono text-lg text-[#f5ede3]">{robot.weightClass}</div>
+                                        <div className="font-mono text-[9px] tracking-widest text-text-muted uppercase">{robot.status}</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="mt-4 md:mt-0 text-left md:text-right flex items-center gap-6 md:block">
-                                <div className="font-mono text-lg text-[#f5ede3] mb-1">{robot.weightClass}</div>
-                                <div className="font-mono text-[9px] tracking-widest text-text-muted uppercase">{robot.status}</div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* MY ROLE (Right) */}
+                <div className="w-full lg:w-1/2 flex flex-col">
+                    <h3 className="font-mono text-xs tracking-widest text-text-muted uppercase mb-8 pb-4 border-b border-white/10">My Role</h3>
+                    <div className="flex flex-col relative w-full h-full min-h-[300px] border border-white/5 bg-[#050505] p-8 lg:p-12 overflow-hidden group">
+                        
+                        {/* Connecting Line (visual logic linking left and right) */}
+                        <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-accent/20 transition-all duration-700 group-hover:bg-accent/40" />
+
+                        <div className="flex flex-col lg:flex-row justify-between w-full h-full gap-12">
+                            
+                            {/* Engineer */}
+                            <div className="flex flex-col items-start w-full lg:w-1/2 z-10 relative">
+                                <h4 className="font-display text-[clamp(28px,3.5vw,42px)] text-[#f5ede3] uppercase tracking-tighter mb-6">Engineer</h4>
+                                <div className="flex flex-col gap-2 font-mono text-[9px] lg:text-[10px] text-[#e0e0e0] uppercase tracking-widest">
+                                    <span className="flex items-center gap-3"><span className="w-4 h-[1px] bg-accent/40" />CAD Design</span>
+                                    <span className="flex items-center gap-3"><span className="w-4 h-[1px] bg-accent/40" />Structural Simulation</span>
+                                    <span className="flex items-center gap-3"><span className="w-4 h-[1px] bg-accent/40" />Fabrication</span>
+                                    <span className="flex items-center gap-3"><span className="w-4 h-[1px] bg-accent/40" />Robot Design</span>
+                                </div>
                             </div>
+                            
+                            {/* Visual Separator */}
+                            <div className="hidden lg:block absolute left-1/2 top-12 bottom-12 w-[1px] bg-white/5" />
+
+                            {/* Treasurer */}
+                            <div className="flex flex-col items-start lg:items-end w-full lg:w-1/2 z-10 relative text-left lg:text-right">
+                                <h4 className="font-display text-[clamp(28px,3.5vw,42px)] text-accent uppercase tracking-tighter mb-6">Treasurer</h4>
+                                <div className="flex flex-col lg:items-end gap-2 font-mono text-[9px] lg:text-[10px] text-[#e0e0e0] uppercase tracking-widest">
+                                    <span className="flex items-center lg:flex-row-reverse gap-3"><span className="w-4 h-[1px] bg-accent/40" />Budgeting</span>
+                                    <span className="flex items-center lg:flex-row-reverse gap-3"><span className="w-4 h-[1px] bg-accent/40" />Procurement</span>
+                                    <span className="flex items-center lg:flex-row-reverse gap-3"><span className="w-4 h-[1px] bg-accent/40" />Sponsorship</span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {/* Faint Wireframe Overlay on Role block */}
+                        <div className="absolute right-[-10%] bottom-[-20%] w-[80%] h-[80%] opacity-[0.03] pointer-events-none mix-blend-screen transition-opacity duration-700 group-hover:opacity-[0.05]">
+                            <Image src={velociraptorAssets.technical.heroWireframe} alt="Wireframe" fill className="object-contain" />
                         </div>
                     </div>
-                ))}
+                </div>
+
             </div>
         </div>
 
-        {/* ENGINEER x TREASURER ROLE */}
-        <div className="w-full px-6 lg:px-16 mb-24">
-            <h3 className="font-mono text-xs tracking-widest text-text-muted uppercase mb-8">My Role</h3>
-            
-            <div 
-                ref={roleRef}
-                className="relative w-full h-[250px] border border-white/5 flex select-none bg-[#050505]"
-                onPointerMove={handleRolePointerMove}
-                onPointerLeave={handleRoleLeave}
-            >
-                {/* Left side (Engineer) */}
-                <div 
-                    className="absolute top-0 left-0 h-full flex flex-col items-end justify-center pr-8 lg:pr-16 overflow-hidden border-r border-accent/20 transition-all duration-75"
-                    style={{ width: 'var(--split-pos)' }}
-                >
-                    <h4 className="font-display text-[clamp(30px,3.5vw,52px)] text-[#f5ede3] uppercase tracking-tighter mb-4">Engineer</h4>
-                    <div className="flex flex-col gap-1 font-mono text-[9px] lg:text-[10px] text-text-muted uppercase tracking-widest text-right">
-                        <span>CAD Design</span>
-                        <span>Structural Simulation</span>
-                        <span>Fabrication & Iteration</span>
-                    </div>
-                </div>
-
-                {/* Right side (Treasurer) */}
-                <div 
-                    className="absolute top-0 right-0 h-full flex flex-col items-start justify-center pl-8 lg:pl-16 overflow-hidden transition-all duration-75"
-                    style={{ width: 'calc(100% - var(--split-pos))' }}
-                >
-                    <h4 className="font-display text-[clamp(30px,3.5vw,52px)] text-accent uppercase tracking-tighter mb-4">Treasurer</h4>
-                    <div className="flex flex-col gap-1 font-mono text-[9px] lg:text-[10px] text-text-muted uppercase tracking-widest">
-                        <span>Budgeting</span>
-                        <span>Procurement</span>
-                        <span>Sponsorship</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {/* MILESTONES, SPONSORS & CLOSE */}
-        <div className="w-full px-6 lg:px-16 flex flex-col gap-16">
+        {/* ACHIEVEMENTS, SPONSORS & CLOSE */}
+        <div className="w-full px-6 lg:px-16 pt-16 flex flex-col gap-16">
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
                 {/* Milestones */}
