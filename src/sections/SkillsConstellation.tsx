@@ -33,6 +33,7 @@ export const SkillsConstellation = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<typeof NODES>([]);
   
+  const [viewportSize, setViewportSize] = useState({ w: 0, h: 0 });
   const camera = useRef({ x: 0, y: 150, z: 0.85 });
   const isPanning = useRef(false);
   const lastPan = useRef({ x: 0, y: 0 });
@@ -165,37 +166,7 @@ export const SkillsConstellation = () => {
        };
     });
 
-    const placedLabels: { x: number, y: number, w: number, h: number }[] = [];
-    nData.forEach(node => {
-        const isHub = node.level === 'A';
-        const isCore = node.level === 'B';
-        const radius = isHub ? 8 : isCore ? 4 : 2.5;
-        
-        let bestAlign: 'left' | 'right' | 'top' | 'bottom' = isHub ? 'bottom' : (node.proj.x > 0 ? 'right' : 'left');
-        let lx = 0, ly = 0;
-        const w = 70, h = 18;
-        
-        const tryAlign = (align: string) => {
-            if (align === 'bottom') { lx = node.proj.x - w/2; ly = node.proj.y + radius + 5; }
-            else if (align === 'top') { lx = node.proj.x - w/2; ly = node.proj.y - radius - 15; }
-            else if (align === 'right') { lx = node.proj.x + radius + 5; ly = node.proj.y - h/2; }
-            else { lx = node.proj.x - radius - 5 - w; ly = node.proj.y - h/2; }
-            
-            for (const p of placedLabels) {
-                if (Math.abs(lx - p.x) < (w+p.w)/2 && Math.abs(ly - p.y) < (h+p.h)/2) return false;
-            }
-            return true;
-        };
-        
-        if (!tryAlign(bestAlign)) {
-            const alts = ['right', 'left', 'bottom', 'top'];
-            for (const alt of alts) {
-                if (tryAlign(alt)) { bestAlign = alt as any; break; }
-            }
-        }
-        placedLabels.push({ x: lx, y: ly, w, h });
-        node.align = bestAlign;
-    });
+
 
     const dData = DOMAINS.map(d => {
        const z = getZ(d.x, d.y);
@@ -232,6 +203,132 @@ export const SkillsConstellation = () => {
 
     return { terrain: tData, parsedTerrain: pTerrain, nodesProj: nData, edgesProj: eData, domainsProj: dData };
   }, []);
+
+  const labelLayout = useMemo(() => {
+    const sorted = [...nodesProj].sort((a, b) => {
+      const aRich = !!SKILL_DETAILS[a.id] ? 1 : 0;
+      const bRich = !!SKILL_DETAILS[b.id] ? 1 : 0;
+      if (aRich !== bRich) return bRich - aRich;
+      const aLevel = a.level === 'A' ? 3 : a.level === 'B' ? 2 : 1;
+      const bLevel = b.level === 'A' ? 3 : b.level === 'B' ? 2 : 1;
+      return bLevel - aLevel;
+    });
+
+    const layout: Record<string, { align: string, lx: number, ly: number, hasLeader: boolean, leaderX: number, leaderY: number }> = {};
+    const placed: { x: number, y: number, w: number, h: number }[] = [];
+    
+    let panelLeft = Infinity;
+    if (pinnedNode && viewportSize.w > 0) {
+      const targetNode = nodesProj.find(n => n.id === pinnedNode);
+      if (targetNode) {
+        let targetZ = camera.current.z * 1.10;
+        targetZ = Math.max(0.9, Math.min(1.8, targetZ)); 
+        const svgScale = cachedRect.current.svgWidth ? cachedRect.current.svgWidth / 2400 : 1;
+        const targetScreenX = viewportSize.w * 0.38;
+        const targetCamX = (targetScreenX - viewportSize.w / 2) / svgScale - targetNode.proj.x * targetZ;
+        
+        const panelScreenX = viewportSize.w * 0.64;
+        panelLeft = (panelScreenX - viewportSize.w / 2) / svgScale / targetZ - targetCamX / targetZ;
+      }
+    }
+
+    // Add domains to placed boxes so skills don't cover domain labels
+    domainsProj.forEach(d => {
+       placed.push({ x: d.proj.x, y: d.proj.y - 10, w: 200, h: 40 });
+    });
+
+    sorted.forEach(node => {
+      const isHub = node.level === 'A';
+      const isCore = node.level === 'B';
+      const radius = isHub ? 8 : isCore ? 4 : 2.5;
+      const w = isHub ? 110 : 80;
+      const h = isHub ? 22 : 18;
+      
+      const padX = 6;
+      const padY = 5;
+      
+      const tryPlacement = (dx: number, dy: number) => {
+        const lx = node.proj.x + dx;
+        const ly = node.proj.y + dy;
+        
+        if (lx + w/2 > panelLeft) return false;
+        
+        for (const p of placed) {
+          if (Math.abs(lx - p.x) < (w + p.w)/2 + padX && Math.abs(ly - p.y) < (h + p.h)/2 + padY) {
+            return false;
+          }
+        }
+        return { lx, ly };
+      };
+      
+      const candidates = [
+        { align: 'right', dx: radius + w/2 + 6, dy: 0, leader: false },
+        { align: 'left', dx: -(radius + w/2 + 6), dy: 0, leader: false },
+        { align: 'bottom', dx: 0, dy: radius + h/2 + 6, leader: false },
+        { align: 'top', dx: 0, dy: -(radius + h/2 + 6), leader: false },
+        
+        { align: 'right', dx: radius + w/2 + 6, dy: radius + h/2 + 4, leader: false },
+        { align: 'right', dx: radius + w/2 + 6, dy: -(radius + h/2 + 4), leader: false },
+        { align: 'left', dx: -(radius + w/2 + 6), dy: radius + h/2 + 4, leader: false },
+        { align: 'left', dx: -(radius + w/2 + 6), dy: -(radius + h/2 + 4), leader: false },
+        
+        { align: 'bottom', dx: w/3, dy: radius + h/2 + 10, leader: false },
+        { align: 'bottom', dx: -w/3, dy: radius + h/2 + 10, leader: false },
+        
+        { align: 'right', dx: radius + w/2 + 35, dy: radius + h/2 + 20, leader: true },
+        { align: 'left', dx: -(radius + w/2 + 35), dy: radius + h/2 + 20, leader: true },
+        { align: 'right', dx: radius + w/2 + 35, dy: -(radius + h/2 + 20), leader: true },
+        { align: 'left', dx: -(radius + w/2 + 35), dy: -(radius + h/2 + 20), leader: true },
+        
+        { align: 'right', dx: radius + w/2 + 60, dy: radius + h/2 + 40, leader: true },
+        { align: 'left', dx: -(radius + w/2 + 60), dy: radius + h/2 + 40, leader: true },
+      ];
+      
+      let best: { lx: number, ly: number } | null = null;
+      let usedCandidate: { align: string, dx: number, dy: number, leader: boolean } = candidates[0];
+      
+      for (const cand of candidates) {
+         const res = tryPlacement(cand.dx, cand.dy);
+         if (res) {
+            best = res;
+            usedCandidate = cand;
+            break;
+         }
+      }
+      
+      if (!best) {
+         best = { lx: node.proj.x, ly: node.proj.y + radius + h/2 + 5 };
+         usedCandidate = { align: 'bottom', dx: 0, dy: radius + h/2 + 5, leader: false };
+      }
+      
+      placed.push({ x: best.lx, y: best.ly, w, h });
+      
+      let textX = 0; let textY = 0;
+      if (usedCandidate.align === 'right') textX = usedCandidate.dx - w/2;
+      else if (usedCandidate.align === 'left') textX = usedCandidate.dx + w/2;
+      else textX = usedCandidate.dx;
+      textY = usedCandidate.dy + h/4; 
+      
+      let leaderX = 0; let leaderY = 0;
+      if (usedCandidate.leader) {
+         if (usedCandidate.align === 'right') { leaderX = usedCandidate.dx - w/2 - 3; leaderY = usedCandidate.dy; }
+         else if (usedCandidate.align === 'left') { leaderX = usedCandidate.dx + w/2 + 3; leaderY = usedCandidate.dy; }
+         else if (usedCandidate.align === 'bottom') { leaderX = usedCandidate.dx; leaderY = usedCandidate.dy - h/2 - 3; }
+         else { leaderX = usedCandidate.dx; leaderY = usedCandidate.dy + h/2 + 3; }
+      }
+      
+      layout[node.id] = {
+         align: usedCandidate.align,
+         lx: textX,
+         ly: textY,
+         hasLeader: usedCandidate.leader,
+         leaderX,
+         leaderY
+      };
+    });
+    
+    return layout;
+  }, [nodesProj, domainsProj, pinnedNode, viewportSize]);
 
   const renderCursorResponse = useCallback(() => {
     const state = interactionState.current;
@@ -359,6 +456,7 @@ export const SkillsConstellation = () => {
       if (svgWrapperRef.current) {
         const r = svgWrapperRef.current.getBoundingClientRect();
         cachedRect.current = { width: r.width, height: r.height, left: r.left, top: r.top, svgWidth: cachedRect.current.svgWidth };
+        setViewportSize({ w: r.width, h: r.height });
       }
       if (svgRef.current) {
         cachedRect.current.svgWidth = svgRef.current.getBoundingClientRect().width;
@@ -698,27 +796,28 @@ export const SkillsConstellation = () => {
     
     let opacity = 1;
     if (activeNode) {
-      opacity = isHovered ? 1 : isFirstOrder ? 0.9 : isSecondOrder ? 0.5 : 0.15;
+      opacity = isHovered ? 1 : isFirstOrder ? 0.9 : isSecondOrder ? 0.6 : 0.30;
     } else if (activeDomain) {
-      opacity = inActiveDomain ? 1 : 0.15;
+      opacity = inActiveDomain ? 1 : 0.25;
     }
 
     const isHub = node.level === 'A';
     const isCore = node.level === 'B';
-    const radius = isHub ? 8 : isCore ? 4 : 2.5;
-    const fontSize = isHub ? 14 : isCore ? 10 : 8;
     const isRich = !!SKILL_DETAILS[node.id];
-
-    let labelX, labelY, textAnchor;
-    if (node.align === 'bottom') {
-       labelX = 0; labelY = radius + 15; textAnchor = 'middle';
-    } else if (node.align === 'top') {
-       labelX = 0; labelY = -(radius + 10); textAnchor = 'middle';
-    } else if (node.align === 'right') {
-       labelX = radius + 5; labelY = 3; textAnchor = 'start';
-    } else {
-       labelX = -(radius + 5); labelY = 3; textAnchor = 'end';
+    
+    const isMobile = viewportSize.w > 0 && viewportSize.w < 768;
+    if (isMobile && !isHub && !isRich && !isHovered && !isFirstOrder && camera.current.z < 1.3 && searchQuery === "") {
+       opacity = 0;
     }
+
+    const radius = isHub ? 8 : isCore ? 4 : 2.5;
+    const fontSize = isHub ? 18 : isCore ? 14 : 14;
+
+    const layout = labelLayout[node.id] || { align: 'bottom', lx: 0, ly: radius + 15, hasLeader: false, leaderX: 0, leaderY: 0 };
+    
+    let textAnchor = 'middle';
+    if (layout.align === 'right') textAnchor = 'start';
+    else if (layout.align === 'left') textAnchor = 'end';
 
     renderQueue.push({
       yDepth: node.originalY,
@@ -726,7 +825,7 @@ export const SkillsConstellation = () => {
         <g
           key={`node-${i}`}
           ref={(el) => { nodeRefs.current[node.id] = el; }}
-          className={`constellation-node transition-all duration-300 no-pan cursor-pointer ${isRich ? 'is-rich' : ''}`}
+          className={`constellation-node transition-all duration-300 no-pan ${isRich ? 'is-rich' : ''} ${opacity === 0 ? 'pointer-events-none' : 'cursor-pointer'}`}
           transform={`translate(${node.proj.x}, ${node.proj.y})`}
           opacity={opacity}
           onMouseEnter={() => { if (!pinnedNode && !isDragging) setHoveredNode(node.id); }}
@@ -740,6 +839,10 @@ export const SkillsConstellation = () => {
           }}
         >
           {isHub && <line x1="0" y1="0" x2="0" y2="15" stroke="var(--text-muted)" strokeWidth="1" opacity={isHovered ? 1 : 0.4} />}
+          
+          {layout.hasLeader && (
+            <line x1="0" y1="0" x2={layout.leaderX} y2={layout.leaderY} stroke="rgba(245, 237, 227, 0.2)" strokeWidth="1" className="pointer-events-none transition-all duration-300" />
+          )}
           
           {isRich && (
              <circle 
@@ -760,13 +863,13 @@ export const SkillsConstellation = () => {
             className="transition-colors duration-300"
           />
           <text
-            x={labelX}
-            y={labelY}
+            x={layout.lx}
+            y={layout.ly}
             fontSize={fontSize}
-            fill={isHovered ? "var(--text-primary)" : isFirstOrder ? "var(--text-primary)" : "var(--text-muted)"}
+            fill={isHovered ? "var(--text-primary)" : isFirstOrder ? "var(--text-primary)" : (isRich ? "var(--text-primary)" : "var(--text-muted)")}
             textAnchor={textAnchor as any}
-            className={`font-mono tracking-widest pointer-events-none transition-colors duration-300 uppercase font-bold text-text-primary`}
-            style={{ textShadow: "0 2px 10px rgba(0,0,0,1)" }}
+            className={`font-mono tracking-widest pointer-events-none transition-all duration-500 uppercase ${isRich ? 'font-bold' : 'font-medium'}`}
+            style={{ textShadow: "0 1px 3px rgba(0,0,0,1), 0 0 7px rgba(0,0,0,0.8)" }}
           >
             {node.label}
           </text>
