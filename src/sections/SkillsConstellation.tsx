@@ -156,10 +156,28 @@ export const SkillsConstellation = () => {
        const nA = nData.find(n => n.id === a);
        const nB = nData.find(n => n.id === b);
        if (!nA || !nB) return null;
-       const midY = (nA.originalY + nB.originalY) / 2;
-       const d = `M ${nA.proj.x} ${nA.proj.y} L ${nB.proj.x} ${nB.proj.y}`;
-       return { a, b, d, midY };
-    }).filter(Boolean) as { a: string, b: string, d: string, midY: number }[];
+       
+       const dx = nB.x - nA.x;
+       const dy = nB.y - nA.y;
+       const dist = Math.sqrt(dx * dx + dy * dy);
+       const numSamples = Math.max(16, Math.min(40, Math.floor(dist / 25)));
+       
+       const pts = [];
+       for (let i = 0; i <= numSamples; i++) {
+           const t = i / numSamples;
+           const arcOffset = Math.sin(t * Math.PI) * (dist * 0.1); 
+           const nx = -dy / dist;
+           const ny = dx / dist;
+           
+           const x = nA.x + dx * t + nx * arcOffset;
+           const y = nA.y + dy * t + ny * arcOffset;
+           
+           const z = getZ(x, y) + 2; 
+           pts.push({ ...project(x, y, z), originalY: y });
+       }
+       
+       return { a, b, pts };
+    }).filter(Boolean) as { a: string, b: string, pts: {x: number, y: number, originalY: number}[] }[];
 
     return { terrain: tData, parsedTerrain: pTerrain, nodesProj: nData, edgesProj: eData, domainsProj: dData };
   }, []);
@@ -187,21 +205,17 @@ export const SkillsConstellation = () => {
     interactionState.current._wasZero = false;
 
     const px = state.x, py = state.y;
-    const nx = state.nx, ny = state.ny;
     const master = state.master;
     
     const scale = camera.current.z || 0.85;
-    const localSigma = 450 / scale;
-    const globalSigma = 2000 / scale;
-    const localSigmaSq = localSigma * localSigma;
-    const globalSigmaSq = globalSigma * globalSigma;
+    const ratio = (cachedRect.current.svgWidth || 2400) / 2400;
+    const screenMult = scale * ratio;
     
     parsedTerrain.forEach((t, i) => {
         const pathEl = terrainRefs.current[i];
         if (!pathEl) return;
         
         let minDistSq = Infinity;
-        let sumX = 0, sumY = 0;
         const len = t.pts.length;
         
         for (let j = 0; j < len; j++) {
@@ -210,14 +224,7 @@ export const SkillsConstellation = () => {
             const dy = pt.y - py;
             const dSq = dx*dx + dy*dy;
             if (dSq < minDistSq) minDistSq = dSq;
-            sumX += pt.x;
-            sumY += pt.y;
         }
-        
-        const avgX = sumX / len;
-        const avgY = sumY / len;
-        const lx = avgX / 1200;
-        const ly = avgY / 800;
         
         let baseAlpha = 0.08;
         if (!t.isCol) {
@@ -227,23 +234,23 @@ export const SkillsConstellation = () => {
            baseAlpha = 0.12;
         }
         
-        const globalDist = Math.exp(-minDistSq / (2 * globalSigmaSq)) * 0.08;
-        const globalDir = (nx * lx + ny * ly) * 0.06;
-        const ridgeFactor = Math.max(0, -t.yDepth / 1200);
-        const ridgeInfluence = (ny < 0 ? -ny : 0) * ridgeFactor * 0.08;
+        const pixelDist = Math.sqrt(minDistSq) * screenMult;
         
-        const globalInfluence = globalDist + globalDir + ridgeInfluence;
-        const localInfluence = Math.exp(-minDistSq / (2 * localSigmaSq));
+        let influence = 0;
+        if (pixelDist < 750) {
+            // Smooth bell curve falloff mapping nicely to 0-750px
+            influence = Math.exp(-(pixelDist * pixelDist) / (2 * 220 * 220));
+        }
         
-        let finalAlpha = baseAlpha + (globalInfluence + localInfluence * 0.5) * master;
+        let finalAlpha = baseAlpha + (influence * 0.45) * master;
         finalAlpha = Math.max(0.02, Math.min(0.95, finalAlpha));
         
-        const r = Math.round(245 + localInfluence * master * 10);
-        const g = Math.round(237 + localInfluence * master * 8);
-        const b = Math.round(227 - localInfluence * master * 15);
+        const r = Math.round(245 + influence * master * 10);
+        const g = Math.round(237 + influence * master * 8);
+        const b = Math.round(227 - influence * master * 10);
         
         pathEl.style.stroke = `rgba(${r}, ${g}, ${b}, ${finalAlpha.toFixed(3)})`;
-        pathEl.style.strokeWidth = (0.8 + localInfluence * master * 0.5).toFixed(2);
+        pathEl.style.strokeWidth = (0.8 + influence * master * 0.5).toFixed(2);
     });
   }, [parsedTerrain]);
 
@@ -389,6 +396,80 @@ export const SkillsConstellation = () => {
     setTimeout(() => setIsDragging(false), 50);
   };
 
+  const getConnectedNodes = useCallback((nodeId: string) => {
+    const connected = new Set<string>();
+    CONNECTIONS.forEach(([a, b]) => {
+      if (a === nodeId) connected.add(b);
+      if (b === nodeId) connected.add(a);
+    });
+    return connected;
+  }, []);
+
+  const focusOnNode = useCallback((nodeId: string) => {
+    const nData = nodesProj.find(n => n.id === nodeId);
+    if (!nData) return;
+
+    const connectedNodes = getConnectedNodes(nodeId);
+    
+    let minX = nData.proj.x, maxX = nData.proj.x;
+    let minY = nData.proj.y, maxY = nData.proj.y;
+
+    const includePoint = (p: {x: number, y: number}) => {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+    };
+
+    connectedNodes.forEach(sn => {
+        const snData = nodesProj.find(n => n.id === sn);
+        if (snData) includePoint(snData.proj);
+    });
+
+    edgesProj.forEach(e => {
+        if (e.a === nodeId || e.b === nodeId) {
+            e.pts.forEach(includePoint);
+        }
+    });
+
+    const padding = 120;
+    minX -= padding;
+    maxX += padding;
+    minY -= padding;
+    maxY += padding;
+
+    const netWidth = maxX - minX;
+    const netHeight = maxY - minY;
+    
+    const svgRect = cachedRect.current;
+    if (svgRect.width === 0) return;
+    
+    // Determine card side based on node position.
+    const isNodeRight = nData.proj.x > 0;
+    const cardSide = isNodeRight ? 'left' : 'right';
+    
+    const svgWidth = 2400; 
+    const svgHeight = 1600;
+    
+    const availableWidth = svgWidth * 0.62;
+    const availableHeight = svgHeight * 0.8;
+    
+    let targetZ = Math.min(availableWidth / netWidth, availableHeight / netHeight);
+    targetZ = Math.max(1.0, Math.min(2.0, targetZ)); 
+    
+    const netCx = (minX + maxX) / 2;
+    const netCy = (minY + maxY) / 2;
+    
+    const shiftX = cardSide === 'right' ? -(svgWidth * 0.15) : (svgWidth * 0.15);
+    
+    const targetCamX = -netCx * targetZ + shiftX;
+    const targetCamY = -netCy * targetZ;
+    
+    camera.current = { x: targetCamX, y: targetCamY, z: targetZ };
+    clampCamera();
+    applyCamera(true, 0.7);
+  }, [nodesProj, edgesProj, getConnectedNodes, clampCamera, applyCamera]);
+
   const focusOn = useCallback((x: number, y: number, z: number) => {
     camera.current = { x: -x * z, y: -y * z, z };
     clampCamera();
@@ -435,14 +516,7 @@ export const SkillsConstellation = () => {
     );
   }, { scope: containerRef });
 
-  const getConnectedNodes = useCallback((nodeId: string) => {
-    const connected = new Set<string>();
-    CONNECTIONS.forEach(([a, b]) => {
-      if (a === nodeId) connected.add(b);
-      if (b === nodeId) connected.add(a);
-    });
-    return connected;
-  }, []);
+
 
   const activeNode = pinnedNode || hoveredNode;
   const firstOrder = useMemo(() => activeNode ? getConnectedNodes(activeNode) : new Set<string>(), [activeNode, getConnectedNodes]);
@@ -530,8 +604,8 @@ export const SkillsConstellation = () => {
     });
   });
 
-  edgesProj.forEach((e, i) => {
-    const { a, b, d, midY } = e;
+  edgesProj.forEach((e, edgeIdx) => {
+    const { a, b, pts } = e;
     const isDirectActive = activeNode && (
        (activeNode === a && firstOrder.has(b)) || 
        (activeNode === b && firstOrder.has(a))
@@ -554,32 +628,40 @@ export const SkillsConstellation = () => {
       }
     }
 
-    if (isDirectActive) {
-       renderQueue.push({
-         yDepth: midY,
-         element: (
-           <g key={`edge-${i}`} className="pointer-events-none transition-opacity duration-300">
-              <path d={d} fill="none" stroke="#000" strokeWidth="4" />
-              <path d={d} fill="none" stroke="rgba(220,38,38,0.5)" strokeWidth="2.5" />
-              <path d={d} fill="none" stroke="var(--text-primary)" strokeWidth="1.2" />
-           </g>
-         )
-       });
-    } else {
-       renderQueue.push({
-         yDepth: midY,
-         element: (
-           <path 
-             key={`edge-${i}`}
-             d={d}
-             fill="none"
-             stroke={stroke}
-             strokeWidth="1.5"
-             opacity={opacity}
-             className="constellation-line transition-opacity duration-500 pointer-events-none"
-           />
-         )
-       });
+    for (let i = 0; i < pts.length - 1; i++) {
+        const p1 = pts[i];
+        const p2 = pts[i+1];
+        const d = `M ${formatSvgNumber(p1.x)} ${formatSvgNumber(p1.y)} L ${formatSvgNumber(p2.x)} ${formatSvgNumber(p2.y)}`;
+        const midY = (p1.originalY + p2.originalY) / 2;
+        
+        if (isDirectActive) {
+           renderQueue.push({
+             yDepth: midY,
+             element: (
+               <g key={`edge-${edgeIdx}-${i}`} className="pointer-events-none transition-opacity duration-300">
+                  <path d={d} fill="none" stroke="#000" strokeWidth="4" strokeLinecap="round" />
+                  <path d={d} fill="none" stroke="rgba(220,38,38,0.5)" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d={d} fill="none" stroke="var(--text-primary)" strokeWidth="1.2" strokeLinecap="round" />
+               </g>
+             )
+           });
+        } else {
+           renderQueue.push({
+             yDepth: midY,
+             element: (
+               <path 
+                 key={`edge-${edgeIdx}-${i}`}
+                 d={d}
+                 fill="none"
+                 stroke={stroke}
+                 strokeWidth="1.5"
+                 strokeLinecap="round"
+                 opacity={opacity}
+                 className="constellation-line transition-opacity duration-500 pointer-events-none"
+               />
+             )
+           });
+        }
     }
   });
 
@@ -629,7 +711,7 @@ export const SkillsConstellation = () => {
             e.stopPropagation();
             setPinnedNode(pinnedNode === node.id ? null : node.id);
             setHoveredNode(null);
-            if (pinnedNode !== node.id) focusOn(node.proj.x, node.proj.y, 1.3);
+            if (pinnedNode !== node.id) focusOnNode(node.id);
           }}
         >
           {isHub && <line x1="0" y1="0" x2="0" y2="15" stroke="var(--text-muted)" strokeWidth="1" opacity={isHovered ? 1 : 0.4} />}
