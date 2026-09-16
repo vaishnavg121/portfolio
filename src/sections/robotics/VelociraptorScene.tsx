@@ -28,7 +28,6 @@ const VelociraptorModel = () => {
     const targetDim = 55; // Fit 55%
     const scale = targetDim / maxDim;
     
-    scene.position.copy(center).multiplyScalar(-1);
     group.current?.scale.setScalar(scale);
     
     // Create a clone for wireframe
@@ -152,12 +151,14 @@ const VelociraptorModel = () => {
 
   return (
     <group ref={group} rotation={[Math.PI / 8, -Math.PI / 4, 0]}>
-      <primitive object={scene} />
-      <mesh ref={strikeBlockRef} position={[100, -10, 20]} rotation={[0, 0, Math.PI/8]}>
-         <boxGeometry args={[10, 40, 40]} />
-         <meshStandardMaterial color="#080808" roughness={0.7} metalness={0.5} transparent opacity={0.8} />
-      </mesh>
-      <Sparks active={impactActive} />
+      <group position={[-1.78, 67.2, -18.5]}> {/* Approximate inverted center derived from earlier bounds */}
+        <primitive object={scene} />
+        <mesh ref={strikeBlockRef} position={[32.43, -135.89, 37]}>
+           <boxGeometry args={[10, 40, 40]} />
+           <meshStandardMaterial color="#080808" roughness={0.7} metalness={0.5} transparent opacity={0.8} />
+        </mesh>
+        <Sparks active={impactActive} />
+      </group>
     </group>
   );
 };

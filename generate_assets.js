@@ -1,0 +1,208 @@
+const fs = require('fs');
+const path = require('path');
+const express = require('express');
+const puppeteer = require('puppeteer');
+
+const app = express();
+app.use(express.json({ limit: '50mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
+
+let remaining = 15;
+
+app.post('/api/save-image', (req, res) => {
+    const { id, dataUrl } = req.body;
+    console.log("Saving " + id); const base64Data = dataUrl.replace(/^data:image\/webp;base64,/, "");
+    
+    let folder = 'renders';
+    if (id.includes('wireframe') || id.includes('outline') || id.includes('ghost')) folder = 'technical';
+    if (id.includes('alpha')) folder = 'masks';
+    if (id.includes('weapon-close') || id === 'weapon-isolated') folder = 'parts';
+    
+    const filePath = path.join(__dirname, `public/assets/robotics/velociraptor/${folder}/${id}.webp`);
+    
+    // Ensure dir exists
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    
+    fs.writeFileSync(filePath, base64Data, 'base64');
+    console.log(`Saved ${filePath}`);
+    remaining--;
+    res.json({ success: true });
+});
+
+const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+</script>
+<style>
+body { margin: 0; background: transparent; overflow: hidden; }
+canvas { display: block; }
+</style>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const w = 1920;
+const h = 1080;
+const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(w, h);
+renderer.setPixelRatio(2);
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 1000);
+const orthoCamera = new THREE.OrthographicCamera(-w/2, w/2, h/2, -h/2, 0.1, 1000);
+
+const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambient);
+const dirLight = new THREE.DirectionalLight(0xf5ede3, 1.5);
+dirLight.position.set(100, 100, 50);
+scene.add(dirLight);
+const dirLight2 = new THREE.DirectionalLight(0xcc3333, 2.0);
+dirLight2.position.set(-100, -50, -50);
+scene.add(dirLight2);
+
+const loader = new GLTFLoader();
+
+const views = [
+  { id: 'velociraptor-hero-34', type: 'perspective', pos: [100, 50, 100], mat: 'default' },
+  { id: 'velociraptor-hero-opposite', type: 'perspective', pos: [-100, 50, -100], mat: 'default' },
+  { id: 'velociraptor-top', type: 'orthographic', pos: [0, 100, 0], mat: 'default' },
+  { id: 'velociraptor-front', type: 'orthographic', pos: [0, 0, 100], mat: 'default' },
+  { id: 'velociraptor-side', type: 'orthographic', pos: [100, 0, 0], mat: 'default' },
+  { id: 'velociraptor-rear', type: 'orthographic', pos: [-100, 0, 0], mat: 'default' },
+  { id: 'velociraptor-low-weapon', type: 'perspective', pos: [100, 10, 100], mat: 'default' },
+  { id: 'velociraptor-weapon-close', type: 'perspective', pos: [100, 50, 100], mat: 'default', focusWeapon: true },
+  { id: 'velociraptor-internals-top', type: 'orthographic', pos: [0, 100, 0], mat: 'default', hideTop: true },
+  { id: 'velociraptor-wireframe', type: 'perspective', pos: [100, 50, 100], mat: 'wireframe' },
+  { id: 'velociraptor-wireframe-top', type: 'orthographic', pos: [0, 100, 0], mat: 'wireframe' },
+  { id: 'velociraptor-outline', type: 'perspective', pos: [100, 50, 100], mat: 'outline' },
+  { id: 'velociraptor-ghost', type: 'perspective', pos: [100, 50, 100], mat: 'ghost' },
+  { id: 'velociraptor-hero-alpha', type: 'perspective', pos: [100, 50, 100], mat: 'alpha' },
+  { id: 'velociraptor-weapon-alpha', type: 'perspective', pos: [100, 50, 100], mat: 'alpha', focusWeapon: true },
+];
+
+async function run() {
+    const gltf = await loader.loadAsync('/assets/robotics/velociraptor/model/velociraptor.glb');
+    const model = gltf.scene;
+    scene.add(model);
+    
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const scale = 55 / maxDim; // MATCH TARGET DIM 55%
+    
+    model.position.copy(center).multiplyScalar(-1);
+    
+    const group = new THREE.Group();
+    scene.add(group);
+    group.add(model);
+    group.scale.set(scale, scale, scale);
+    group.rotation.set(Math.PI/8, -Math.PI/4, 0); // MATCH DEFAULT ROTATION
+
+    // We also need the isolated weapon for weapon-close.
+    let weaponMeshes = [];
+    model.traverse(c => {
+       if(c.name === 'mesh_Component874-Mesh' || c.name === 'mesh_645') {
+           weaponMeshes.push(c);
+       }
+    });
+    
+    const metalMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.3, metalness: 0.8 });
+    const weaponMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2, metalness: 0.9 });
+    const wireMat = new THREE.MeshBasicMaterial({ color: 0xcc3333, wireframe: true });
+    const outlineMat = new THREE.MeshBasicMaterial({ color: 0xf5ede3, wireframe: true });
+    const ghostMat = new THREE.MeshStandardMaterial({ color: 0x333333, transparent: true, opacity: 0.3, wireframe: true });
+    const alphaMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    
+    for (const view of views) {
+        // Reset state
+        group.visible = true;
+        model.traverse(c => {
+           if(c.isMesh) {
+               c.visible = true;
+               if(view.mat === 'wireframe') c.material = wireMat;
+               else if(view.mat === 'outline') c.material = outlineMat;
+               else if(view.mat === 'ghost') c.material = ghostMat;
+               else if(view.mat === 'alpha') c.material = alphaMat;
+               else {
+                   if(weaponMeshes.includes(c)) c.material = weaponMat;
+                   else c.material = metalMat;
+               }
+           }
+        });
+        
+        if (view.focusWeapon) {
+            model.traverse(c => {
+                if(c.isMesh && !weaponMeshes.includes(c)) c.visible = false;
+            });
+        }
+        
+        if (view.hideTop) {
+            // we don't know the top plate name easily, just apply wireframe to non-weapon to simulate internals
+            model.traverse(c => {
+                if(c.isMesh && !weaponMeshes.includes(c)) {
+                    c.material = ghostMat;
+                }
+            });
+        }
+
+        const cam = view.type === 'perspective' ? camera : orthoCamera;
+        cam.position.set(...view.pos);
+        if (view.type === 'orthographic') {
+            cam.zoom = 600 / maxDim; // Arbitrary zoom to fit screen
+            cam.updateProjectionMatrix();
+        }
+        cam.lookAt(0,0,0);
+        
+        renderer.setClearColor(0x000000, 0); // transparent
+        renderer.render(scene, cam);
+        
+        const dataUrl = renderer.domElement.toDataURL('image/webp', 1.0);
+        
+        await fetch('/api/save-image', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id: view.id, dataUrl })
+        });
+    }
+    
+    document.body.innerHTML = "DONE";
+}
+
+run().catch(e => { console.error(e); console.log("ERROR: "+e); document.body.innerHTML = "ERROR: " + e; });
+</script>
+</body>
+</html>
+`;
+
+fs.writeFileSync('generate.html', html);
+
+const server = app.listen(3457, async () => {
+    console.log("Server listening on 3457");
+    await new Promise(r => setTimeout(r, 2000)); const browser = await puppeteer.launch({ headless: 'new', executablePath: 'C:\\Users\\gvnag\\.cache\\puppeteer\\chrome\\win64-153.0.8010.36\\chrome-win64\\chrome.exe' });
+    const page = await browser.newPage();
+    page.on('console', msg => console.log('PAGE LOG:', msg.text())); page.on('response', r => { if(r.status()===404) console.log('404:', r.url()) });
+    await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 });
+    
+    await page.goto('http://localhost:3457/generate.html');
+    
+    // Wait for "DONE"
+    await page.waitForFunction('document.body.innerText.includes("DONE") || document.body.innerText.includes("ERROR")', { timeout: 60000 });
+    
+    await browser.close();
+    server.close();
+    console.log("Assets generated.");
+});

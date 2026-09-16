@@ -26,6 +26,8 @@ export const velociraptorAssets = {
     weaponProperties: '/assets/robotics/velociraptor/fea/weapon-properties.png',
   },
   animation: {
-    impactOrigin: [40, -5, 20] as [number, number, number], // Derived approx visual impact point
+    impactOrigin: [32.43, -135.89, 37] as [number, number, number], // Visual contact origin derived from CAD weapon perimeter; not an empirical impact measurement.
+    weaponPivot: [0, -135.89, 37] as [number, number, number],
+    weaponAxis: [0, 0, 1] as [number, number, number],
   }
 };
