@@ -416,86 +416,49 @@ export const SkillsConstellation = () => {
     const nData = nodesProj.find(n => n.id === nodeId);
     if (!nData) return;
 
-    const connectedNodes = getConnectedNodes(nodeId);
-    
-    let minX = nData.proj.x, maxX = nData.proj.x;
-    let minY = nData.proj.y, maxY = nData.proj.y;
-
-    const includePoint = (p: {x: number, y: number}) => {
-        if (p.x < minX) minX = p.x;
-        if (p.x > maxX) maxX = p.x;
-        if (p.y < minY) minY = p.y;
-        if (p.y > maxY) maxY = p.y;
-    };
-
-    connectedNodes.forEach(sn => {
-        const snData = nodesProj.find(n => n.id === sn);
-        if (snData) includePoint(snData.proj);
-    });
-
-    edgesProj.forEach(e => {
-        if (e.a === nodeId || e.b === nodeId) {
-            e.pts.forEach(includePoint);
-        }
-    });
-
-    const netWidthOrig = maxX - minX;
-    const netHeightOrig = maxY - minY;
-    
-    const marginX = netWidthOrig * 0.15;
-    const marginY = netHeightOrig * 0.18;
-    minX -= marginX;
-    maxX += marginX;
-    minY -= marginY;
-    maxY += marginY;
-
-    const netWidth = maxX - minX;
-    const netHeight = maxY - minY;
-    
     const svgRect = cachedRect.current;
     if (svgRect.width === 0) return;
     
+    // 1. Zoom strategy: Start from current zoom and apply a small focus factor
+    const smallFocusFactor = 1.05;
+    let targetZ = camera.current.z * smallFocusFactor;
+    
+    // Hard cap the delta: no more than ~10% zoom in, ~5% zoom out from current camera
+    const maxZoomIn = camera.current.z * 1.10;
+    const maxZoomOut = camera.current.z * 0.95;
+    targetZ = Math.max(maxZoomOut, Math.min(maxZoomIn, targetZ));
+    
+    // Absolute bounds for selection zoom
+    targetZ = Math.max(0.9, Math.min(1.8, targetZ)); 
+    
+    // 2. Primary camera movement: PAN
+    // Determine card side
     const isNodeRight = nData.proj.x > 0;
     const cardSide = isNodeRight ? 'left' : 'right';
     
     const svgWidth = 2400; 
     const svgHeight = 1600;
     
-    const safePadX = svgWidth * 0.08;
-    const safePadY = svgHeight * 0.11;
+    // 3. Selected-node screen target
+    // If card is right, target X is ~40%. If left, target X is ~60%.
+    // In our SVG space, the viewport width is svgWidth / targetZ.
+    // Center is 0. Left edge is -svgWidth / (2 * targetZ). Right edge is +...
+    // But remember we calculate targetCamX as what maps node.x to 40% of the screen.
+    // screen_ratio_x = 0.40 -> means the node is at -10% from the center (which is 0.50).
+    // In SVG space, 10% of the visible viewport width is 0.10 * (svgWidth / targetZ) = 240 / targetZ.
+    const offsetX = cardSide === 'right' ? (240 / targetZ) : -(240 / targetZ);
     
-    const cardReserve = svgWidth * 0.35;
+    // Target Y: ~50% viewport Y -> perfectly centered vertically
+    const offsetY = 0;
     
-    const availableWidth = svgWidth - (safePadX * 2) - cardReserve;
-    const availableHeight = svgHeight - (safePadY * 2);
-    
-    let targetZ = Math.min(availableWidth / netWidth, availableHeight / netHeight);
-    targetZ = Math.max(0.9, Math.min(2.1, targetZ)); 
-    
-    const netCx = (minX + maxX) / 2;
-    const netCy = (minY + maxY) / 2;
-    
-    let availLeft, availRight;
-    if (cardSide === 'right') {
-        availLeft = -1200 + safePadX;
-        availRight = 1200 - safePadX - cardReserve;
-    } else {
-        availLeft = -1200 + safePadX + cardReserve;
-        availRight = 1200 - safePadX;
-    }
-    const availCx = (availLeft + availRight) / 2;
-    
-    const availTop = -800 + safePadY;
-    const availBottom = 800 - safePadY;
-    const availCy = (availTop + availBottom) / 2;
-    
-    const targetCamX = availCx - netCx * targetZ;
-    const targetCamY = availCy - netCy * targetZ;
+    // We want the camera to focus on `nData.proj.x` + offsetX
+    const targetCamX = -(nData.proj.x + offsetX) * targetZ;
+    const targetCamY = -(nData.proj.y + offsetY) * targetZ;
     
     camera.current = { x: targetCamX, y: targetCamY, z: targetZ };
     clampCamera();
-    applyCamera(true, 0.6);
-  }, [nodesProj, edgesProj, getConnectedNodes, clampCamera, applyCamera]);
+    applyCamera(true, 0.5); // 400-550ms transition
+  }, [nodesProj, clampCamera, applyCamera]);
 
   const focusOn = useCallback((x: number, y: number, z: number) => {
     camera.current = { x: -x * z, y: -y * z, z };
@@ -654,41 +617,40 @@ export const SkillsConstellation = () => {
         stroke = "var(--text-muted)";
       }
     }
+    
+    let fullPathD = "";
+    pts.forEach((p, idx) => {
+        fullPathD += idx === 0 ? `M ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} ` : `L ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} `;
+    });
+    
+    const midY = (pts[0].originalY + pts[pts.length - 1].originalY) / 2;
 
-    for (let i = 0; i < pts.length - 1; i++) {
-        const p1 = pts[i];
-        const p2 = pts[i+1];
-        const d = `M ${formatSvgNumber(p1.x)} ${formatSvgNumber(p1.y)} L ${formatSvgNumber(p2.x)} ${formatSvgNumber(p2.y)}`;
-        const midY = (p1.originalY + p2.originalY) / 2;
-        
-        if (isDirectActive) {
-           renderQueue.push({
-             yDepth: midY,
-             element: (
-               <g key={`edge-${edgeIdx}-${i}`} className="pointer-events-none transition-opacity duration-300">
-                  <path d={d} fill="none" stroke="#000" strokeWidth="4" strokeLinecap="round" />
-                  <path d={d} fill="none" stroke="rgba(220,38,38,0.5)" strokeWidth="2.5" strokeLinecap="round" />
-                  <path d={d} fill="none" stroke="var(--text-primary)" strokeWidth="1.2" strokeLinecap="round" />
-               </g>
-             )
-           });
-        } else {
-           renderQueue.push({
-             yDepth: midY,
-             element: (
-               <path 
-                 key={`edge-${edgeIdx}-${i}`}
-                 d={d}
-                 fill="none"
-                 stroke={stroke}
-                 strokeWidth="1.5"
-                 strokeLinecap="round"
-                 opacity={opacity}
-                 className="constellation-line transition-opacity duration-500 pointer-events-none"
-               />
-             )
-           });
-        }
+    if (isDirectActive) {
+       renderQueue.push({
+         yDepth: midY,
+         element: (
+           <g key={`edge-${edgeIdx}`} className="pointer-events-none transition-opacity duration-300">
+              <path d={fullPathD} fill="none" stroke="#000" strokeWidth="4" />
+              <path d={fullPathD} fill="none" stroke="rgba(220,38,38,0.5)" strokeWidth="2.5" />
+              <path d={fullPathD} fill="none" stroke="var(--text-primary)" strokeWidth="1.2" />
+           </g>
+         )
+       });
+    } else {
+       renderQueue.push({
+         yDepth: midY,
+         element: (
+           <path 
+             key={`edge-${edgeIdx}`}
+             d={fullPathD}
+             fill="none"
+             stroke={stroke}
+             strokeWidth="1.5"
+             opacity={opacity}
+             className="constellation-line transition-opacity duration-500 pointer-events-none"
+           />
+         )
+       });
     }
   });
 
