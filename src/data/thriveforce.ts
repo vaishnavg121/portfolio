@@ -15,6 +15,7 @@ export const thriveforceData = {
       weightClass: "3 lb / 1.36 kg",
       type: "Horizontal Undercutter",
       status: "Verified Build",
+      image: null,
       specs: {
         energy: "~470 J",
         weaponMass: "0.297 kg",
@@ -36,6 +37,7 @@ export const thriveforceData = {
       weightClass: "8 kg",
       type: "Combat Robot",
       status: "Verified Legacy",
+      image: null,
     },
     {
       id: "slipknut",
@@ -43,6 +45,7 @@ export const thriveforceData = {
       weightClass: "15 kg",
       type: "Combat Robot",
       status: "Verified Legacy",
+      image: null,
     }
   ],
   sponsors: [

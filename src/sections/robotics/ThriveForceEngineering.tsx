@@ -2,7 +2,10 @@
 import React, { useRef, useEffect } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { velociraptorAssets } from '../../data/velociraptorAssets';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export const ThriveForceEngineering = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,21 +41,6 @@ export const ThriveForceEngineering = () => {
                     start: "top center",
                     end: "center center",
                     scrub: 1
-                }
-            }
-        );
-
-        // Team Transition Rule
-        gsap.fromTo(".team-rule",
-            { scaleX: 0 },
-            {
-                scaleX: 1,
-                ease: "none",
-                scrollTrigger: {
-                    trigger: ".transition-section",
-                    start: "center bottom",
-                    end: "center center",
-                    scrub: true
                 }
             }
         );

@@ -35,8 +35,8 @@ export const ThriveForceTeam = () => {
         
         {/* 07 - TEAM INTRO */}
         <div className="w-full px-6 lg:px-16 pt-32 pb-24">
-            <h2 className="font-display text-[6rem] lg:text-[10rem] uppercase tracking-tighter leading-none mb-4">
-                Team<br/>ThriveForce
+            <h2 className="font-display text-[clamp(30px,3.5vw,52px)] uppercase tracking-tighter leading-none mb-4">
+                Team ThriveForce
             </h2>
             <div className="flex flex-col lg:flex-row lg:items-center justify-between border-t border-white/10 pt-8 mt-8">
                 <div className="font-mono text-sm tracking-widest text-text-muted uppercase">Combat Robotics</div>
@@ -44,7 +44,7 @@ export const ThriveForceTeam = () => {
                     Design &bull; Simulation &bull; Fabrication
                 </div>
             </div>
-            <div className="w-full h-[1px] bg-accent/30 mb-8" />
+            <div className="w-full h-[1px] bg-accent/30 mb-8 mt-8" />
             
             <div className="flex flex-col border-t border-white/5">
                 {thriveforceData.robots.map((robot, i) => (
@@ -72,7 +72,7 @@ export const ThriveForceTeam = () => {
             
             <div 
                 ref={roleRef}
-                className="relative w-full h-[300px] border border-white/5 flex select-none bg-[#050505]"
+                className="relative w-full h-[250px] border border-white/5 flex select-none bg-[#050505]"
                 onPointerMove={handleRolePointerMove}
                 onPointerLeave={handleRoleLeave}
             >
@@ -81,7 +81,7 @@ export const ThriveForceTeam = () => {
                     className="absolute top-0 left-0 h-full flex flex-col items-end justify-center pr-8 lg:pr-16 overflow-hidden border-r border-accent/20 transition-all duration-75"
                     style={{ width: 'var(--split-pos)' }}
                 >
-                    <h4 className="font-display text-4xl lg:text-6xl text-[#f5ede3] uppercase tracking-tighter mb-6">Engineer</h4>
+                    <h4 className="font-display text-[clamp(30px,3.5vw,52px)] text-[#f5ede3] uppercase tracking-tighter mb-4">Engineer</h4>
                     <div className="flex flex-col gap-1 font-mono text-[9px] lg:text-[10px] text-text-muted uppercase tracking-widest text-right">
                         <span>CAD Design</span>
                         <span>Structural Simulation</span>
@@ -94,7 +94,7 @@ export const ThriveForceTeam = () => {
                     className="absolute top-0 right-0 h-full flex flex-col items-start justify-center pl-8 lg:pl-16 overflow-hidden transition-all duration-75"
                     style={{ width: 'calc(100% - var(--split-pos))' }}
                 >
-                    <h4 className="font-display text-4xl lg:text-6xl text-accent uppercase tracking-tighter mb-6">Treasurer</h4>
+                    <h4 className="font-display text-[clamp(30px,3.5vw,52px)] text-accent uppercase tracking-tighter mb-4">Treasurer</h4>
                     <div className="flex flex-col gap-1 font-mono text-[9px] lg:text-[10px] text-text-muted uppercase tracking-widest">
                         <span>Budgeting</span>
                         <span>Procurement</span>
@@ -139,11 +139,11 @@ export const ThriveForceTeam = () => {
             </div>
 
             {/* CLOSING */}
-            <div className="mt-8 pt-16 border-t border-white/5 text-center relative overflow-hidden">
+            <div className="mt-8 pt-16 border-t border-white/5 text-center relative overflow-hidden pb-16">
                 <div className="absolute inset-0 w-full h-full opacity-[0.02] pointer-events-none mix-blend-screen flex items-center justify-center">
                     <Image src={velociraptorAssets.technical.heroWireframe} alt="Silhouette" fill className="object-cover" />
                 </div>
-                <h2 className="relative z-10 font-display text-[4rem] lg:text-[6rem] uppercase tracking-tighter text-[#f5ede3] leading-[0.9]">
+                <h2 className="relative z-10 font-display text-[clamp(38px,4.5vw,68px)] uppercase tracking-tighter text-[#f5ede3] leading-[0.9]">
                     From CAD<br/>To <span className="text-accent">Combat.</span>
                 </h2>
                 <div className="relative z-10 font-mono text-[9px] tracking-widest text-text-muted uppercase mt-8">

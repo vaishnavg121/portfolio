@@ -23,13 +23,6 @@ export const velociraptorAssets = {
     wireframeTop: '/assets/robotics/velociraptor/renders/velociraptor-wireframe-top.webp',
     silhouette: '/assets/robotics/velociraptor/renders/velociraptor-silhouette.webp',
   },
-  screenshots: {
-    hero34: '/assets/robotics/velociraptor/screenshots/Screenshot 2026-09-17 042044.png',
-    frontal: '/assets/robotics/velociraptor/screenshots/Screenshot 2026-09-17 042341.png',
-    top: '/assets/robotics/velociraptor/screenshots/Screenshot 2026-09-17 042126.png',
-    weaponClose1: '/assets/robotics/velociraptor/screenshots/Screenshot 2026-09-17 042455.png',
-    weaponClose2: '/assets/robotics/velociraptor/screenshots/Screenshot 2026-09-17 042505.png',
-  },
   fea: {
     sideStress: '/assets/robotics/velociraptor/fea/fea-side-stress.png',
     sideDisplacement: '/assets/robotics/velociraptor/fea/fea-side-displacement.png',
