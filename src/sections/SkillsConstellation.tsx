@@ -32,8 +32,6 @@ export const SkillsConstellation = () => {
   const [showHint, setShowHint] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<typeof NODES>([]);
-  const [popupPos, setPopupPos] = useState({ x: 0, y: 0, align: 'right' });
-  const [popupOffset, setPopupOffset] = useState({ dx: 150, dy: -150, align: 'right' });
   
   const camera = useRef({ x: 0, y: 150, z: 0.85 });
   const isPanning = useRef(false);
@@ -454,136 +452,27 @@ export const SkillsConstellation = () => {
     const svgRect = cachedRect.current;
     if (svgRect.width === 0) return;
     
-    // 1. Zoom strategy
-    let targetZ = camera.current.z * 1.05;
-    const maxZoomIn = camera.current.z * 1.10;
+    // 1. Zoom strategy (slightly stronger focus as requested: ~10% bump)
+    let targetZ = camera.current.z * 1.10;
+    const maxZoomIn = camera.current.z * 1.15;
     const maxZoomOut = camera.current.z * 0.95;
     targetZ = Math.max(maxZoomOut, Math.min(maxZoomIn, targetZ));
     targetZ = Math.max(0.9, Math.min(1.8, targetZ)); 
     
-    // 2. Base camera (keeps node at current screen position before pan)
+    // 2. Base camera (place node at 38% viewport width and 50% height to leave room for right panel)
     const rect = svgRect;
     const svgScale = rect.svgWidth ? rect.svgWidth / 2400 : 1;
     
-    const currentScreenX = rect.width / 2 + (nData.proj.x * camera.current.z + camera.current.x) * svgScale;
-    const currentScreenY = rect.height / 2 + (nData.proj.y * camera.current.z + camera.current.y) * svgScale;
+    const targetScreenX = rect.width * 0.38;
+    const targetScreenY = rect.height * 0.50;
 
-    const baseCamX = (currentScreenX - rect.width / 2) / svgScale - nData.proj.x * targetZ;
-    const baseCamY = (currentScreenY - rect.height / 2) / svgScale - nData.proj.y * targetZ;
-
-    // 3. Screen-space mapping helpers
-    const safeLeft = 32;
-    const safeRight = rect.width - 32;
-    const safeTop = 32;
-    const safeBottom = rect.height - 32;
-
-    const toScreen = (pt: {x: number, y: number}) => ({
-        x: rect.width / 2 + (pt.x * targetZ + baseCamX) * svgScale,
-        y: rect.height / 2 + (pt.y * targetZ + baseCamY) * svgScale
-    });
-
-    const connectedNodes = getConnectedNodes(nodeId);
-    const nodeScr = toScreen(nData.proj);
-    const neighborScr = Array.from(connectedNodes).map(sn => {
-        const np = nodesProj.find(n => n.id === sn);
-        return np ? toScreen(np.proj) : null;
-    }).filter(Boolean) as {x: number, y: number}[];
-
-    const pathScr: {x: number, y: number}[] = [];
-    edgesProj.forEach(e => {
-        if (e.a === nodeId || e.b === nodeId) {
-            e.pts.forEach(p => pathScr.push(toScreen(p)));
-        }
-    });
-
-    // Card dimensions (screen space)
-    const cW = 380; // 360 + 20 padding
-    const cH = 320; 
-
-    // Gap from selected node
-    const gapX = 70;
-    const gapY = 50;
-
-    const candidates = [
-        { dx: gapX, dy: -cH/2, align: 'right' },
-        { dx: -gapX, dy: -cH/2, align: 'left' },
-        { dx: gapX, dy: -cH - gapY, align: 'right' },
-        { dx: -gapX, dy: -cH - gapY, align: 'left' },
-        { dx: gapX, dy: gapY, align: 'right' },
-        { dx: -gapX, dy: gapY, align: 'left' }
-    ];
-
-    let bestCandidate = candidates[0];
-    let minScore = Infinity;
-    let bestPanX = 0;
-    let bestPanY = 0;
-
-    for (const c of candidates) {
-        const cLeft = c.align === 'right' ? nodeScr.x + c.dx : nodeScr.x + c.dx - cW;
-        const cRight = cLeft + cW;
-        const cTop = nodeScr.y + c.dy;
-        const cBottom = cTop + cH;
-
-        let panX = 0;
-        let panY = 0;
-        let score = 0;
-
-        // Composition bounding box (Node + Card)
-        const compLeft = Math.min(cLeft, nodeScr.x - 40);
-        const compRight = Math.max(cRight, nodeScr.x + 40);
-        const compTop = Math.min(cTop, nodeScr.y - 40);
-        const compBottom = Math.max(cBottom, nodeScr.y + 40);
-
-        if (compLeft < safeLeft) panX = safeLeft - compLeft;
-        else if (compRight > safeRight) panX = safeRight - compRight;
-
-        if (compTop < safeTop) panY = safeTop - compTop;
-        else if (compBottom > safeBottom) panY = safeBottom - compBottom;
-
-        if (panX !== 0 || panY !== 0) {
-            score += 10000; // Prefer no pan
-            if (Math.abs(panX) > rect.width * 0.15 || Math.abs(panY) > rect.height * 0.15) {
-                score += 2000000; // Extreme pan penalty
-            }
-        }
-
-        const distToRect = (px: number, py: number) => {
-            const dx = Math.max(cLeft - px, 0, px - cRight);
-            const dy = Math.max(cTop - py, 0, py - cBottom);
-            return Math.sqrt(dx*dx + dy*dy);
-        };
-
-        if (distToRect(nodeScr.x, nodeScr.y) < 70) score += 500000;
-        
-        neighborScr.forEach(p => { if (distToRect(p.x, p.y) < 40) score += 50000; });
-        pathScr.forEach(p => { if (distToRect(p.x, p.y) < 25) score += 20000; });
-
-        score += candidates.indexOf(c) * 100;
-
-        if (score < minScore) {
-            minScore = score;
-            bestCandidate = c;
-            bestPanX = panX;
-            bestPanY = panY;
-        }
-    }
-
-    // Convert candidate screen offset back to SVG offset for `popupOffset` state
-    // screen distance D = svg distance * targetZ * svgScale
-    // => svg distance = D / (targetZ * svgScale)
-    const svgDx = bestCandidate.dx / (targetZ * svgScale);
-    const svgDy = bestCandidate.dy / (targetZ * svgScale);
-    setPopupOffset({ dx: svgDx, dy: svgDy, align: bestCandidate.align });
-
-    // Apply the optimal pan
-    // Pan in screen space -> pan in SVG space
-    const targetCamX = baseCamX + (bestPanX / svgScale);
-    const targetCamY = baseCamY + (bestPanY / svgScale);
+    const targetCamX = (targetScreenX - rect.width / 2) / svgScale - nData.proj.x * targetZ;
+    const targetCamY = (targetScreenY - rect.height / 2) / svgScale - nData.proj.y * targetZ;
 
     camera.current = { x: targetCamX, y: targetCamY, z: targetZ };
     clampCamera();
     applyCamera(true, 0.5);
-  }, [nodesProj, edgesProj, getConnectedNodes, clampCamera, applyCamera]);
+  }, [nodesProj, clampCamera, applyCamera]);
 
   const focusOn = useCallback((x: number, y: number, z: number) => {
     camera.current = { x: -x * z, y: -y * z, z };
@@ -648,27 +537,6 @@ export const SkillsConstellation = () => {
 
   const activeNodeData = nodesProj.find(n => n.id === activeNode);
   const getProject = (slug: string) => projects.find(p => p.slug === slug);
-
-  // Exact screen-space tracker for popup
-  useEffect(() => {
-    if (pinnedNode && activeNodeData && containerRef.current) {
-      let rafId: number;
-      const updatePos = () => {
-         const rect = cachedRect.current;
-         if (!rect.width) return;
-         const svgScale = rect.svgWidth ? rect.svgWidth / 2400 : 1;
-         const svgX = (activeNodeData.proj.x + popupOffset.dx) * camera.current.z + camera.current.x;
-         const svgY = (activeNodeData.proj.y + popupOffset.dy) * camera.current.z + camera.current.y;
-         const screenX = rect.width / 2 + svgX * svgScale;
-         const screenY = rect.height / 2 + svgY * svgScale;
-         setPopupPos({ x: screenX, y: screenY, align: popupOffset.align });
-         rafId = requestAnimationFrame(updatePos);
-      };
-      updatePos();
-      return () => cancelAnimationFrame(rafId);
-    }
-  }, [pinnedNode, activeNodeData, popupOffset]);
-
   const detail = activeNodeData ? SKILL_DETAILS[activeNodeData.id] : null;
   const renderQueue: { yDepth: number, element: React.ReactNode }[] = [];
 
@@ -1019,87 +887,73 @@ export const SkillsConstellation = () => {
           <AnimatePresence>
             {pinnedNode && activeNodeData && detail && (
               <motion.div
-                className={`absolute z-50 interactive-ui hidden md:flex flex-col drop-shadow-2xl ${popupPos.align === 'left' ? '-translate-x-full' : ''}`}
-                style={{ left: popupPos.x, top: popupPos.y, filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.8))" }}
-                initial={{ opacity: 0, scale: 0.98, x: popupPos.align === 'left' ? 10 : -10 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="absolute right-0 top-0 bottom-0 z-50 interactive-ui hidden md:flex flex-col w-[34%] min-w-[320px] max-w-[440px] bg-[rgba(10,10,10,0.76)] backdrop-blur-[20px] border-l border-border/40 overflow-hidden shadow-[-20px_0_40px_rgba(0,0,0,0.5)]"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
               >
-                {/* Connector */}
-                <div className={`absolute top-1/2 -translate-y-1/2 w-12 h-[1px] bg-text-muted/60 flex items-center ${popupPos.align === 'left' ? 'left-full flex-row-reverse' : 'right-full'}`}>
-                  <div className="w-1.5 h-1.5 bg-accent absolute -left-[3px] shadow-[0_0_8px_rgba(220,38,38,1)]" />
-                </div>
+                {/* Subtle top-left highlight sheen */}
+                <div className="absolute top-0 left-0 w-full h-[150px] bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none" />
+                
+                {/* Crimson detailing: tiny top left tick */}
+                <div className="absolute top-0 left-0 w-[2px] h-12 bg-accent/80" />
 
-                {/* Premium Card */}
-                <div className="relative w-[360px] group">
-                  <div className="absolute inset-0 bg-[#080808]/90 backdrop-blur-2xl border-l border-t border-border/50 transition-colors group-hover:border-border/80" 
-                       style={{ clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)" }} />
-                  <div className="absolute bottom-0 right-0 w-[24px] h-[24px] border-b border-r border-accent bg-[#080808]/50 backdrop-blur-md flex items-center justify-center">
-                    <div className="w-1 h-1 bg-accent/80 rounded-full" />
+                <div className="relative p-10 overflow-y-auto h-full flex flex-col">
+                  <button onClick={() => setPinnedNode(null)} className="absolute top-8 right-8 text-text-muted hover:text-white transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+                  
+                  <div className="flex items-center gap-3 mb-5 mt-2">
+                    <div className="w-1.5 h-1.5 bg-accent" />
+                    <span className="font-mono text-[10px] tracking-[0.2em] text-text-muted uppercase">{DOMAINS.find(d => d.id === activeNodeData.domainId)?.label.split('// ')[1]}</span>
                   </div>
                   
-                  <div className="relative p-8">
-                    <button onClick={() => setPinnedNode(null)} className="absolute top-6 right-6 text-text-muted hover:text-white transition-colors">
-                      <X className="w-4 h-4" />
-                    </button>
-                    
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-                      <span className="font-mono text-[9px] tracking-[0.2em] text-text-muted uppercase">MK_ID // {activeNodeData.id.replace(/_/g, ' ')}</span>
+                  <h3 className="text-3xl font-display font-medium text-[#f5ede3] mb-6 uppercase tracking-tight leading-none">{activeNodeData.label}</h3>
+                  
+                  <p className="text-[#a0a0a0] text-[13px] font-light leading-relaxed mb-10">{detail.description}</p>
+                  
+                  <div className="flex-1">
+                    <div className="font-mono text-[10px] text-text-muted tracking-widest mb-4 uppercase flex items-center gap-2">
+                       <div className="w-1 h-1 bg-text-muted/40" /> USED IN
                     </div>
-                    
-                    <h3 className="text-2xl font-display font-medium text-text-primary mb-1 uppercase tracking-tight">{activeNodeData.label}</h3>
-                    <div className="font-mono text-[10px] text-accent tracking-widest mb-6 uppercase">
-                      {DOMAINS.find(d => d.id === activeNodeData.domainId)?.label.split('// ')[1]}
-                    </div>
-                    
-                    <p className="text-text-muted text-[13px] font-light leading-relaxed mb-6">{detail.description}</p>
-                    
-                    <div className="border-t border-border/40 pt-5 mb-6">
-                      <div className="font-mono text-[9px] text-text-muted tracking-widest mb-3 uppercase flex items-center gap-2">
-                         <div className="w-1 h-1 bg-text-muted/50" /> Application Context
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        {detail.usedIn.map((u, i) => {
-                          if (u.href) {
-                            const slug = u.href.split('/').pop();
-                            const proj = getProject(slug || '');
-                            return (
-                              <Link key={i} href={proj ? `/work/${proj.slug}` : u.href} 
-                                className="group/chip flex items-center justify-between px-3 py-2.5 bg-[#0e0e0e] border border-border hover:border-accent/50 transition-all"
-                              >
-                                <span className="font-mono text-[10px] text-text-primary uppercase tracking-widest group-hover/chip:text-accent transition-colors">{u.label}</span>
-                                <ArrowUpRight className="w-3.5 h-3.5 text-text-muted group-hover/chip:text-accent transition-colors transform group-hover/chip:translate-x-0.5 group-hover/chip:-translate-y-0.5" />
-                              </Link>
-                            );
-                          }
+                    <div className="flex flex-col gap-2 mb-10">
+                      {detail.usedIn.map((u, i) => {
+                        if (u.href) {
+                          const slug = u.href.split('/').pop();
+                          const proj = getProject(slug || '');
                           return (
-                            <div key={i} className="flex items-center gap-3 px-3 py-2 bg-[#0e0e0e]/50 border border-border/30">
-                              <span className="font-mono text-[10px] text-text-muted uppercase tracking-widest">{u.label}</span>
-                            </div>
+                            <Link key={i} href={proj ? `/work/${proj.slug}` : u.href} 
+                              className="group/chip flex items-center justify-between px-4 py-3 bg-white/[0.02] border border-border/50 hover:bg-white/[0.04] hover:border-accent/40 transition-all"
+                            >
+                              <span className="font-mono text-[11px] text-[#e0e0e0] uppercase tracking-widest group-hover/chip:text-accent transition-colors">{u.label}</span>
+                              <ArrowUpRight className="w-4 h-4 text-text-muted group-hover/chip:text-accent transition-colors transform group-hover/chip:translate-x-0.5 group-hover/chip:-translate-y-0.5" />
+                            </Link>
                           );
-                        })}
-                      </div>
+                        }
+                        return (
+                          <div key={i} className="flex items-center gap-3 px-4 py-3 bg-white/[0.01] border border-border/30">
+                            <span className="font-mono text-[11px] text-text-muted uppercase tracking-widest">{u.label}</span>
+                          </div>
+                        );
+                      })}
                     </div>
 
-                    <div className="border-t border-border/40 pt-5">
-                      <div className="font-mono text-[9px] text-text-muted tracking-widest mb-3 uppercase flex items-center gap-2">
-                         <div className="w-1 h-1 bg-text-muted/50" /> Topology Ties
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {Array.from(firstOrder).slice(0, 5).map(relId => {
-                          const n = nodesProj.find(x => x.id === relId);
-                          if (!n) return null;
-                          return (
-                            <button key={relId} onClick={() => { setPinnedNode(relId); focusOnNode(relId); }}
-                              className="px-3 py-1.5 font-mono text-[9px] tracking-[0.1em] border border-border bg-[#0e0e0e] text-text-muted hover:border-accent/40 hover:text-text-primary transition-colors cursor-pointer"
-                            >
-                              {n.label}
-                            </button>
-                          );
-                        })}
-                      </div>
+                    <div className="font-mono text-[10px] text-text-muted tracking-widest mb-4 uppercase flex items-center gap-2">
+                       <div className="w-1 h-1 bg-text-muted/40" /> RELATED SKILLS
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {Array.from(firstOrder).slice(0, 8).map(relId => {
+                        const n = nodesProj.find(x => x.id === relId);
+                        if (!n) return null;
+                        return (
+                          <button key={relId} onClick={() => { setPinnedNode(relId); focusOnNode(relId); }}
+                            className="px-3 py-2 font-mono text-[10px] tracking-[0.1em] border border-border/50 bg-[#0a0a0a]/50 text-[#a0a0a0] hover:border-accent/50 hover:text-[#f5ede3] hover:bg-accent/10 transition-colors cursor-pointer"
+                          >
+                            {n.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
