@@ -454,97 +454,135 @@ export const SkillsConstellation = () => {
     const svgRect = cachedRect.current;
     if (svgRect.width === 0) return;
     
-    // 1. Zoom strategy: Start from current zoom and apply a small focus factor
-    const smallFocusFactor = 1.05;
-    let targetZ = camera.current.z * smallFocusFactor;
-    
-    // Hard cap the delta: no more than ~10% zoom in, ~5% zoom out from current camera
+    // 1. Zoom strategy
+    let targetZ = camera.current.z * 1.05;
     const maxZoomIn = camera.current.z * 1.10;
     const maxZoomOut = camera.current.z * 0.95;
     targetZ = Math.max(maxZoomOut, Math.min(maxZoomIn, targetZ));
-    
-    // Absolute bounds for selection zoom
     targetZ = Math.max(0.9, Math.min(1.8, targetZ)); 
     
-    // 2. Collision model to find best popupOffset
+    // 2. Base camera (keeps node at current screen position before pan)
+    const rect = svgRect;
+    const svgScale = rect.svgWidth ? rect.svgWidth / 2400 : 1;
+    
+    const currentScreenX = rect.width / 2 + (nData.proj.x * camera.current.z + camera.current.x) * svgScale;
+    const currentScreenY = rect.height / 2 + (nData.proj.y * camera.current.z + camera.current.y) * svgScale;
+
+    const baseCamX = (currentScreenX - rect.width / 2) / svgScale - nData.proj.x * targetZ;
+    const baseCamY = (currentScreenY - rect.height / 2) / svgScale - nData.proj.y * targetZ;
+
+    // 3. Screen-space mapping helpers
+    const safeLeft = 32;
+    const safeRight = rect.width - 32;
+    const safeTop = 32;
+    const safeBottom = rect.height - 32;
+
+    const toScreen = (pt: {x: number, y: number}) => ({
+        x: rect.width / 2 + (pt.x * targetZ + baseCamX) * svgScale,
+        y: rect.height / 2 + (pt.y * targetZ + baseCamY) * svgScale
+    });
+
     const connectedNodes = getConnectedNodes(nodeId);
-    const nodePt = nData.proj;
-    const neighborPts = Array.from(connectedNodes).map(sn => nodesProj.find(n => n.id === sn)?.proj).filter(Boolean) as {x: number, y: number}[];
-    const pathPts: {x: number, y: number}[] = [];
+    const nodeScr = toScreen(nData.proj);
+    const neighborScr = Array.from(connectedNodes).map(sn => {
+        const np = nodesProj.find(n => n.id === sn);
+        return np ? toScreen(np.proj) : null;
+    }).filter(Boolean) as {x: number, y: number}[];
+
+    const pathScr: {x: number, y: number}[] = [];
     edgesProj.forEach(e => {
         if (e.a === nodeId || e.b === nodeId) {
-            pathPts.push(...e.pts);
+            e.pts.forEach(p => pathScr.push(toScreen(p)));
         }
     });
 
-    const cW = 420 / targetZ; 
-    const cH = 380 / targetZ;
-    const padX = 120 / targetZ;
-    const padY = 120 / targetZ;
+    // Card dimensions (screen space)
+    const cW = 380; // 360 + 20 padding
+    const cH = 320; 
+
+    // Gap from selected node
+    const gapX = 70;
+    const gapY = 50;
 
     const candidates = [
-        { dx: padX, dy: -cH/2, align: 'right' },            // RIGHT
-        { dx: -padX, dy: -cH/2, align: 'left' },           // LEFT
-        { dx: padX, dy: -cH - padY, align: 'right' },      // TOP-RIGHT
-        { dx: -padX, dy: -cH - padY, align: 'left' },     // TOP-LEFT
-        { dx: padX, dy: padY, align: 'right' },            // BOTTOM-RIGHT
-        { dx: -padX, dy: padY, align: 'left' }            // BOTTOM-LEFT
+        { dx: gapX, dy: -cH/2, align: 'right' },
+        { dx: -gapX, dy: -cH/2, align: 'left' },
+        { dx: gapX, dy: -cH - gapY, align: 'right' },
+        { dx: -gapX, dy: -cH - gapY, align: 'left' },
+        { dx: gapX, dy: gapY, align: 'right' },
+        { dx: -gapX, dy: gapY, align: 'left' }
     ];
 
     let bestCandidate = candidates[0];
     let minScore = Infinity;
+    let bestPanX = 0;
+    let bestPanY = 0;
 
     for (const c of candidates) {
-        const rectLeft = c.align === 'right' ? nodePt.x + c.dx : nodePt.x + c.dx - cW;
-        const rectRight = rectLeft + cW;
-        const rectTop = nodePt.y + c.dy;
-        const rectBottom = rectTop + cH;
+        const cLeft = c.align === 'right' ? nodeScr.x + c.dx : nodeScr.x + c.dx - cW;
+        const cRight = cLeft + cW;
+        const cTop = nodeScr.y + c.dy;
+        const cBottom = cTop + cH;
 
+        let panX = 0;
+        let panY = 0;
         let score = 0;
 
+        // Composition bounding box (Node + Card)
+        const compLeft = Math.min(cLeft, nodeScr.x - 40);
+        const compRight = Math.max(cRight, nodeScr.x + 40);
+        const compTop = Math.min(cTop, nodeScr.y - 40);
+        const compBottom = Math.max(cBottom, nodeScr.y + 40);
+
+        if (compLeft < safeLeft) panX = safeLeft - compLeft;
+        else if (compRight > safeRight) panX = safeRight - compRight;
+
+        if (compTop < safeTop) panY = safeTop - compTop;
+        else if (compBottom > safeBottom) panY = safeBottom - compBottom;
+
+        if (panX !== 0 || panY !== 0) {
+            score += 10000; // Prefer no pan
+            if (Math.abs(panX) > rect.width * 0.15 || Math.abs(panY) > rect.height * 0.15) {
+                score += 2000000; // Extreme pan penalty
+            }
+        }
+
         const distToRect = (px: number, py: number) => {
-            const dx = Math.max(rectLeft - px, 0, px - rectRight);
-            const dy = Math.max(rectTop - py, 0, py - rectBottom);
+            const dx = Math.max(cLeft - px, 0, px - cRight);
+            const dy = Math.max(cTop - py, 0, py - cBottom);
             return Math.sqrt(dx*dx + dy*dy);
         };
 
-        // Penalize if covering selected node (needs ~60px gap)
-        if (distToRect(nodePt.x, nodePt.y) < 60) score += 100000;
-
-        // Neighbors (medium protection ~40px)
-        neighborPts.forEach(p => {
-            if (distToRect(p.x, p.y) < 40) score += 5000;
-        });
-
-        // Paths (corridor protection ~25px)
-        pathPts.forEach(p => {
-            if (distToRect(p.x, p.y) < 25) score += 1000;
-        });
+        if (distToRect(nodeScr.x, nodeScr.y) < 70) score += 500000;
         
-        score += candidates.indexOf(c) * 10; // tie-breaker preference
+        neighborScr.forEach(p => { if (distToRect(p.x, p.y) < 40) score += 50000; });
+        pathScr.forEach(p => { if (distToRect(p.x, p.y) < 25) score += 20000; });
+
+        score += candidates.indexOf(c) * 100;
 
         if (score < minScore) {
             minScore = score;
             bestCandidate = c;
+            bestPanX = panX;
+            bestPanY = panY;
         }
     }
 
-    setPopupOffset(bestCandidate);
+    // Convert candidate screen offset back to SVG offset for `popupOffset` state
+    // screen distance D = svg distance * targetZ * svgScale
+    // => svg distance = D / (targetZ * svgScale)
+    const svgDx = bestCandidate.dx / (targetZ * svgScale);
+    const svgDy = bestCandidate.dy / (targetZ * svgScale);
+    setPopupOffset({ dx: svgDx, dy: svgDy, align: bestCandidate.align });
 
-    // 3. Pan camera so the combination of the node and the chosen card is centered.
-    // The visual center of interest is halfway between the node and the card.
-    const cardCenterSVGX = bestCandidate.align === 'right' ? nodePt.x + bestCandidate.dx + cW/2 : nodePt.x + bestCandidate.dx - cW/2;
-    const cardCenterSVGY = nodePt.y + bestCandidate.dy + cH/2;
-    
-    const focalX = (nodePt.x + cardCenterSVGX) / 2;
-    const focalY = (nodePt.y + cardCenterSVGY) / 2;
-    
-    const targetCamX = -focalX * targetZ;
-    const targetCamY = -focalY * targetZ;
+    // Apply the optimal pan
+    // Pan in screen space -> pan in SVG space
+    const targetCamX = baseCamX + (bestPanX / svgScale);
+    const targetCamY = baseCamY + (bestPanY / svgScale);
 
     camera.current = { x: targetCamX, y: targetCamY, z: targetZ };
     clampCamera();
-    applyCamera(true, 0.5); // 400-550ms transition
+    applyCamera(true, 0.5);
   }, [nodesProj, edgesProj, getConnectedNodes, clampCamera, applyCamera]);
 
   const focusOn = useCallback((x: number, y: number, z: number) => {
