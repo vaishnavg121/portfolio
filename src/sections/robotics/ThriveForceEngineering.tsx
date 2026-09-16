@@ -2,7 +2,6 @@
 import React, { useRef, useEffect } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { velociraptorAssets } from '../../data/velociraptorAssets';
 
 export const ThriveForceEngineering = () => {
@@ -82,117 +81,97 @@ export const ThriveForceEngineering = () => {
   };
 
   return (
-    <section ref={containerRef} className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 flex flex-col gap-32 pt-24 pb-32">
+    <section ref={containerRef} className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 flex flex-col gap-16 pt-24 pb-16">
         
-        {/* FEA SECTION 1 - SIDE LOAD */}
-        <div className="w-full flex flex-col md:flex-row items-center px-6 lg:px-16">
-            <div className="w-full md:w-1/3 mb-12 md:mb-0">
-                <h3 className="font-mono text-sm tracking-widest text-text-muted uppercase mb-8 border-b border-white/10 pb-4">Side Load Case</h3>
-                <div className="text-accent font-mono text-xl mb-1">2000 N</div>
-                <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase mb-8">Static Load Case</div>
-                
-                <div className="text-[#e0e0e0] font-mono text-3xl mb-1">449 MPa</div>
-                <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase mb-6">Max Von Mises</div>
-                
-                <div className="flex gap-12">
-                    <div>
-                        <div className="text-[#e0e0e0] font-mono text-xl mb-1">~1.9</div>
-                        <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase">Estimated FoS</div>
-                    </div>
-                    <div>
-                        <div className="text-[#e0e0e0] font-mono text-xl mb-1">~0.7 MM</div>
-                        <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase">Max Displacement</div>
-                    </div>
-                </div>
-            </div>
-            <div 
-               className="w-full md:w-2/3 h-[50vh] relative ml-0 md:ml-12 border border-white/5 bg-[#050505] overflow-hidden"
-               onPointerMove={(e) => handleFEAHover(e, 'cursor-lbl-1')}
-               onPointerLeave={(e) => handleFEALeave(e, 'cursor-lbl-1')}
-            >
-                <Image src={velociraptorAssets.fea.sideStress} alt="FEA Side" fill className="object-contain p-4 transition-transform duration-1000" />
-                <div className="cursor-lbl-1 absolute top-0 left-0 pointer-events-none opacity-0 bg-[#030303]/80 backdrop-blur-sm border border-white/10 px-3 py-1 font-mono text-[9px] text-accent tracking-widest uppercase z-10">FEA / SIDE LOAD</div>
-            </div>
+        {/* HEADER */}
+        <div className="w-full px-6 lg:px-16 mb-4">
+            <h2 className="font-display text-[clamp(32px,4vw,58px)] text-white uppercase tracking-tighter">
+                Engineering The Hit.
+            </h2>
         </div>
 
-        {/* FEA SECTION 2 - UPWARD LOAD */}
-        <div className="w-full flex flex-col md:flex-row items-center px-6 lg:px-16">
-            <div className="w-full md:w-1/3 mb-12 md:mb-0">
-                <h3 className="font-mono text-sm tracking-widest text-text-muted uppercase mb-8 border-b border-white/10 pb-4">Upward Load Case</h3>
-                <div className="text-accent font-mono text-xl mb-1">2000 N</div>
-                <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase mb-8">Static Load Case</div>
-                
-                <div className="text-[#e0e0e0] font-mono text-3xl mb-1">208 MPa</div>
-                <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase mb-6">Max Von Mises</div>
-                
-                <div className="flex gap-12">
+        {/* FEA SECTIONS */}
+        <div className="w-full flex flex-col lg:flex-row gap-8 lg:gap-12 px-6 lg:px-16">
+            
+            {/* SIDE LOAD */}
+            <div className="w-full lg:w-1/2 flex flex-col">
+                <div 
+                   className="w-full h-[40vh] relative border border-white/5 bg-[#050505] overflow-hidden mb-6"
+                   onPointerMove={(e) => handleFEAHover(e, 'cursor-lbl-1')}
+                   onPointerLeave={(e) => handleFEALeave(e, 'cursor-lbl-1')}
+                >
+                    <Image src={velociraptorAssets.fea.sideStress} alt="FEA Side" fill className="object-contain p-4 transition-transform duration-1000" />
+                    <div className="cursor-lbl-1 absolute top-0 left-0 pointer-events-none opacity-0 bg-[#030303]/80 backdrop-blur-sm border border-white/10 px-3 py-1 font-mono text-[9px] text-accent tracking-widest uppercase z-10">SIDE LOAD</div>
+                </div>
+                <div className="flex justify-between items-end border-b border-white/10 pb-4">
                     <div>
-                        <div className="text-[#e0e0e0] font-mono text-xl mb-1">~4.0</div>
-                        <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase">Estimated FoS</div>
+                        <div className="text-accent font-mono text-sm mb-1">2000 N</div>
+                        <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">Side Load</div>
                     </div>
-                    <div>
-                        <div className="text-[#e0e0e0] font-mono text-xl mb-1">~0.1 MM</div>
-                        <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase">Max Displacement</div>
+                    <div className="text-right">
+                        <div className="text-[#e0e0e0] font-mono text-xl mb-1">449 MPa</div>
+                        <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">Max Von Mises</div>
+                    </div>
+                    <div className="text-right hidden sm:block">
+                        <div className="text-[#e0e0e0] font-mono text-xl mb-1">~1.9 FoS</div>
+                        <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">~0.7mm Disp</div>
                     </div>
                 </div>
             </div>
-            <div 
-               className="w-full md:w-2/3 h-[50vh] relative ml-0 md:ml-12 border border-white/5 bg-[#050505] overflow-hidden"
-               onPointerMove={(e) => handleFEAHover(e, 'cursor-lbl-2')}
-               onPointerLeave={(e) => handleFEALeave(e, 'cursor-lbl-2')}
-            >
-                <Image src={velociraptorAssets.fea.upwardStress} alt="FEA Upward" fill className="object-contain p-4 transition-transform duration-1000" />
-                <div className="cursor-lbl-2 absolute top-0 left-0 pointer-events-none opacity-0 bg-[#030303]/80 backdrop-blur-sm border border-white/10 px-3 py-1 font-mono text-[9px] text-accent tracking-widest uppercase z-10">FEA / UPWARD LOAD</div>
+
+            {/* UPWARD LOAD */}
+            <div className="w-full lg:w-1/2 flex flex-col">
+                <div 
+                   className="w-full h-[40vh] relative border border-white/5 bg-[#050505] overflow-hidden mb-6"
+                   onPointerMove={(e) => handleFEAHover(e, 'cursor-lbl-2')}
+                   onPointerLeave={(e) => handleFEALeave(e, 'cursor-lbl-2')}
+                >
+                    <Image src={velociraptorAssets.fea.upwardStress} alt="FEA Upward" fill className="object-contain p-4 transition-transform duration-1000" />
+                    <div className="cursor-lbl-2 absolute top-0 left-0 pointer-events-none opacity-0 bg-[#030303]/80 backdrop-blur-sm border border-white/10 px-3 py-1 font-mono text-[9px] text-accent tracking-widest uppercase z-10">UPWARD LOAD</div>
+                </div>
+                <div className="flex justify-between items-end border-b border-white/10 pb-4">
+                    <div>
+                        <div className="text-accent font-mono text-sm mb-1">2000 N</div>
+                        <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">Upward Load</div>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-[#e0e0e0] font-mono text-xl mb-1">208 MPa</div>
+                        <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">Max Von Mises</div>
+                    </div>
+                    <div className="text-right hidden sm:block">
+                        <div className="text-[#e0e0e0] font-mono text-xl mb-1">~4.0 FoS</div>
+                        <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">~0.1mm Disp</div>
+                    </div>
+                </div>
             </div>
+            
         </div>
 
         {/* POWERTRAIN SECTION */}
-        <div className="powertrain-section w-full flex flex-col md:flex-row items-center px-6 lg:px-16 mt-16">
-            <div className="w-full md:w-1/2 h-[60vh] relative border border-white/5 bg-[#050505] p-8 overflow-hidden">
-                <Image src={velociraptorAssets.renders.top} alt="CAD Top" fill className="object-cover opacity-80" />
-                <div className="absolute inset-0 flex flex-col justify-around pointer-events-none mix-blend-overlay opacity-20 -rotate-12 scale-150">
-                    {["LOW CENTER OF MASS", "WEIGHT EFFICIENCY", "IMPACT RESISTANCE", "SERVICEABILITY", "MODULAR LAYOUT", "SYMMETRICAL DRIVE"].map((w,i) => (
-                        <div key={i} className="font-display text-[6rem] text-white whitespace-nowrap uppercase tracking-tighter">{w}</div>
-                    ))}
-                </div>
+        <div className="powertrain-section w-full px-6 lg:px-16 mt-8">
+            <h3 className="font-display text-[clamp(24px,3vw,42px)] uppercase tracking-tighter text-[#f5ede3] mb-8">
+                Power To Weapon.
+            </h3>
+
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between relative border border-white/5 bg-[#050505] p-6 lg:p-12">
+                {/* Horizontal flow line for desktop, vertical for mobile */}
+                <div className="powertrain-line hidden md:block absolute top-1/2 left-12 w-[calc(100%-96px)] h-[1px] bg-accent/30 -translate-y-1/2 origin-left" />
+                <div className="powertrain-line md:hidden absolute left-[35px] top-6 w-[1px] h-[calc(100%-48px)] bg-accent/30 origin-top" />
+                
+                {[
+                    { title: "3S 1000mAh", sub: "LiPo" },
+                    { title: "Hobbywing", sub: "50A ESC" },
+                    { title: "DYS 3530", sub: "1100KV" },
+                    { title: "1.7:1", sub: "Increase" },
+                    { title: "Undercutter", sub: "Weapon" }
+                ].map((item, i) => (
+                    <div key={i} className="pt-item relative bg-[#050505] z-10 px-4 md:px-6 py-4 md:py-0 w-full md:w-auto text-left md:text-center">
+                        <div className="absolute left-0 md:left-1/2 top-1/2 md:-top-4 w-2 h-2 rounded-full bg-accent -translate-y-1/2 md:translate-y-0 md:-translate-x-1/2" />
+                        <div className="font-mono text-sm lg:text-base text-[#e0e0e0] uppercase ml-6 md:ml-0 mt-0 md:mt-6">{item.title}</div>
+                        <div className="font-mono text-[9px] tracking-widest text-text-muted uppercase ml-6 md:ml-0 mt-1">{item.sub}</div>
+                    </div>
+                ))}
             </div>
-
-            <div className="w-full md:w-1/2 flex flex-col justify-center pl-0 md:pl-16 mt-12 md:mt-0 relative">
-                <h3 className="font-display text-5xl lg:text-7xl uppercase tracking-tighter text-[#f5ede3] mb-16">
-                    Power<br/>To<br/>Weapon.
-                </h3>
-
-                <div className="relative pl-8 flex flex-col gap-8">
-                    {/* The crimson flow line */}
-                    <div className="powertrain-line absolute left-0 top-2 w-[2px] h-[calc(100%-24px)] bg-accent origin-top" />
-                    
-                    {[
-                        { title: "SCORPION", sub: "3S · 1000mAh" },
-                        { title: "HOBBYWING", sub: "50A ESC" },
-                        { title: "DYS 3530", sub: "1100KV" },
-                        { title: "1.7:1", sub: "SPEED INCREASE" },
-                        { title: "UNDERCUTTER", sub: "WEAPON" }
-                    ].map((item, i) => (
-                        <div key={i} className="pt-item relative">
-                            {/* Node dot */}
-                            <div className="absolute -left-[37px] top-2 w-3 h-3 rounded-full bg-[#030303] border-2 border-accent" />
-                            <div className="font-mono text-xl text-[#e0e0e0] uppercase">{item.title}</div>
-                            <div className="font-mono text-[9px] tracking-widest text-text-muted uppercase mt-1">{item.sub}</div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-
-        {/* TRANSITION TO TEAM */}
-        <div className="transition-section w-full flex flex-col items-center justify-center mt-32 px-6">
-            <h2 className="font-display text-5xl md:text-7xl lg:text-[9rem] uppercase tracking-tighter text-[#f5ede3] mb-4 text-center">
-                ONE MACHINE.
-            </h2>
-            <h2 className="font-display text-3xl md:text-5xl lg:text-7xl uppercase tracking-tighter text-[#888] mb-12 text-center">
-                A MUCH BIGGER TEAM.
-            </h2>
-            <div className="team-rule w-[80%] md:w-[60%] h-[1px] bg-accent origin-center" />
         </div>
 
     </section>

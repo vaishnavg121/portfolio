@@ -2,7 +2,6 @@
 import React, { useRef, useEffect } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { velociraptorAssets } from '../../data/velociraptorAssets';
 
 export const ThriveForceWeapon = () => {
@@ -26,12 +25,12 @@ export const ThriveForceWeapon = () => {
     if (!containerRef.current) return;
     
     const ctx = gsap.context(() => {
-        // Master timeline tied directly to scroll progress (scrubbable, fully reversible)
+        // Master timeline tied directly to scroll progress
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: containerRef.current,
             start: "top top",
-            end: "+=120%",
+            end: "+=80%", // Reduced scroll length
             pin: true,
             scrub: 0.5,
           }
@@ -40,23 +39,14 @@ export const ThriveForceWeapon = () => {
         tl.fromTo(".weapon-img-container", { scale: 0.9, x: "10%", y: "10%" }, { scale: 1.1, x: "-5%", y: "-5%", duration: 1 })
           .to(".energy-title", { opacity: 1, x: 0, duration: 0.2 }, 0.2)
           .to(".stat-item", { opacity: 1, x: 0, duration: 0.3, stagger: 0.1 }, 0.4)
-          // ------------------------------------------
-          // SCRUBBABLE IMPACT (Triggers around 0.8)
-          // ------------------------------------------
-          // 1. Camera Impulse
+          // IMPACT (Triggers around 0.8)
           .to(containerRef.current, { x: -8, y: 4, duration: 0.05, ease: "power1.inOut" }, 0.8)
           .to(containerRef.current, { x: 0, y: 0, duration: 0.05, ease: "power1.inOut" }, 0.85)
-          // 2. Flash
           .set(".impact-fx", { opacity: 1 }, 0.8)
           .fromTo(".impact-flash", { scale: 0.5, opacity: 1 }, { scale: 2, opacity: 0, duration: 0.2 }, 0.8)
-          // 3. Main Streak
           .fromTo(".impact-streak", { strokeDashoffset: 300 }, { strokeDashoffset: 0, duration: 0.15 }, 0.8)
-          // 4. Sparks (shoot out and fade)
           .fromTo(".spark-line", { strokeDashoffset: 200 }, { strokeDashoffset: 0, duration: 0.15, stagger: 0.01 }, 0.8)
-          .to(".spark-line", { opacity: 0, duration: 0.05 }, 0.95)
-          // 5. Typography handoff
-          .to(".weapon-stats-group", { opacity: 0.1, duration: 0.2 }, 0.8)
-          .fromTo(".engineering-hit-text", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.2 }, 0.85);
+          .to(".spark-line", { opacity: 0, duration: 0.05 }, 0.95);
 
     }, containerRef);
 
@@ -83,7 +73,7 @@ export const ThriveForceWeapon = () => {
                onPointerMove={handlePointerMove}
             >
                 <Image 
-                   src={velociraptorAssets.parts.weaponClose} 
+                   src={velociraptorAssets.screenshots.weaponClose1} 
                    alt="Weapon Close Up" 
                    fill 
                    className="object-contain" 
@@ -124,7 +114,7 @@ export const ThriveForceWeapon = () => {
         <div className="weapon-stats-group absolute inset-0 w-full h-full pointer-events-none flex flex-col justify-center px-6 lg:px-24 items-end">
             
             <div className="energy-title opacity-0 translate-x-12 mb-12 text-right">
-                <h3 className="font-display text-8xl lg:text-[9rem] leading-none tracking-tighter text-[#f5ede3]">
+                <h3 className="font-display text-[clamp(42px,5vw,72px)] leading-none tracking-tighter text-[#f5ede3]">
                     <span className="text-accent">~470</span> J
                 </h3>
                 <p className="font-mono text-xs tracking-widest text-text-muted uppercase mt-2">
@@ -146,13 +136,6 @@ export const ThriveForceWeapon = () => {
                 ))}
             </div>
             
-        </div>
-
-        {/* ENGINEERING THE HIT TEXT */}
-        <div className="engineering-hit-text absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0 translate-y-[30px] z-30 mix-blend-difference">
-            <h2 className="font-display text-[8rem] lg:text-[12rem] text-white uppercase tracking-tighter leading-none text-center">
-                Engineering<br/>The Hit.
-            </h2>
         </div>
     </section>
   );
