@@ -21,8 +21,7 @@ export const SkillsConstellation = () => {
   const svgRef = useRef<SVGSVGElement>(null);
   const worldRef = useRef<SVGGElement>(null);
   const nodeRefs = useRef<{ [key: string]: SVGGElement | null }>({});
-  const cursorGradRef = useRef<SVGRadialGradientElement>(null);
-  const cursorLayerRef = useRef<SVGGElement>(null);
+  const cursorGlowRef = useRef<HTMLDivElement>(null);
   const { ref: visibilityRef, isVisible } = useSectionVisibility("200px");
   const cachedRect = useRef({ width: 0, height: 0, left: 0, top: 0, svgWidth: 0 });
   
@@ -131,17 +130,14 @@ export const SkillsConstellation = () => {
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!isVisible) return;
-    if (svgRef.current && cursorGradRef.current) {
-       const pt = svgRef.current.createSVGPoint();
-       pt.x = e.clientX; pt.y = e.clientY;
-       const svgP = pt.matrixTransform(worldRef.current!.getScreenCTM()!.inverse());
+    if (cursorGlowRef.current) {
+       const rect = cachedRect.current;
+       const x = e.clientX - rect.left;
+       const y = e.clientY - rect.top;
        
-       const scaleRatio = 2400 / (cachedRect.current.svgWidth || 2400);
-       const worldRadius = (750 * scaleRatio) / camera.current.z;
-       
-       gsap.to(cursorGradRef.current, {
-           attr: { cx: svgP.x, cy: svgP.y, r: worldRadius },
-           duration: 0.18,
+       gsap.to(cursorGlowRef.current, {
+           x, y,
+           duration: 0.12,
            ease: "power2.out",
            overwrite: "auto"
        });
@@ -175,11 +171,11 @@ export const SkillsConstellation = () => {
   const onPointerLeave = () => {
     isPanning.current = false;
     setTimeout(() => setIsDragging(false), 50);
-    if (cursorLayerRef.current) gsap.to(cursorLayerRef.current, { opacity: 0, duration: 0.35, ease: "power2.out" });
+    if (cursorGlowRef.current) gsap.to(cursorGlowRef.current, { opacity: 0, duration: 0.35, ease: "power2.out" });
   };
 
   const onPointerEnter = () => {
-    if (cursorLayerRef.current) gsap.to(cursorLayerRef.current, { opacity: 1, duration: 0.2, ease: "power2.out" });
+    if (cursorGlowRef.current) gsap.to(cursorGlowRef.current, { opacity: 1, duration: 0.2, ease: "power2.out" });
   };
 
   const onPointerUp = () => {
@@ -646,22 +642,12 @@ export const SkillsConstellation = () => {
             preserveAspectRatio="xMidYMid slice" className="absolute inset-0"
           >
             <defs>
-                <radialGradient id="cursor-grad" cx="-5000" cy="-5000" r="750" gradientUnits="userSpaceOnUse" ref={cursorGradRef}>
-                  <stop offset="0%" stopColor="white" stopOpacity="1" />
-                  <stop offset="15%" stopColor="white" stopOpacity="0.7" />
-                  <stop offset="40%" stopColor="white" stopOpacity="0.25" />
-                  <stop offset="65%" stopColor="white" stopOpacity="0.05" />
-                  <stop offset="100%" stopColor="white" stopOpacity="0" />
-                </radialGradient>
               {activeNodeData && (
                  <radialGradient id="select-grad" cx={activeNodeData.proj.x} cy={activeNodeData.proj.y} r="350" gradientUnits="userSpaceOnUse">
                    <stop offset="0%" stopColor="white" stopOpacity="1" />
                    <stop offset="100%" stopColor="white" stopOpacity="0" />
                  </radialGradient>
               )}
-              <mask id="cursor-mask" maskUnits="userSpaceOnUse">
-                 <rect x="-5000" y="-5000" width="10000" height="10000" fill="url(#cursor-grad)" />
-              </mask>
               {activeNodeData && (
                 <mask id="select-mask" maskUnits="userSpaceOnUse">
                    <rect x="-5000" y="-5000" width="10000" height="10000" fill="url(#select-grad)" />
@@ -673,28 +659,6 @@ export const SkillsConstellation = () => {
               {/* Base Wireframe Mesh Queue */}
               {renderQueue.map((item, i) => React.cloneElement(item.element as React.ReactElement, { key: `depth-${i}` }))}
               
-              {/* Cursor Exploration Layer */}
-             <g ref={cursorLayerRef} mask="url(#cursor-mask)" className="pointer-events-none opacity-0">
-                {terrain.map((t, i) => {
-                  let baseOpacity = 0.08;
-                  if (!t.isCol) {
-                     const depthRatio = (t.yDepth - (-700)) / (650 - (-700));
-                     baseOpacity = 0.08 + depthRatio * 0.25;
-                  } else {
-                     baseOpacity = 0.12;
-                  }
-                  return (
-                    <path 
-                      key={`ch-${i}`} 
-                      d={t.d} 
-                      fill="none" 
-                      stroke={`rgba(255, 248, 235, ${baseOpacity * 2.8})`} 
-                      strokeWidth="1.3" 
-                    />
-                  );
-                })}
-              </g>
-
               {/* Selection Focus Layer */}
               {activeNodeData && (
                 <g mask="url(#select-mask)" className="pointer-events-none transition-opacity duration-500">
@@ -705,6 +669,19 @@ export const SkillsConstellation = () => {
               )}
             </g>
           </svg>
+          
+          {/* Recovered Historical Canvas Color-Dodge Interaction */}
+          <div 
+            ref={cursorGlowRef}
+            className="absolute top-0 left-0 pointer-events-none z-10 opacity-0"
+            style={{
+              width: 700, height: 700,
+              marginLeft: -350, marginTop: -350,
+              background: 'radial-gradient(circle 350px at 50% 50%, rgba(245, 240, 220, 0.45) 0%, transparent 100%)',
+              mixBlendMode: 'color-dodge',
+              willChange: 'transform, opacity'
+            }}
+          />
         </div>
 
         {/* DOMAIN LENSES */}
