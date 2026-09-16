@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -8,69 +8,68 @@ import { velociraptorAssets } from '../../data/velociraptorAssets';
 export const ThriveForceWeapon = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const weaponRef = useRef<HTMLDivElement>(null);
-  const [arcAngle, setArcAngle] = useState(0);
-  const [impactFired, setImpactFired] = useState(false);
+  const arcRef = useRef<SVGSVGElement>(null);
 
-  const sparkData = useRef([...Array(8)].map(() => ({
-      x: 520 + Math.random() * 150,
-      y: 560 - Math.random() * 150,
-      w: Math.random() * 2
-  })));
+  // DETERMINISTIC SPARKS (No Math.random() for hydration safety)
+  const sparks = [
+      { id: 1, x2: 605, y2: 432, w: 1.5, length: 153 },
+      { id: 2, x2: 654, y2: 489, w: 0.8, length: 151 },
+      { id: 3, x2: 578, y2: 456, w: 1.2, length: 119 },
+      { id: 4, x2: 668, y2: 501, w: 2.0, length: 159 },
+      { id: 5, x2: 593, y2: 524, w: 1.1, length: 81 },
+      { id: 6, x2: 627, y2: 415, w: 0.9, length: 180 },
+      { id: 7, x2: 541, y2: 472, w: 1.7, length: 90 },
+      { id: 8, x2: 650, y2: 442, w: 1.0, length: 175 }
+  ];
 
   useEffect(() => {
     if (!containerRef.current) return;
     
-    const fireImpact = () => {
-      const flash = gsap.timeline();
-      // Impact impulse on whole container
-      flash.to(containerRef.current, { x: -10, y: 5, duration: 0.05, yoyo: true, repeat: 1 })
-           // Show vector and flash
-           .set(".impact-fx", { opacity: 1 }, 0)
-           .fromTo(".impact-flash", { scale: 0.5, opacity: 1 }, { scale: 2, opacity: 0, duration: 0.2 }, 0)
-           .fromTo(".impact-streak", { strokeDashoffset: 100 }, { strokeDashoffset: 0, duration: 0.1 }, 0)
-           // Text transition
-           .to(".weapon-stats-group", { opacity: 0.1, duration: 0.2 }, 0)
-           .to(".engineering-hit-text", { opacity: 1, y: 0, duration: 0.3 }, 0.1);
-    };
+    const ctx = gsap.context(() => {
+        // Master timeline tied directly to scroll progress (scrubbable, fully reversible)
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: "top top",
+            end: "+=120%",
+            pin: true,
+            scrub: 0.5,
+          }
+        });
 
-    // Impact timeline triggered exactly at the end of the scroll block
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top top",
-        end: "+=120%",
-        pin: true,
-        scrub: true,
-        onUpdate: (self) => {
-            if (self.progress > 0.85 && !impactFired) {
-                setImpactFired(true);
-                fireImpact();
-            } else if (self.progress < 0.8 && impactFired) {
-                setImpactFired(false);
-                gsap.set(".impact-fx", { opacity: 0 });
-                gsap.set(".engineering-hit-text", { opacity: 0, y: 30 });
-            }
-        }
-      }
-    });
+        tl.fromTo(".weapon-img-container", { scale: 0.9, x: "10%", y: "10%" }, { scale: 1.1, x: "-5%", y: "-5%", duration: 1 })
+          .to(".energy-title", { opacity: 1, x: 0, duration: 0.2 }, 0.2)
+          .to(".stat-item", { opacity: 1, x: 0, duration: 0.3, stagger: 0.1 }, 0.4)
+          // ------------------------------------------
+          // SCRUBBABLE IMPACT (Triggers around 0.8)
+          // ------------------------------------------
+          // 1. Camera Impulse
+          .to(containerRef.current, { x: -8, y: 4, duration: 0.05, ease: "power1.inOut" }, 0.8)
+          .to(containerRef.current, { x: 0, y: 0, duration: 0.05, ease: "power1.inOut" }, 0.85)
+          // 2. Flash
+          .set(".impact-fx", { opacity: 1 }, 0.8)
+          .fromTo(".impact-flash", { scale: 0.5, opacity: 1 }, { scale: 2, opacity: 0, duration: 0.2 }, 0.8)
+          // 3. Main Streak
+          .fromTo(".impact-streak", { strokeDashoffset: 300 }, { strokeDashoffset: 0, duration: 0.15 }, 0.8)
+          // 4. Sparks (shoot out and fade)
+          .fromTo(".spark-line", { strokeDashoffset: 200 }, { strokeDashoffset: 0, duration: 0.15, stagger: 0.01 }, 0.8)
+          .to(".spark-line", { opacity: 0, duration: 0.05 }, 0.95)
+          // 5. Typography handoff
+          .to(".weapon-stats-group", { opacity: 0.1, duration: 0.2 }, 0.8)
+          .fromTo(".engineering-hit-text", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.2 }, 0.85);
 
-    tl.fromTo(".weapon-img-container", { scale: 0.9, x: "10%", y: "10%" }, { scale: 1.1, x: "-5%", y: "-5%", duration: 1 })
-      .to(".energy-title", { opacity: 1, x: 0, duration: 0.2 }, 0.2)
-      .to(".stat-item", { opacity: 1, x: 0, duration: 0.3, stagger: 0.1 }, 0.4);
+    }, containerRef);
 
-    return () => {
-        tl.kill();
-        ScrollTrigger.getAll().forEach(t => t.kill());
-    };
-  }, [impactFired]);
+    return () => ctx.revert();
+  }, []);
 
   const handlePointerMove = (e: React.PointerEvent) => {
-      if (!weaponRef.current) return;
+      if (!weaponRef.current || !arcRef.current) return;
       const rect = weaponRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left - rect.width/2;
       const y = e.clientY - rect.top - rect.height/2;
       const angle = Math.atan2(y, x) * (180 / Math.PI);
-      setArcAngle(angle);
+      gsap.to(arcRef.current, { rotation: angle, transformOrigin: "center center", duration: 0.1, ease: "none", overwrite: "auto" });
   };
 
   return (
@@ -91,7 +90,7 @@ export const ThriveForceWeapon = () => {
                 />
                 
                 {/* Interactive SVG Arc */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-50 mix-blend-screen transition-transform duration-100" style={{ transform: `rotate(${arcAngle}deg)` }} viewBox="0 0 800 800">
+                <svg ref={arcRef} className="absolute inset-0 w-full h-full pointer-events-none opacity-50 mix-blend-screen" viewBox="0 0 800 800">
                     <circle cx="400" cy="400" r="180" fill="none" stroke="#cc3333" strokeWidth="1" strokeDasharray="10 20" opacity="0.3" />
                     <path d="M 580 400 A 180 180 0 0 1 400 580" fill="none" stroke="#f5ede3" strokeWidth="2" opacity="0.6" />
                     <polygon points="395,575 405,580 395,585" fill="#f5ede3" />
@@ -103,8 +102,18 @@ export const ThriveForceWeapon = () => {
                     <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 800 800">
                         <line className="impact-streak" x1="100" y1="900" x2="520" y2="560" stroke="#cc3333" strokeWidth="2" strokeDasharray="100" strokeDashoffset="100" />
                         {/* Sparks */}
-                        {sparkData.current.map((spark, i) => (
-                            <line key={i} x1="520" y1="560" x2={spark.x} y2={spark.y} stroke="#f5ede3" strokeWidth={spark.w} opacity="0.8" />
+                        {sparks.map((spark) => (
+                            <line 
+                               key={spark.id} 
+                               className="spark-line"
+                               x1="520" y1="560" 
+                               x2={spark.x2} y2={spark.y2} 
+                               stroke="#f5ede3" 
+                               strokeWidth={spark.w} 
+                               strokeDasharray={200}
+                               strokeDashoffset={200}
+                               opacity="0.8" 
+                            />
                         ))}
                     </svg>
                 </div>

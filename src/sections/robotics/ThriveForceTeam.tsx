@@ -16,12 +16,12 @@ export const ThriveForceTeam = () => {
       const pct = (x / rect.width) * 100;
       // Clamp between 45% and 55%
       const clamped = Math.max(45, Math.min(55, pct));
-      gsap.to(roleRef.current, { '--split-pos': `${clamped}%`, duration: 0.3, ease: "power2.out" });
+      gsap.to(roleRef.current, { '--split-pos': `${clamped}%`, duration: 0.3, ease: "power2.out", overwrite: "auto" });
   };
 
   const handleRoleLeave = () => {
       if (!roleRef.current) return;
-      gsap.to(roleRef.current, { '--split-pos': `50%`, duration: 0.5, ease: "power2.out" });
+      gsap.to(roleRef.current, { '--split-pos': `50%`, duration: 0.5, ease: "power2.out", overwrite: "auto" });
   };
 
   useEffect(() => {

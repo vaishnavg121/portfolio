@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -11,37 +11,36 @@ export const ThriveForceEntry = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const robotRef = useRef<HTMLDivElement>(null);
   const crosshairRef = useRef<HTMLDivElement>(null);
-  const [isHovering, setIsHovering] = useState(false);
+  const xrayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!containerRef.current || !robotRef.current) return;
 
-    // Scroll sequence
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "top top",
-        end: "+=150%",
-        pin: true,
-        scrub: 0.5,
-      }
-    });
+    const ctx = gsap.context(() => {
+        // Scroll sequence
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: "top top",
+            end: "+=100%",
+            pin: true,
+            scrub: 0.5,
+          }
+        });
 
-    // Animate text entry -> fade out, then machine intro fades in
-    tl.to(".entry-text", { opacity: 0, y: -50, duration: 1 })
-      .to(".machine-text", { opacity: 1, y: 0, duration: 1 }, "-=0.5")
-      .to(".annotation-line", { scaleX: 1, duration: 0.5, stagger: 0.2 }, "-=0.5")
-      .to(".annotation-text", { opacity: 1, x: 0, duration: 0.5, stagger: 0.2 }, "-=0.3")
-      // Dissolve solid to wireframe towards the end
-      .to(".robot-solid", { opacity: 0, duration: 1.5 }, "+=0.5")
-      .to(".robot-wireframe-base", { opacity: 1, duration: 1.5 }, "<")
-      // Hide X-ray mask to let full wireframe show
-      .to(".robot-xray", { opacity: 0, duration: 0.5 }, "<");
+        // Animate text entry -> fade out, then machine intro fades in
+        tl.to(".entry-text", { opacity: 0, y: -50, duration: 1 })
+          .to(".machine-text", { opacity: 1, y: 0, duration: 1 }, "-=0.5")
+          .to(".annotation-line", { scaleX: 1, duration: 0.5, stagger: 0.2 }, "-=0.5")
+          .to(".annotation-text", { opacity: 1, x: 0, duration: 0.5, stagger: 0.2 }, "-=0.3")
+          // Dissolve solid to wireframe towards the end
+          .to(".robot-solid", { opacity: 0, duration: 1.5 }, "+=0.5")
+          .to(".robot-wireframe-base", { opacity: 1, duration: 1.5 }, "<")
+          // Hide X-ray mask to let full wireframe show
+          .to(xrayRef.current, { opacity: 0, duration: 0.5 }, "<");
+    }, containerRef);
 
-    return () => {
-      tl.kill();
-      ScrollTrigger.getAll().forEach(t => t.kill());
-    };
+    return () => ctx.revert();
   }, []);
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -53,12 +52,16 @@ export const ThriveForceEntry = () => {
     robotRef.current.style.setProperty('--cursor-y', `${y}px`);
 
     if (crosshairRef.current) {
-        gsap.to(crosshairRef.current, {
-            x, y,
-            duration: 0.1,
-            ease: "power2.out"
-        });
+        gsap.to(crosshairRef.current, { x, y, duration: 0.1, ease: "power2.out", overwrite: "auto" });
     }
+  };
+
+  const handlePointerEnter = () => {
+      gsap.to([xrayRef.current, crosshairRef.current], { opacity: 1, duration: 0.3, overwrite: "auto" });
+  };
+
+  const handlePointerLeave = () => {
+      gsap.to([xrayRef.current, crosshairRef.current], { opacity: 0, duration: 0.3, overwrite: "auto" });
   };
 
   return (
@@ -68,8 +71,8 @@ export const ThriveForceEntry = () => {
           ref={robotRef}
           className="absolute inset-0 w-full h-full pointer-events-auto"
           onPointerMove={handlePointerMove}
-          onPointerEnter={() => setIsHovering(true)}
-          onPointerLeave={() => setIsHovering(false)}
+          onPointerEnter={handlePointerEnter}
+          onPointerLeave={handlePointerLeave}
        >
           {/* Base Solid */}
           <div className="robot-solid absolute right-0 top-0 w-full lg:w-[65%] h-full">
@@ -94,9 +97,9 @@ export const ThriveForceEntry = () => {
 
           {/* X-Ray Mask Layer */}
           <div 
-             className="robot-xray absolute right-0 top-0 w-full lg:w-[65%] h-full pointer-events-none transition-opacity duration-300"
+             ref={xrayRef}
+             className="robot-xray absolute right-0 top-0 w-full lg:w-[65%] h-full pointer-events-none opacity-0"
              style={{
-                 opacity: isHovering ? 1 : 0,
                  maskImage: 'radial-gradient(circle 180px at var(--cursor-x, 50%) var(--cursor-y, 50%), black 20%, transparent 80%)',
                  WebkitMaskImage: 'radial-gradient(circle 180px at var(--cursor-x, 50%) var(--cursor-y, 50%), black 20%, transparent 80%)'
              }}
@@ -114,8 +117,7 @@ export const ThriveForceEntry = () => {
           {/* Crosshair */}
           <div 
              ref={crosshairRef}
-             className="absolute top-0 left-0 w-8 h-8 pointer-events-none -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300 z-10"
-             style={{ opacity: isHovering ? 1 : 0 }}
+             className="absolute top-0 left-0 w-8 h-8 pointer-events-none -translate-x-1/2 -translate-y-1/2 opacity-0 z-10"
           >
              <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-accent/50 -translate-x-1/2" />
              <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-accent/50 -translate-y-1/2" />
