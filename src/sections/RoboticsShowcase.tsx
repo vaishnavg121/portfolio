@@ -1,210 +1,220 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useRef, useState, Suspense } from "react";
+import { motion } from "framer-motion";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { useSectionVisibility, useReducedMotion } from "@/lib/visibility";
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
 
-const STAGES = ["CAD", "COMPONENTS", "MANUFACTURE", "ASSEMBLY", "COMPETITION"];
+gsap.registerPlugin(ScrollTrigger);
 
-const ROBOTS = [
-  { id: "A7X", name: "A7X", weight: "8 KG", desc: "Kinetic energy drum spinner designed for high-impact horizontal strikes." },
-  { id: "SLIPKNUT", name: "Slipknut", weight: "15 KG", desc: "Wedge/flipper bot engineered for defensive survival and leverage." }
-];
+const VelociraptorScene = dynamic(() => import('@/components/3d/VelociraptorScene').then(mod => mod.VelociraptorScene), { 
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-[#050505] flex items-center justify-center text-text-muted font-mono text-xs tracking-widest">LOADING CAD DATA...</div>
+});
 
 export const RoboticsShowcase = () => {
-  const [activeBot, setActiveBot] = useState(ROBOTS[0].id);
-  const [activeStage, setActiveStage] = useState(0);
   const containerRef = useRef<HTMLElement>(null);
-  const [mounted, setMounted] = useState(false);
+  const { ref: visibilityRef, isVisible } = useSectionVisibility("500px");
   const shouldReduceMotion = useReducedMotion();
-  const { ref: visibilityRef, isVisible } = useSectionVisibility("300px");
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const activeBotData = ROBOTS.find(b => b.id === activeBot);
+  // Scroll triggers will control timeline state
+  const [activeScene, setActiveScene] = useState("entry");
 
   useGSAP(() => {
-    if (!mounted || !isVisible) return;
-
+    if (!isVisible) return;
+    
+    // Create the master scroll timeline
     const ctx = gsap.context(() => {
-      gsap.fromTo('.blueprint-grid',
-        { opacity: 0 },
-        { opacity: 0.2, duration: 1, ease: "power2.out", scrollTrigger: { trigger: containerRef.current, start: "top 70%" } }
-      );
-
-      gsap.fromTo('.const-line',
-        { strokeDasharray: "0 200", opacity: 0 },
-        { strokeDasharray: "200 0", opacity: 1, duration: 1.5, stagger: 0.1, ease: "power3.out", scrollTrigger: { trigger: containerRef.current, start: "top 60%" } }
-      );
-
-      gsap.fromTo('.traverse-crosshair',
-        { x: -50, opacity: 0 },
-        { x: 150, opacity: 0.5, duration: 2, ease: "power1.inOut", scrollTrigger: { trigger: containerRef.current, start: "top 50%" } }
-      );
-
-      gsap.to('.const-line', {
-        scaleX: 2,
-        x: 100,
-        opacity: 0,
-        ease: "power2.inOut",
+      // Pin the whole section
+      const tl = gsap.timeline({
         scrollTrigger: {
           trigger: containerRef.current,
-          start: "bottom 60%",
-          end: "bottom top",
-          scrub: 1
+          start: "top top",
+          end: "+=3500",
+          pin: true,
+          scrub: 1,
+          onUpdate: (self) => {
+             const prog = self.progress;
+             if (prog < 0.1) setActiveScene("entry");
+             else if (prog < 0.3) setActiveScene("reveal");
+             else if (prog < 0.5) setActiveScene("weapon");
+             else if (prog < 0.7) setActiveScene("fea");
+             else if (prog < 0.85) setActiveScene("powertrain");
+             else setActiveScene("closing");
+             
+             // Dispatch a custom event so the 3D scene can react without React re-renders
+             window.dispatchEvent(new CustomEvent("robotics-scroll", { detail: prog }));
+          }
         }
       });
-    }, containerRef);
+      
+      // Text animations over the timeline
+      tl.to(".text-entry", { opacity: 0, y: -50, duration: 0.1 }, 0.1);
+      
+      tl.fromTo(".text-reveal", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.05 }, 0.15);
+      tl.to(".text-reveal", { opacity: 0, y: -50, duration: 0.05 }, 0.25);
+      
+      tl.fromTo(".text-weapon", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.05 }, 0.3);
+      tl.to(".text-weapon", { opacity: 0, duration: 0.01 }, 0.49); // Sudden disappear on impact
+      
+      tl.fromTo(".text-fea", { opacity: 0, x: 50 }, { opacity: 1, x: 0, duration: 0.05 }, 0.52);
+      tl.to(".text-fea", { opacity: 0, x: -50, duration: 0.05 }, 0.65);
+      
+      tl.fromTo(".text-powertrain", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.05 }, 0.7);
+      tl.to(".text-powertrain", { opacity: 0, y: -50, duration: 0.05 }, 0.82);
+      
+      tl.fromTo(".text-closing", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.05 }, 0.85);
 
+    }, containerRef);
+    
     return () => ctx.revert();
-  }, { scope: containerRef, dependencies: [mounted, isVisible] });
+  }, [isVisible]);
 
   return (
-    <section className="py-32 bg-[#050505]" id="robotics" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
-      <div className="container mx-auto px-6 md:px-12">
-        <h2 className="text-sm font-mono text-text-muted mb-16 tracking-widest uppercase border-b border-[#222] pb-4">
-          Robotics / Hardware
-        </h2>
-
-        <div className="flex flex-col lg:flex-row gap-12">
-          <div className="w-full lg:w-1/3 flex flex-col justify-between">
-            <div>
-              <div className="flex gap-4 mb-12">
-                {ROBOTS.map(bot => (
-                  <button
-                    key={bot.id}
-                    onClick={() => setActiveBot(bot.id)}
-                    className={`font-mono text-xl tracking-widest pb-2 border-b-2 transition-colors ${
-                      activeBot === bot.id ? 'border-accent text-text-primary' : 'border-transparent text-text-muted hover:text-text-primary'
-                    }`}
-                  >
-                    {bot.name}
-                  </button>
-                ))}
-              </div>
-
-              <motion.div
-                key={activeBot}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="mb-12"
-              >
-                <div className="text-accent font-mono text-xs mb-2 uppercase">{activeBotData?.weight} CLASS</div>
-                <p className="text-text-muted text-lg leading-relaxed mb-6">
-                  {activeBotData?.desc}
-                </p>
-                <div className="text-xs font-mono text-text-muted opacity-80 border-l border-border pl-3 flex flex-col gap-2">
-                  <p className="text-accent">Designed and filed a patent application for a custom combat-robotics Kill Switch.</p>
-                  <p>Sponsors / Suppliers: PCBWay, OnlyScrews, Technobotix</p>
-                </div>
-              </motion.div>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div className="text-xs font-mono text-text-muted mb-2 tracking-widest uppercase">System Evolution</div>
-              {STAGES.map((stage, idx) => (
-                <button
-                  key={stage}
-                  onClick={() => setActiveStage(idx)}
-                  className={`text-left text-sm font-mono tracking-wider py-2 pl-4 border-l-2 transition-all ${
-                    activeStage === idx
-                      ? 'border-accent text-text-primary bg-accent/5'
-                      : 'border-[#222] text-text-muted hover:border-text-muted hover:text-text-primary'
-                  }`}
-                >
-                  0{idx + 1} {`//`} {stage}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="w-full lg:w-2/3 aspect-video bg-[#0a1128] border border-[#1d2d50] relative overflow-hidden rounded-sm cursor-crosshair group" data-cursor="VIEW">
-            <div className="blueprint-grid absolute inset-0 opacity-20"
-              style={{
-                backgroundImage: 'linear-gradient(rgba(59, 130, 246, 0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.5) 1px, transparent 1px)',
-                backgroundSize: '20px 20px'
-              }}
-            />
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${activeBot}-${activeStage}`}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05 }}
-                transition={{ duration: 0.4 }}
-                className="absolute inset-0 p-8 md:p-12"
-              >
-                <svg width="100%" height="100%" viewBox="0 0 200 150" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-
-                  <rect className="const-line" x="5" y="5" width="190" height="140" stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
-                  <line className="const-line" x1="5" y1="20" x2="195" y2="20" stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
-                  <line className="const-line" x1="160" y1="5" x2="160" y2="145" stroke="#3b82f6" strokeWidth="0.5" opacity="0.3" />
-                  <line className="traverse-crosshair" x1="0" y1="0" x2="0" y2="150" stroke="#3b82f6" strokeWidth="0.2" opacity="0.5" />
-
-                  <line className="const-line" x1="20" y1="130" x2="140" y2="130" stroke="#3b82f6" strokeWidth="0.5" />
-                  <line className="const-line" x1="20" y1="128" x2="20" y2="132" stroke="#3b82f6" strokeWidth="0.5" />
-                  <line className="const-line" x1="140" y1="128" x2="140" y2="132" stroke="#3b82f6" strokeWidth="0.5" />
-                  <text x="80" y="127" fill="#3b82f6" fontSize="4" fontFamily="monospace">TBD_DIMENSION</text>
-
-                  {activeStage === 0 && (
-                     <g stroke="#3b82f6" strokeWidth="0.5">
-                       <rect x="40" y="50" width="80" height="40" strokeDasharray="2 2" />
-                       <circle cx="60" cy="70" r="15" />
-                       <circle cx="100" cy="70" r="15" />
-                       <line x1="20" y1="70" x2="140" y2="70" strokeWidth="0.2" opacity="0.5" />
-                       <line x1="80" y1="30" x2="80" y2="110" strokeWidth="0.2" opacity="0.5" />
-                       <text x="10" y="15" fill="#3b82f6" fontSize="5" fontFamily="monospace">TOP_DOWN_ELEVATION</text>
-                     </g>
-                  )}
-                  {activeStage > 0 && activeStage < 3 && (
-                     <g stroke="#3b82f6" strokeWidth="0.5">
-                       <circle cx="50" cy="50" r="10" fill="rgba(59, 130, 246, 0.1)" />
-                       <rect x="80" y="40" width="20" height="20" fill="rgba(59, 130, 246, 0.1)" />
-                       <path d="M40,90 L60,90 L70,110 L30,110 Z" fill="rgba(59, 130, 246, 0.1)" />
-                       <circle cx="100" cy="100" r="15" strokeDasharray="1 1"/>
-                       <line x1="60" y1="50" x2="80" y2="50" strokeWidth="0.2" strokeDasharray="2 2" />
-                       <text x="10" y="15" fill="#3b82f6" fontSize="5" fontFamily="monospace">{`BOM // CNC_PARTS`}</text>
-                     </g>
-                  )}
-                  {activeStage >= 3 && (
-                     <g stroke="#3b82f6" strokeWidth="0.5">
-                       <path d="M50 60 L110 40 L150 70 L90 90 Z" fill="rgba(59, 130, 246, 0.15)" strokeWidth="1" />
-                       <path d="M50 60 L50 75 L90 105 L90 90 Z" fill="rgba(59, 130, 246, 0.2)" strokeWidth="1" />
-                       <path d="M150 70 L150 85 L90 105 L90 90 Z" fill="rgba(59, 130, 246, 0.1)" strokeWidth="1" />
-
-                       <text x="10" y="15" fill="#3b82f6" fontSize="5" fontFamily="monospace">SYS_ASSEMBLY_ISO</text>
-
-                       {activeStage === 4 && !shouldReduceMotion && (
-                         <motion.rect
-                           x="85" y="85" width="10" height="10"
-                           fill="rgba(204, 51, 51, 0.5)"
-                           initial={{ opacity: 0 }}
-                           animate={{ opacity: [0, 1, 0] }}
-                           transition={{ repeat: Infinity, duration: 1.5 }}
-                         />
-                       )}
-                     </g>
-                  )}
-
-                  <text x="165" y="30" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">MAT: AL7075-T6</text>
-                  <text x="165" y="35" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">TOL: +/- 0.05MM</text>
-                  <text x="165" y="45" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">DIM: CUSTOM</text>
-                  <text x="165" y="50" fill="#3b82f6" fontSize="3" fontFamily="monospace" opacity="0.8">REV: 02.B</text>
-                </svg>
-              </motion.div>
-            </AnimatePresence>
-
-            <div className="absolute bottom-4 right-4 text-[#3b82f6] font-mono text-xs text-right opacity-70">
-              <div>FILE: {activeBot}_{STAGES[activeStage]}.dwg</div>
-              <div>SCALE: 1:10</div>
-            </div>
-          </div>
+    <section 
+      id="robotics" 
+      ref={(el) => { containerRef.current = el; visibilityRef(el); }}
+      className="relative w-full h-screen bg-[#030303] overflow-hidden"
+    >
+      {/* 3D Underlay */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+         {isVisible && !shouldReduceMotion ? (
+             <VelociraptorScene />
+         ) : (
+             <div className="w-full h-full relative">
+                 <Image src="/assets/robotics/velociraptor/velociraptor-hero.png" alt="Velociraptor" fill className="object-contain opacity-50" />
+             </div>
+         )}
+      </div>
+      
+      {/* HUD & Typography Overlay */}
+      <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-center px-12">
+        
+        {/* SCENE: ENTRY */}
+        <div className="text-entry absolute top-1/2 left-12 -translate-y-1/2">
+           <p className="font-mono text-xs text-accent tracking-[0.3em] mb-4">THRIVEFORCE // COMBAT ROBOTICS</p>
+           <h2 className="font-display text-7xl md:text-9xl font-bold text-[#f5ede3] leading-[0.85] tracking-tighter uppercase">
+             Designed<br/>For<br/>Impact.
+           </h2>
         </div>
+        
+        {/* SCENE: REVEAL */}
+        <div className="text-reveal absolute bottom-24 right-12 text-right opacity-0">
+           <h3 className="font-display text-5xl text-[#f5ede3] uppercase tracking-tight">Velociraptor</h3>
+           <p className="font-mono text-xs text-text-muted tracking-widest mt-2">3 LB / UNDERCUTTER / HARDENED EN24</p>
+        </div>
+        
+        {/* SCENE: WEAPON */}
+        <div className="text-weapon absolute top-1/2 right-12 -translate-y-1/2 text-right opacity-0">
+           <h3 className="font-display text-8xl text-accent font-medium leading-none tracking-tighter">~470 J</h3>
+           <p className="font-mono text-[10px] text-text-muted tracking-[0.2em] mt-4 uppercase">Stored Weapon Energy</p>
+           <div className="mt-8 flex flex-col gap-2 font-mono text-[10px] text-text-muted tracking-widest uppercase">
+             <div className="flex justify-end gap-4"><span>Mass</span> <span className="text-[#e0e0e0]">0.297 KG</span></div>
+             <div className="flex justify-end gap-4"><span>Diameter</span> <span className="text-[#e0e0e0]">140.6 MM</span></div>
+             <div className="flex justify-end gap-4"><span>Bite</span> <span className="text-[#e0e0e0]">15.8 MM</span></div>
+           </div>
+        </div>
+
+        {/* SCENE: FEA */}
+        <div className="text-fea absolute inset-0 opacity-0 bg-black/80 backdrop-blur-md flex items-center justify-between px-12 z-20">
+            <div className="w-[35%]">
+               <h3 className="font-display text-4xl text-[#f5ede3] uppercase tracking-tight mb-12">Engineering<br/>The Hit.</h3>
+               
+               {/* Side Load */}
+               <div className="space-y-6 mb-12 pb-12 border-b border-border/30">
+                 <div>
+                   <div className="text-accent font-mono text-xl">2000 N</div>
+                   <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase">Side Load Case</div>
+                 </div>
+                 <div className="flex gap-8">
+                   <div>
+                     <div className="text-[#e0e0e0] font-mono text-xl">449 MPa</div>
+                     <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase">Max Von Mises</div>
+                   </div>
+                   <div>
+                     <div className="text-[#e0e0e0] font-mono text-xl">~1.9</div>
+                     <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase">Min Safety Factor</div>
+                   </div>
+                   <div>
+                     <div className="text-[#e0e0e0] font-mono text-xl">~0.7 mm</div>
+                     <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase">Displacement</div>
+                   </div>
+                 </div>
+               </div>
+               
+               {/* Upward Load */}
+               <div className="space-y-6">
+                 <div>
+                   <div className="text-accent font-mono text-xl">2000 N</div>
+                   <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase">Upward Load Case</div>
+                 </div>
+                 <div className="flex gap-8">
+                   <div>
+                     <div className="text-[#e0e0e0] font-mono text-xl">208 MPa</div>
+                     <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase">Max Von Mises</div>
+                   </div>
+                   <div>
+                     <div className="text-[#e0e0e0] font-mono text-xl">~4.0</div>
+                     <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase">Min Safety Factor</div>
+                   </div>
+                   <div>
+                     <div className="text-[#e0e0e0] font-mono text-xl">~0.1 mm</div>
+                     <div className="text-text-muted font-mono text-[10px] tracking-widest uppercase">Displacement</div>
+                   </div>
+                 </div>
+               </div>
+
+            </div>
+            <div className="w-[60%] h-[80%] relative flex flex-col gap-4">
+               <div className="relative flex-1 border border-border/30 bg-[#050505]">
+                  <Image src="/assets/robotics/velociraptor/fea-side-stress.png" alt="FEA Side Stress" fill className="object-contain p-4" />
+                  <div className="absolute bottom-4 left-4 font-mono text-[9px] tracking-widest text-text-muted">FIG 1. SIDE IMPACT STRESS</div>
+               </div>
+               <div className="relative flex-1 border border-border/30 bg-[#050505]">
+                  <Image src="/assets/robotics/velociraptor/fea-upward-stress.png" alt="FEA Upward Stress" fill className="object-contain p-4" />
+                  <div className="absolute bottom-4 left-4 font-mono text-[9px] tracking-widest text-text-muted">FIG 2. UPWARD IMPACT STRESS</div>
+               </div>
+            </div>
+        </div>
+
+        {/* SCENE: POWERTRAIN */}
+        <div className="text-powertrain absolute top-1/3 left-12 opacity-0">
+           <h3 className="font-display text-3xl text-[#f5ede3] uppercase tracking-tight mb-8">Powertrain</h3>
+           <div className="flex flex-col gap-6 border-l border-border/50 pl-6">
+             <div>
+               <div className="font-mono text-xs text-accent tracking-widest">SCORPION 3S 1000mAh</div>
+               <div className="font-mono text-[9px] text-text-muted uppercase">Power Source</div>
+             </div>
+             <div>
+               <div className="font-mono text-xs text-[#e0e0e0] tracking-widest">HOBBYWING 50A</div>
+               <div className="font-mono text-[9px] text-text-muted uppercase">Weapon ESC</div>
+             </div>
+             <div>
+               <div className="font-mono text-xs text-[#e0e0e0] tracking-widest">DYS 3530 1100KV</div>
+               <div className="font-mono text-[9px] text-text-muted uppercase">Weapon Motor</div>
+             </div>
+             <div>
+               <div className="font-mono text-xs text-[#e0e0e0] tracking-widest">1.7:1 RATIO</div>
+               <div className="font-mono text-[9px] text-text-muted uppercase">Speed Increase Pulley</div>
+             </div>
+           </div>
+        </div>
+        
+        {/* SCENE: CLOSING */}
+        <div className="text-closing absolute bottom-24 left-12 opacity-0">
+           <h3 className="font-display text-3xl text-[#f5ede3] uppercase tracking-tight mb-4">Engineer & Treasurer</h3>
+           <p className="font-mono text-[11px] text-text-muted max-w-md leading-relaxed uppercase tracking-widest">
+             Design, simulation, and fabrication for ThriveForce combat robotics.
+           </p>
+           <a href="https://github.com/vaishnavg121/Velociraptor" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 mt-8 font-mono text-[10px] text-accent tracking-widest hover:text-[#f5ede3] transition-colors pointer-events-auto">
+             VIEW CAD / ANALYSIS SOURCE →
+           </a>
+        </div>
+        
       </div>
     </section>
   );

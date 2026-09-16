@@ -312,7 +312,7 @@ export const SelectedWork = () => {
                   className="absolute inset-0 z-10"
                   style={{ x: shouldReduceMotion ? 0 : layer1X, y: shouldReduceMotion ? 0 : layer1Y }}
                 >
-                  <project.EffectComponent />
+                  { (() => { const Effect = project.EffectComponent as any; return <Effect />; })() }
                 </motion.div>
 
                 <div className="absolute top-4 right-4 text-[10px] font-mono text-[#333] tracking-widest z-20">
