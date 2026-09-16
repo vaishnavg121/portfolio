@@ -33,6 +33,7 @@ export const SkillsConstellation = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<typeof NODES>([]);
   const [popupPos, setPopupPos] = useState({ x: 0, y: 0, align: 'right' });
+  const [popupOffset, setPopupOffset] = useState({ dx: 150, dy: -150, align: 'right' });
   
   const camera = useRef({ x: 0, y: 150, z: 0.85 });
   const isPanning = useRef(false);
@@ -431,34 +432,86 @@ export const SkillsConstellation = () => {
     // Absolute bounds for selection zoom
     targetZ = Math.max(0.9, Math.min(1.8, targetZ)); 
     
-    // 2. Primary camera movement: PAN
-    // Determine card side
-    const isNodeRight = nData.proj.x > 0;
-    const cardSide = isNodeRight ? 'left' : 'right';
+    // 2. Collision model to find best popupOffset
+    const connectedNodes = getConnectedNodes(nodeId);
+    const nodePt = nData.proj;
+    const neighborPts = Array.from(connectedNodes).map(sn => nodesProj.find(n => n.id === sn)?.proj).filter(Boolean) as {x: number, y: number}[];
+    const pathPts: {x: number, y: number}[] = [];
+    edgesProj.forEach(e => {
+        if (e.a === nodeId || e.b === nodeId) {
+            pathPts.push(...e.pts);
+        }
+    });
+
+    const cW = 420 / targetZ; 
+    const cH = 380 / targetZ;
+    const padX = 120 / targetZ;
+    const padY = 120 / targetZ;
+
+    const candidates = [
+        { dx: padX, dy: -cH/2, align: 'right' },            // RIGHT
+        { dx: -padX, dy: -cH/2, align: 'left' },           // LEFT
+        { dx: padX, dy: -cH - padY, align: 'right' },      // TOP-RIGHT
+        { dx: -padX, dy: -cH - padY, align: 'left' },     // TOP-LEFT
+        { dx: padX, dy: padY, align: 'right' },            // BOTTOM-RIGHT
+        { dx: -padX, dy: padY, align: 'left' }            // BOTTOM-LEFT
+    ];
+
+    let bestCandidate = candidates[0];
+    let minScore = Infinity;
+
+    for (const c of candidates) {
+        const rectLeft = c.align === 'right' ? nodePt.x + c.dx : nodePt.x + c.dx - cW;
+        const rectRight = rectLeft + cW;
+        const rectTop = nodePt.y + c.dy;
+        const rectBottom = rectTop + cH;
+
+        let score = 0;
+
+        const distToRect = (px: number, py: number) => {
+            const dx = Math.max(rectLeft - px, 0, px - rectRight);
+            const dy = Math.max(rectTop - py, 0, py - rectBottom);
+            return Math.sqrt(dx*dx + dy*dy);
+        };
+
+        // Penalize if covering selected node (needs ~60px gap)
+        if (distToRect(nodePt.x, nodePt.y) < 60) score += 100000;
+
+        // Neighbors (medium protection ~40px)
+        neighborPts.forEach(p => {
+            if (distToRect(p.x, p.y) < 40) score += 5000;
+        });
+
+        // Paths (corridor protection ~25px)
+        pathPts.forEach(p => {
+            if (distToRect(p.x, p.y) < 25) score += 1000;
+        });
+        
+        score += candidates.indexOf(c) * 10; // tie-breaker preference
+
+        if (score < minScore) {
+            minScore = score;
+            bestCandidate = c;
+        }
+    }
+
+    setPopupOffset(bestCandidate);
+
+    // 3. Pan camera so the combination of the node and the chosen card is centered.
+    // The visual center of interest is halfway between the node and the card.
+    const cardCenterSVGX = bestCandidate.align === 'right' ? nodePt.x + bestCandidate.dx + cW/2 : nodePt.x + bestCandidate.dx - cW/2;
+    const cardCenterSVGY = nodePt.y + bestCandidate.dy + cH/2;
     
-    const svgWidth = 2400; 
-    const svgHeight = 1600;
+    const focalX = (nodePt.x + cardCenterSVGX) / 2;
+    const focalY = (nodePt.y + cardCenterSVGY) / 2;
     
-    // 3. Selected-node screen target
-    // If card is right, target X is ~40%. If left, target X is ~60%.
-    // In our SVG space, the viewport width is svgWidth / targetZ.
-    // Center is 0. Left edge is -svgWidth / (2 * targetZ). Right edge is +...
-    // But remember we calculate targetCamX as what maps node.x to 40% of the screen.
-    // screen_ratio_x = 0.40 -> means the node is at -10% from the center (which is 0.50).
-    // In SVG space, 10% of the visible viewport width is 0.10 * (svgWidth / targetZ) = 240 / targetZ.
-    const offsetX = cardSide === 'right' ? (240 / targetZ) : -(240 / targetZ);
-    
-    // Target Y: ~50% viewport Y -> perfectly centered vertically
-    const offsetY = 0;
-    
-    // We want the camera to focus on `nData.proj.x` + offsetX
-    const targetCamX = -(nData.proj.x + offsetX) * targetZ;
-    const targetCamY = -(nData.proj.y + offsetY) * targetZ;
-    
+    const targetCamX = -focalX * targetZ;
+    const targetCamY = -focalY * targetZ;
+
     camera.current = { x: targetCamX, y: targetCamY, z: targetZ };
     clampCamera();
     applyCamera(true, 0.5); // 400-550ms transition
-  }, [nodesProj, clampCamera, applyCamera]);
+  }, [nodesProj, edgesProj, getConnectedNodes, clampCamera, applyCamera]);
 
   const focusOn = useCallback((x: number, y: number, z: number) => {
     camera.current = { x: -x * z, y: -y * z, z };
@@ -532,17 +585,17 @@ export const SkillsConstellation = () => {
          const rect = cachedRect.current;
          if (!rect.width) return;
          const svgScale = rect.svgWidth ? rect.svgWidth / 2400 : 1;
-         const svgX = activeNodeData.proj.x * camera.current.z + camera.current.x;
-         const svgY = activeNodeData.proj.y * camera.current.z + camera.current.y;
+         const svgX = (activeNodeData.proj.x + popupOffset.dx) * camera.current.z + camera.current.x;
+         const svgY = (activeNodeData.proj.y + popupOffset.dy) * camera.current.z + camera.current.y;
          const screenX = rect.width / 2 + svgX * svgScale;
          const screenY = rect.height / 2 + svgY * svgScale;
-         setPopupPos({ x: screenX, y: screenY, align: screenX > rect.width / 2 ? 'left' : 'right' });
+         setPopupPos({ x: screenX, y: screenY, align: popupOffset.align });
          rafId = requestAnimationFrame(updatePos);
       };
       updatePos();
       return () => cancelAnimationFrame(rafId);
     }
-  }, [pinnedNode, activeNodeData]);
+  }, [pinnedNode, activeNodeData, popupOffset]);
 
   const detail = activeNodeData ? SKILL_DETAILS[activeNodeData.id] : null;
   const renderQueue: { yDepth: number, element: React.ReactNode }[] = [];
@@ -772,7 +825,7 @@ export const SkillsConstellation = () => {
                         const n = nodesProj.find(node => node.id === res.id);
                         if (n) {
                            setPinnedNode(res.id);
-                           focusOn(n.proj.x, n.proj.y, 1.4);
+                           focusOnNode(res.id);
                            setSearchQuery("");
                            setSearchResults([]);
                         }
@@ -845,6 +898,48 @@ export const SkillsConstellation = () => {
               >
                 <div className="font-mono text-[10px] text-accent tracking-widest mb-2 uppercase">{detail.title}</div>
                 <p className="text-xs text-text-muted line-clamp-3">{detail.description}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {pinnedNode && activeNodeData && detail && (
+              <motion.div
+                className="fixed md:hidden bottom-0 left-0 right-0 z-50 bg-[#080808]/95 backdrop-blur-2xl border-t border-border p-6 shadow-[0_-20px_40px_rgba(0,0,0,0.8)] rounded-t-2xl interactive-ui"
+                initial={{ opacity: 0, y: "100%" }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: "100%", transition: { duration: 0.2 } }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                <button onClick={() => setPinnedNode(null)} className="absolute top-6 right-6 text-text-muted hover:text-white transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+                
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-2 h-2 bg-accent rounded-full animate-pulse" />
+                  <span className="font-mono text-[9px] tracking-[0.2em] text-text-muted uppercase">MK_ID // {activeNodeData.id.replace(/_/g, ' ')}</span>
+                </div>
+                
+                <h3 className="text-xl font-display font-medium text-text-primary mb-1 uppercase tracking-tight">{activeNodeData.label}</h3>
+                <div className="font-mono text-[9px] text-accent tracking-widest mb-4 uppercase">
+                  {DOMAINS.find(d => d.id === activeNodeData.domainId)?.label.split('// ')[1]}
+                </div>
+                
+                <p className="text-text-muted text-xs font-light leading-relaxed mb-6">{detail.description}</p>
+                
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(firstOrder).slice(0, 4).map(relId => {
+                    const n = nodesProj.find(x => x.id === relId);
+                    if (!n) return null;
+                    return (
+                      <button key={relId} onClick={() => { setPinnedNode(relId); focusOnNode(relId); }}
+                        className="px-3 py-1.5 font-mono text-[9px] tracking-[0.1em] border border-border bg-[#0e0e0e] text-text-muted hover:border-accent/40 hover:text-text-primary transition-colors cursor-pointer"
+                      >
+                        {n.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -925,7 +1020,7 @@ export const SkillsConstellation = () => {
                           const n = nodesProj.find(x => x.id === relId);
                           if (!n) return null;
                           return (
-                            <button key={relId} onClick={() => { setPinnedNode(relId); focusOn(n.proj.x, n.proj.y, 1.4); }}
+                            <button key={relId} onClick={() => { setPinnedNode(relId); focusOnNode(relId); }}
                               className="px-3 py-1.5 font-mono text-[9px] tracking-[0.1em] border border-border bg-[#0e0e0e] text-text-muted hover:border-accent/40 hover:text-text-primary transition-colors cursor-pointer"
                             >
                               {n.label}
