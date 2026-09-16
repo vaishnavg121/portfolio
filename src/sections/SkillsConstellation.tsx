@@ -88,6 +88,24 @@ export const SkillsConstellation = () => {
       z += 90 * Math.exp(-(Math.pow(x - 0, 2) + Math.pow(y - 350, 2)) / 90000);
       z += 240 * Math.exp(-(Math.pow(x - 450, 2) + Math.pow(y - 300, 2)) / 25000);
 
+      // 6. Peripheral / Secondary Mountains (Subtle Depth)
+      // Behind Systems (distant left)
+      z += ridge(-1200, -600, 130, 400, 200, 30);
+      z += ridge(-1600, -200, 90, 300, 500, -15);
+      
+      // Behind AI/ML (deep background)
+      z += ridge(-200, -1100, 160, 500, 300, -10);
+      z += ridge(400, -1000, 120, 400, 200, 20);
+      
+      // Beyond Data (extending the horizontal plateau)
+      z += ridge(1400, -300, 110, 600, 200, 15);
+      z += ridge(2000, 100, 80, 500, 250, 35);
+      
+      // Foreground / Finance & Robotics outskirts
+      z += ridge(-1000, 800, 90, 300, 400, -25);
+      z += ridge(300, 1000, 100, 600, 250, 0);
+      z += ridge(1200, 800, 85, 400, 300, -40);
+
       // 6. Subordinate Detail Noise (10-15%)
       const noise1 = Math.sin(x / 45) * Math.cos(y / 45) * 14;
       const noise2 = Math.sin(x / 20 + y / 25) * 6;
@@ -106,8 +124,8 @@ export const SkillsConstellation = () => {
 
     const tData = [];
     const step = 50;
-    const yMin = -1200, yMax = 1200;
-    const xMin = -1800, xMax = 1800;
+    const yMin = -1800, yMax = 1800;
+    const xMin = -2600, xMax = 2600;
     
     for (let y = yMin; y <= yMax; y += step) {
       let d = "";
@@ -544,10 +562,13 @@ export const SkillsConstellation = () => {
   parsedTerrain.forEach((t, i) => {
     let strokeOpacity = 0.08;
     if (!t.isCol) {
-       const depthRatio = (t.yDepth - (-1200)) / (1200 - (-1200));
-       strokeOpacity = 0.08 + depthRatio * 0.25;
+       // Depth fades out towards the far background (-1800)
+       const depthRatio = (t.yDepth - (-1800)) / (1800 - (-1800));
+       // Distant ranges are very faint (~0.02), foreground is stronger
+       strokeOpacity = 0.02 + depthRatio * 0.28;
     } else {
-       strokeOpacity = 0.12;
+       // Vertical grid lines slightly more subtle overall
+       strokeOpacity = 0.07;
     }
     
     renderQueue.push({
