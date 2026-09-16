@@ -237,20 +237,27 @@ export const SkillsConstellation = () => {
         const pixelDist = Math.sqrt(minDistSq) * screenMult;
         
         let influence = 0;
-        if (pixelDist < 750) {
-            // Smooth bell curve falloff mapping nicely to 0-750px
-            influence = Math.exp(-(pixelDist * pixelDist) / (2 * 220 * 220));
+        if (pixelDist < 600) {
+            // Strong nonlinear falloff (core high, regional moderate, edge fast fade)
+            const normalized = pixelDist / 280;
+            influence = Math.exp(-Math.pow(normalized, 2.4));
+            
+            // Terrain-aware weighting (closer ridges respond slightly stronger)
+            const terrainWeight = 0.5 + (baseAlpha * 3.0);
+            influence *= terrainWeight;
         }
         
-        let finalAlpha = baseAlpha + (influence * 0.45) * master;
-        finalAlpha = Math.max(0.02, Math.min(0.95, finalAlpha));
+        // Reduced global/far influence to strict 0.
+        // Reduced peak brightness (0.3 instead of 0.45).
+        let finalAlpha = baseAlpha + (influence * 0.3) * master;
+        finalAlpha = Math.max(0.02, Math.min(0.85, finalAlpha));
         
-        const r = Math.round(245 + influence * master * 10);
-        const g = Math.round(237 + influence * master * 8);
-        const b = Math.round(227 - influence * master * 10);
+        const r = Math.round(245 + influence * master * 8);
+        const g = Math.round(237 + influence * master * 5);
+        const b = Math.round(227 - influence * master * 8);
         
         pathEl.style.stroke = `rgba(${r}, ${g}, ${b}, ${finalAlpha.toFixed(3)})`;
-        pathEl.style.strokeWidth = (0.8 + influence * master * 0.5).toFixed(2);
+        pathEl.style.strokeWidth = (0.8 + influence * master * 0.4).toFixed(2);
     });
   }, [parsedTerrain]);
 
@@ -432,11 +439,15 @@ export const SkillsConstellation = () => {
         }
     });
 
-    const padding = 120;
-    minX -= padding;
-    maxX += padding;
-    minY -= padding;
-    maxY += padding;
+    const netWidthOrig = maxX - minX;
+    const netHeightOrig = maxY - minY;
+    
+    const marginX = netWidthOrig * 0.15;
+    const marginY = netHeightOrig * 0.18;
+    minX -= marginX;
+    maxX += marginX;
+    minY -= marginY;
+    maxY += marginY;
 
     const netWidth = maxX - minX;
     const netHeight = maxY - minY;
@@ -444,30 +455,46 @@ export const SkillsConstellation = () => {
     const svgRect = cachedRect.current;
     if (svgRect.width === 0) return;
     
-    // Determine card side based on node position.
     const isNodeRight = nData.proj.x > 0;
     const cardSide = isNodeRight ? 'left' : 'right';
     
     const svgWidth = 2400; 
     const svgHeight = 1600;
     
-    const availableWidth = svgWidth * 0.62;
-    const availableHeight = svgHeight * 0.8;
+    const safePadX = svgWidth * 0.08;
+    const safePadY = svgHeight * 0.11;
+    
+    const cardReserve = svgWidth * 0.35;
+    
+    const availableWidth = svgWidth - (safePadX * 2) - cardReserve;
+    const availableHeight = svgHeight - (safePadY * 2);
     
     let targetZ = Math.min(availableWidth / netWidth, availableHeight / netHeight);
-    targetZ = Math.max(1.0, Math.min(2.0, targetZ)); 
+    targetZ = Math.max(0.9, Math.min(2.1, targetZ)); 
     
     const netCx = (minX + maxX) / 2;
     const netCy = (minY + maxY) / 2;
     
-    const shiftX = cardSide === 'right' ? -(svgWidth * 0.15) : (svgWidth * 0.15);
+    let availLeft, availRight;
+    if (cardSide === 'right') {
+        availLeft = -1200 + safePadX;
+        availRight = 1200 - safePadX - cardReserve;
+    } else {
+        availLeft = -1200 + safePadX + cardReserve;
+        availRight = 1200 - safePadX;
+    }
+    const availCx = (availLeft + availRight) / 2;
     
-    const targetCamX = -netCx * targetZ + shiftX;
-    const targetCamY = -netCy * targetZ;
+    const availTop = -800 + safePadY;
+    const availBottom = 800 - safePadY;
+    const availCy = (availTop + availBottom) / 2;
+    
+    const targetCamX = availCx - netCx * targetZ;
+    const targetCamY = availCy - netCy * targetZ;
     
     camera.current = { x: targetCamX, y: targetCamY, z: targetZ };
     clampCamera();
-    applyCamera(true, 0.7);
+    applyCamera(true, 0.6);
   }, [nodesProj, edgesProj, getConnectedNodes, clampCamera, applyCamera]);
 
   const focusOn = useCallback((x: number, y: number, z: number) => {
