@@ -21,7 +21,8 @@ export const SkillsConstellation = () => {
   const svgRef = useRef<SVGSVGElement>(null);
   const worldRef = useRef<SVGGElement>(null);
   const nodeRefs = useRef<{ [key: string]: SVGGElement | null }>({});
-  const cursorGlowRef = useRef<HTMLDivElement>(null);
+  const terrainRefs = useRef<(SVGPathElement | null)[]>([]);
+  const interactionState = useRef({ x: -5000, y: -5000, nx: 0, ny: 0, master: 0, _wasZero: false });
   const { ref: visibilityRef, isVisible } = useSectionVisibility("200px");
   const cachedRect = useRef({ width: 0, height: 0, left: 0, top: 0, svgWidth: 0 });
   
@@ -130,18 +131,6 @@ export const SkillsConstellation = () => {
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!isVisible) return;
-    if (cursorGlowRef.current) {
-       const rect = cachedRect.current;
-       const x = e.clientX - rect.left;
-       const y = e.clientY - rect.top;
-       
-       gsap.to(cursorGlowRef.current, {
-           x, y,
-           duration: 0.12,
-           ease: "power2.out",
-           overwrite: "auto"
-       });
-    }
 
     if (svgWrapperRef.current && !isDragging) {
       const rect = cachedRect.current;
@@ -171,11 +160,11 @@ export const SkillsConstellation = () => {
   const onPointerLeave = () => {
     isPanning.current = false;
     setTimeout(() => setIsDragging(false), 50);
-    if (cursorGlowRef.current) gsap.to(cursorGlowRef.current, { opacity: 0, duration: 0.35, ease: "power2.out" });
+    gsap.to(interactionState.current, { master: 0, duration: 0.35, ease: "power2.out", onUpdate: renderCursorResponse, overwrite: "auto" });
   };
 
   const onPointerEnter = () => {
-    if (cursorGlowRef.current) gsap.to(cursorGlowRef.current, { opacity: 1, duration: 0.2, ease: "power2.out" });
+    // Handled by move
   };
 
   const onPointerUp = () => {
@@ -311,6 +300,102 @@ export const SkillsConstellation = () => {
     return { terrain: tData, nodesProj: nData, edgesProj: eData, domainsProj: dData };
   }, []);
 
+  const parsedTerrain = useMemo(() => {
+    return terrain.map(t => {
+      const pts = t.d.split(/[ML]/).map(s => s.trim()).filter(Boolean).map(s => {
+        const [x, y] = s.split(/\s+/).map(Number);
+        return { x, y };
+      });
+      return { ...t, pts };
+    });
+  }, [terrain]);
+  
+  const renderCursorResponse = useCallback(() => {
+    const state = interactionState.current;
+    if (state.master === 0 && !interactionState.current._wasZero) {
+        // Reset everything to base once
+        parsedTerrain.forEach((t, i) => {
+            const pathEl = terrainRefs.current[i];
+            if (!pathEl) return;
+            let baseAlpha = 0.08;
+            if (!t.isCol) {
+               const depthRatio = (t.yDepth - (-700)) / (650 - (-700));
+               baseAlpha = 0.08 + depthRatio * 0.25;
+            } else {
+               baseAlpha = 0.12;
+            }
+            pathEl.style.stroke = `rgba(245, 237, 227, ${baseAlpha})`;
+            pathEl.style.strokeWidth = "0.8";
+        });
+        interactionState.current._wasZero = true;
+        return;
+    }
+    if (state.master === 0) return;
+    interactionState.current._wasZero = false;
+
+    const px = state.x, py = state.y;
+    const nx = state.nx, ny = state.ny;
+    const master = state.master;
+    
+    const scale = camera.current.z || 0.85;
+    const localSigma = 450 / scale;
+    const globalSigma = 2000 / scale;
+    const localSigmaSq = localSigma * localSigma;
+    const globalSigmaSq = globalSigma * globalSigma;
+    
+    parsedTerrain.forEach((t, i) => {
+        const pathEl = terrainRefs.current[i];
+        if (!pathEl) return;
+        
+        let minDistSq = Infinity;
+        let sumX = 0, sumY = 0;
+        const len = t.pts.length;
+        
+        for (let j = 0; j < len; j++) {
+            const pt = t.pts[j];
+            const dx = pt.x - px;
+            const dy = pt.y - py;
+            const dSq = dx*dx + dy*dy;
+            if (dSq < minDistSq) minDistSq = dSq;
+            sumX += pt.x;
+            sumY += pt.y;
+        }
+        
+        const avgX = sumX / len;
+        const avgY = sumY / len;
+        const lx = avgX / 1200;
+        const ly = avgY / 800;
+        
+        // Base alpha
+        let baseAlpha = 0.08;
+        if (!t.isCol) {
+           const depthRatio = (t.yDepth - (-700)) / (650 - (-700));
+           baseAlpha = 0.08 + depthRatio * 0.25;
+        } else {
+           baseAlpha = 0.12;
+        }
+        
+        // Global Directional & Proximity Response
+        const globalDist = Math.exp(-minDistSq / (2 * globalSigmaSq)) * 0.08;
+        const globalDir = (nx * lx + ny * ly) * 0.06;
+        const ridgeFactor = Math.max(0, -t.yDepth / 700);
+        const ridgeInfluence = (ny < 0 ? -ny : 0) * ridgeFactor * 0.08;
+        
+        const globalInfluence = globalDist + globalDir + ridgeInfluence;
+        const localInfluence = Math.exp(-minDistSq / (2 * localSigmaSq));
+        
+        let finalAlpha = baseAlpha + (globalInfluence + localInfluence * 0.5) * master;
+        finalAlpha = Math.max(0.02, Math.min(0.95, finalAlpha));
+        
+        const r = Math.round(245 + localInfluence * master * 10);
+        const g = Math.round(237 + localInfluence * master * 8);
+        const b = Math.round(227 - localInfluence * master * 15);
+        
+        pathEl.style.stroke = `rgba(${r}, ${g}, ${b}, ${finalAlpha.toFixed(3)})`;
+        pathEl.style.strokeWidth = (0.8 + localInfluence * master * 0.5).toFixed(2);
+    });
+  }, [parsedTerrain]);
+
   useGSAP(() => {
     const tl = gsap.timeline();
     gsap.set(worldRef.current, { opacity: 0, y: 150 });
@@ -404,7 +489,7 @@ export const SkillsConstellation = () => {
   const renderQueue: { yDepth: number, element: React.ReactNode }[] = [];
 
   // PURE WIREFRAME TERRAIN
-  terrain.forEach((t, i) => {
+  parsedTerrain.forEach((t, i) => {
     let strokeOpacity = 0.08;
     if (!t.isCol) {
        const depthRatio = (t.yDepth - (-700)) / (650 - (-700));
@@ -418,11 +503,13 @@ export const SkillsConstellation = () => {
       element: (
         <path 
           key={`terrain-${i}`}
+          ref={(el) => { terrainRefs.current[i] = el; }}
           d={t.d}
           fill="none"
           stroke={`rgba(245, 237, 227, ${strokeOpacity})`}
           strokeWidth="0.8"
           className="topo-terrain"
+          style={{ willChange: "stroke, stroke-width, stroke-opacity" }}
         />
       )
     });
@@ -670,18 +757,6 @@ export const SkillsConstellation = () => {
             </g>
           </svg>
           
-          {/* Recovered Historical Canvas Color-Dodge Interaction */}
-          <div 
-            ref={cursorGlowRef}
-            className="absolute top-0 left-0 pointer-events-none z-10 opacity-0"
-            style={{
-              width: 700, height: 700,
-              marginLeft: -350, marginTop: -350,
-              background: 'radial-gradient(circle 350px at 50% 50%, rgba(245, 240, 220, 0.45) 0%, transparent 100%)',
-              mixBlendMode: 'color-dodge',
-              willChange: 'transform, opacity'
-            }}
-          />
         </div>
 
         {/* DOMAIN LENSES */}
