@@ -20,7 +20,8 @@ export const SkillsConstellation = () => {
   const worldRef = useRef<SVGGElement>(null);
   const nodeRefs = useRef<{ [key: string]: SVGGElement | null }>({});
   const terrainRefs = useRef<(SVGPathElement | null)[]>([]);
-  const interactionState = useRef({ x: -5000, y: -5000, nx: 0, ny: 0, master: 0, _wasZero: false });
+  const cursorMaskRef = useRef<SVGCircleElement>(null);
+  const interactionState = useRef({ x: 0, y: 0, nx: 0, ny: 0, master: 0, _wasZero: true });
   const { ref: visibilityRef, isVisible } = useSectionVisibility("200px");
   const cachedRect = useRef({ width: 0, height: 0, left: 0, top: 0, svgWidth: 0 });
   
@@ -39,7 +40,7 @@ export const SkillsConstellation = () => {
   const lastPan = useRef({ x: 0, y: 0 });
 
   // HYDRATION-SAFE MEMOIZED MATHEMATICS
-  const { terrain, parsedTerrain, nodesProj, edgesProj, domainsProj } = useMemo(() => {
+  const { terrainBands, nodesProj, edgesProj, domainsProj } = useMemo(() => {
     const getZ = (x: number, y: number) => {
       let z = 0;
       
@@ -136,12 +137,30 @@ export const SkillsConstellation = () => {
        return { x: x1, y: y1 * Math.cos(tilt) - z * Math.sin(tilt) };
     };
 
-    const tData = [];
+    const BANDS = 12;
+    const terrainBands = Array.from({ length: BANDS }, (_, i) => {
+        const depthRatio = i / (BANDS - 1);
+        const baseAlpha = 0.02 + depthRatio * 0.28;
+        
+        // Emulate previous hover highlight properties statically for mask layering
+        const terrainWeight = 0.5 + (baseAlpha * 3.0);
+        const peakInfluence = 1.0 * terrainWeight;
+        const finalAlpha = Math.min(0.85, baseAlpha + peakInfluence * 0.3);
+        
+        const r = Math.round(245 + peakInfluence * 8);
+        const g = Math.round(237 + peakInfluence * 5);
+        const b = Math.round(227 - peakInfluence * 8);
+        
+        return { baseAlpha, peakAlpha: finalAlpha, color: `${r}, ${g}, ${b}`, d: "" };
+    });
+
     const step = 50;
     const yMin = -1800, yMax = 1800;
     const xMin = -2600, xMax = 2600;
     
     for (let y = yMin; y <= yMax; y += step) {
+      const ratio = (y - yMin) / (yMax - yMin);
+      const bandIdx = Math.max(0, Math.min(BANDS - 1, Math.floor(ratio * BANDS)));
       let d = "";
       for (let x = xMin; x <= xMax; x += step) {
         const px = x + Math.sin(y / 180) * 12 + Math.cos((x+y)/300) * 8;
@@ -149,27 +168,26 @@ export const SkillsConstellation = () => {
         const p = project(px, py, getZ(px, py));
         d += x === xMin ? `M ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} ` : `L ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} `;
       }
-      tData.push({ yDepth: y, d, isCol: false });
+      terrainBands[bandIdx].d += d;
     }
     
     for (let x = xMin; x <= xMax; x += step) {
-      let d = "";
-      for (let y = yMin; y <= yMax; y += step) {
-        const px = x + Math.sin(y / 180) * 12 + Math.cos((x+y)/300) * 8;
-        const py = y + Math.sin(x / 180) * 12 + Math.cos((x-y)/300) * 8;
-        const p = project(px, py, getZ(px, py));
-        d += y === yMin ? `M ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} ` : `L ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} `;
+      for (let y = yMin; y < yMax; y += step) {
+        const ratio = (y - yMin) / (yMax - yMin);
+        const bandIdx = Math.max(0, Math.min(BANDS - 1, Math.floor(ratio * BANDS)));
+        
+        const px1 = x + Math.sin(y / 180) * 12 + Math.cos((x+y)/300) * 8;
+        const py1 = y + Math.sin(x / 180) * 12 + Math.cos((x-y)/300) * 8;
+        const p1 = project(px1, py1, getZ(px1, py1));
+        
+        const y2 = y + step;
+        const px2 = x + Math.sin(y2 / 180) * 12 + Math.cos((x+y2)/300) * 8;
+        const py2 = y2 + Math.sin(x / 180) * 12 + Math.cos((x-y2)/300) * 8;
+        const p2 = project(px2, py2, getZ(px2, py2));
+        
+        terrainBands[bandIdx].d += `M ${formatSvgNumber(p1.x)} ${formatSvgNumber(p1.y)} L ${formatSvgNumber(p2.x)} ${formatSvgNumber(p2.y)} `;
       }
-      tData.push({ yDepth: 9999, d, isCol: true });
     }
-
-    const pTerrain = tData.map(t => {
-      const pts = t.d.split(/[ML]/).map(s => s.trim()).filter(Boolean).map(s => {
-        const [x, y] = s.split(/\s+/).map(Number);
-        return { x, y };
-      });
-      return { ...t, pts };
-    });
 
     const nData = NODES.map(n => {
        const z = getZ(n.x, n.y);
@@ -218,7 +236,7 @@ export const SkillsConstellation = () => {
        return { a, b, pts };
     }).filter(Boolean) as { a: string, b: string, pts: {x: number, y: number, originalY: number}[] }[];
 
-    return { terrain: tData, parsedTerrain: pTerrain, nodesProj: nData, edgesProj: eData, domainsProj: dData };
+    return { terrainBands, nodesProj: nData, edgesProj: eData, domainsProj: dData };
   }, []);
 
   const labelLayout = useMemo(() => {
@@ -347,70 +365,6 @@ export const SkillsConstellation = () => {
     return layout;
   }, [nodesProj, domainsProj, pinnedNode, viewportSize]);
 
-  const renderCursorResponse = useCallback(() => {
-    const state = interactionState.current;
-    if (state.master === 0 && !interactionState.current._wasZero) {
-        parsedTerrain.forEach((t, i) => {
-            const pathEl = terrainRefs.current[i];
-            if (!pathEl) return;
-            pathEl.style.stroke = `rgba(245, 237, 227, 0.12)`;
-            pathEl.style.strokeWidth = "0.8";
-        });
-        interactionState.current._wasZero = true;
-        return;
-    }
-    if (state.master === 0) return;
-    interactionState.current._wasZero = false;
-
-    const px = state.x, py = state.y;
-    const master = state.master;
-    
-    const scale = camera.current.z || 0.85;
-    const ratio = (cachedRect.current.svgWidth || 2400) / 2400;
-    const screenMult = scale * ratio;
-    
-    parsedTerrain.forEach((t, i) => {
-        const pathEl = terrainRefs.current[i];
-        if (!pathEl) return;
-        
-        let minDistSq = Infinity;
-        const len = t.pts.length;
-        
-        for (let j = 0; j < len; j++) {
-            const pt = t.pts[j];
-            const dx = pt.x - px;
-            const dy = pt.y - py;
-            const dSq = dx*dx + dy*dy;
-            if (dSq < minDistSq) minDistSq = dSq;
-        }
-        
-        // The SVG mask handles global depth fading. 
-        // We use a flat baseAlpha to ensure uniform line strength before the mask is applied.
-        let baseAlpha = 0.12;
-        
-        const pixelDist = Math.sqrt(minDistSq) * screenMult;
-        
-        let influence = 0;
-        if (pixelDist < 600) {
-            const normalized = pixelDist / 280;
-            influence = Math.exp(-Math.pow(normalized, 2.4));
-            
-            const terrainWeight = 0.5 + (baseAlpha * 3.0);
-            influence *= terrainWeight;
-        }
-        
-        let finalAlpha = baseAlpha + (influence * 0.3) * master;
-        finalAlpha = Math.max(0.02, Math.min(0.85, finalAlpha));
-        
-        const r = Math.round(245 + influence * master * 8);
-        const g = Math.round(237 + influence * master * 5);
-        const b = Math.round(227 - influence * master * 8);
-        
-        pathEl.style.stroke = `rgba(${r}, ${g}, ${b}, ${finalAlpha.toFixed(3)})`;
-        pathEl.style.strokeWidth = (0.8 + influence * master * 0.4).toFixed(2);
-    });
-  }, [parsedTerrain]);
-
   const applyCamera = useCallback((animate = false, duration = 0.5) => {
     if (!worldRef.current) return;
     const { x, y, z } = camera.current;
@@ -422,13 +376,9 @@ export const SkillsConstellation = () => {
   }, []);
 
   const getCameraBounds = useCallback((z: number) => {
-    // Terrain was expanded to 5200x3600 grid.
-    // Projected safe bounds are roughly 4800x2500 in SVG space.
-    // We use a safe half-width of 2400 and half-height of 1250.
     const safeWorldWidth = 2400; 
     const safeWorldHeight = 1250;
     
-    // limit = (SafeWorldExtents * z - ViewportSize) / 2
     const limitX = Math.max(0, safeWorldWidth * z - 1200);
     const limitY = Math.max(0, safeWorldHeight * z - 800);
     
@@ -532,21 +482,12 @@ export const SkillsConstellation = () => {
         pt.x = e.clientX; pt.y = e.clientY;
         const svgP = pt.matrixTransform(worldRef.current!.getScreenCTM()!.inverse());
         
-        const rect = cachedRect.current;
-        const nx = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-        const ny = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
-        
-        gsap.to(interactionState.current, {
-            x: svgP.x,
-            y: svgP.y,
-            nx: nx,
-            ny: ny,
-            master: 1,
-            duration: 0.18,
-            ease: "power2.out",
-            onUpdate: renderCursorResponse,
-            overwrite: "auto"
-        });
+        if (cursorMaskRef.current) {
+            cursorMaskRef.current.setAttribute('cx', svgP.x.toString());
+            cursorMaskRef.current.setAttribute('cy', svgP.y.toString());
+            gsap.killTweensOf(cursorMaskRef.current);
+            cursorMaskRef.current.style.opacity = '1';
+        }
     }
 
     if (!isPanning.current) return;
@@ -566,7 +507,9 @@ export const SkillsConstellation = () => {
   const onPointerLeave = () => {
     isPanning.current = false;
     setTimeout(() => setIsDragging(false), 50);
-    gsap.to(interactionState.current, { master: 0, duration: 0.35, ease: "power2.out", onUpdate: renderCursorResponse, overwrite: "auto" });
+    if (cursorMaskRef.current) {
+      gsap.to(cursorMaskRef.current, { opacity: 0, duration: 0.35, ease: "power2.out" });
+    }
   };
 
   const onPointerUp = () => {
@@ -681,22 +624,36 @@ export const SkillsConstellation = () => {
   const renderQueue: { yDepth: number, element: React.ReactNode }[] = [];
 
   // PURE WIREFRAME TERRAIN
-  parsedTerrain.forEach((t, i) => {
-    let strokeOpacity = 0.12;
+  terrainBands.forEach((b, i) => {
+    const yDepth = -1800 + (i + 0.5) * 300;
     
+    // Base Layer
     renderQueue.push({
-      yDepth: t.yDepth,
+      yDepth,
       element: (
         <path 
-          key={`terrain-${i}`}
-          ref={(el) => { terrainRefs.current[i] = el; }}
-          d={t.d}
+          key={`terrain-base-${i}`}
+          d={b.d}
           fill="none"
-          stroke={`rgba(245, 237, 227, ${strokeOpacity})`}
+          stroke={`rgba(245, 237, 227, ${b.baseAlpha})`}
           strokeWidth="0.8"
-          mask="url(#depth-mask)"
           className="topo-terrain"
-          style={{ willChange: "stroke, stroke-width, stroke-opacity" }}
+        />
+      )
+    });
+    
+    // Highlight Layer (Masked by CSS)
+    renderQueue.push({
+      yDepth: yDepth + 0.1, // draw slightly above base layer
+      element: (
+        <path 
+          key={`terrain-highlight-${i}`}
+          d={b.d}
+          fill="none"
+          stroke={`rgba(${b.color}, ${b.peakAlpha})`}
+          strokeWidth="1.2"
+          mask="url(#cursor-mask)"
+          className="topo-terrain topo-highlight"
         />
       )
     });
@@ -1133,14 +1090,14 @@ export const SkillsConstellation = () => {
               preserveAspectRatio="xMidYMid slice" className="absolute inset-0"
             >
               <defs>
-                <linearGradient id="world-depth-mask" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="rgba(255,255,255,0.02)" />
-                  <stop offset="30%" stopColor="rgba(255,255,255,0.15)" />
-                  <stop offset="70%" stopColor="rgba(255,255,255,1)" />
-                  <stop offset="100%" stopColor="rgba(255,255,255,1)" />
-                </linearGradient>
-                <mask id="depth-mask" maskUnits="userSpaceOnUse" x="-2600" y="-1200" width="5200" height="2400">
-                  <rect x="-2600" y="-1200" width="5200" height="2400" fill="url(#world-depth-mask)" />
+                <radialGradient id="cursor-gradient" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="white" stopOpacity="1" />
+                  <stop offset="10%" stopColor="white" stopOpacity="0.95" />
+                  <stop offset="40%" stopColor="white" stopOpacity="0.5" />
+                  <stop offset="100%" stopColor="black" stopOpacity="0" />
+                </radialGradient>
+                <mask id="cursor-mask" maskUnits="userSpaceOnUse" x="-4000" y="-3000" width="8000" height="6000">
+                  <circle ref={cursorMaskRef} cx="-5000" cy="-5000" r="600" fill="url(#cursor-gradient)" style={{ opacity: 0 }} />
                 </mask>
               </defs>
               <g ref={worldRef}>
