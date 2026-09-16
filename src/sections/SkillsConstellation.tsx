@@ -78,18 +78,31 @@ export const SkillsConstellation = () => {
       data += ridge(500, -80, 160, 200, 150, 35);
       z += data;
 
-      // 4. Systems (UNCHANGED)
-      let sys = 180 * Math.exp(-(Math.pow(x - (-500), 2) + Math.pow(y - (-100), 2)) / 80000);
-      sys += 140 * Math.exp(-(Math.pow(x - (-650), 2) + Math.pow(y - (-200), 2)) / 50000);
-      sys += 120 * Math.exp(-(Math.pow(x - (-350), 2) + Math.pow(y - 50, 2)) / 40000);
+      // 4. Systems - Broad, rugged, multi-peak
+      let sys = ridge(-500, -100, 180, 300, 200, -20);
+      sys += ridge(-650, -200, 140, 250, 150, 15);
+      sys += ridge(-350, 50, 120, 200, 150, -45);
+      sys += ridge(-450, 0, 90, 150, 80, 45); 
       z += sys;
 
-      // 5. Finance, Web, Robotics (UNCHANGED)
-      z += 220 * Math.exp(-(Math.pow(x - (-400), 2) + Math.pow(y - 300, 2)) / 20000);
-      z += 90 * Math.exp(-(Math.pow(x - 0, 2) + Math.pow(y - 350, 2)) / 90000);
-      z += 240 * Math.exp(-(Math.pow(x - 450, 2) + Math.pow(y - 300, 2)) / 25000);
+      // 5. Finance - Compact, sharp, distinct peak + small shoulder
+      let fin = ridge(-400, 300, 220, 160, 120, 35);
+      fin += ridge(-350, 360, 110, 140, 80, 10);
+      z += fin;
 
-      // 6. Peripheral / Secondary Mountains (Subtle Depth)
+      // 6. Web / Infrastructure - Lower connective valley, rolling basin
+      let web = ridge(0, 350, 90, 350, 200, -10);
+      web += ridge(120, 280, 60, 250, 120, 30);
+      web += ridge(-150, 320, 65, 200, 120, -20);
+      z += web;
+
+      // 7. Robotics - Angular, distinct foreground, asymmetrical shoulders
+      let rob = ridge(450, 300, 240, 180, 130, -25);
+      rob += ridge(520, 340, 140, 150, 90, -45);
+      rob += ridge(380, 260, 110, 130, 80, 15);
+      z += rob;
+
+      // 8. Peripheral / Secondary Mountains (Subtle Depth)
       // Behind Systems (distant left)
       z += ridge(-1200, -600, 130, 400, 200, 30);
       z += ridge(-1600, -200, 90, 300, 500, -15);
@@ -107,7 +120,7 @@ export const SkillsConstellation = () => {
       z += ridge(300, 1000, 100, 600, 250, 0);
       z += ridge(1200, 800, 85, 400, 300, -40);
 
-      // 6. Subordinate Detail Noise (10-15%)
+      // 9. Subordinate Detail Noise (10-15%)
       const noise1 = Math.sin(x / 45) * Math.cos(y / 45) * 14;
       const noise2 = Math.sin(x / 20 + y / 25) * 6;
       z += (noise1 + noise2) * (z / 180);
@@ -131,7 +144,9 @@ export const SkillsConstellation = () => {
     for (let y = yMin; y <= yMax; y += step) {
       let d = "";
       for (let x = xMin; x <= xMax; x += step) {
-        const p = project(x, y, getZ(x, y));
+        const px = x + Math.sin(y / 180) * 12 + Math.cos((x+y)/300) * 8;
+        const py = y + Math.sin(x / 180) * 12 + Math.cos((x-y)/300) * 8;
+        const p = project(px, py, getZ(px, py));
         d += x === xMin ? `M ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} ` : `L ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} `;
       }
       tData.push({ yDepth: y, d, isCol: false });
@@ -140,7 +155,9 @@ export const SkillsConstellation = () => {
     for (let x = xMin; x <= xMax; x += step) {
       let d = "";
       for (let y = yMin; y <= yMax; y += step) {
-        const p = project(x, y, getZ(x, y));
+        const px = x + Math.sin(y / 180) * 12 + Math.cos((x+y)/300) * 8;
+        const py = y + Math.sin(x / 180) * 12 + Math.cos((x-y)/300) * 8;
+        const p = project(px, py, getZ(px, py));
         d += y === yMin ? `M ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} ` : `L ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} `;
       }
       tData.push({ yDepth: 9999, d, isCol: true });
@@ -336,14 +353,7 @@ export const SkillsConstellation = () => {
         parsedTerrain.forEach((t, i) => {
             const pathEl = terrainRefs.current[i];
             if (!pathEl) return;
-            let baseAlpha = 0.08;
-            if (!t.isCol) {
-               const depthRatio = (t.yDepth - (-1200)) / (1200 - (-1200));
-               baseAlpha = 0.08 + depthRatio * 0.25;
-            } else {
-               baseAlpha = 0.12;
-            }
-            pathEl.style.stroke = `rgba(245, 237, 227, ${baseAlpha})`;
+            pathEl.style.stroke = `rgba(245, 237, 227, 0.12)`;
             pathEl.style.strokeWidth = "0.8";
         });
         interactionState.current._wasZero = true;
@@ -374,29 +384,21 @@ export const SkillsConstellation = () => {
             if (dSq < minDistSq) minDistSq = dSq;
         }
         
-        let baseAlpha = 0.08;
-        if (!t.isCol) {
-           const depthRatio = (t.yDepth - (-1200)) / (1200 - (-1200));
-           baseAlpha = 0.08 + depthRatio * 0.25;
-        } else {
-           baseAlpha = 0.12;
-        }
+        // The SVG mask handles global depth fading. 
+        // We use a flat baseAlpha to ensure uniform line strength before the mask is applied.
+        let baseAlpha = 0.12;
         
         const pixelDist = Math.sqrt(minDistSq) * screenMult;
         
         let influence = 0;
         if (pixelDist < 600) {
-            // Strong nonlinear falloff (core high, regional moderate, edge fast fade)
             const normalized = pixelDist / 280;
             influence = Math.exp(-Math.pow(normalized, 2.4));
             
-            // Terrain-aware weighting (closer ridges respond slightly stronger)
             const terrainWeight = 0.5 + (baseAlpha * 3.0);
             influence *= terrainWeight;
         }
         
-        // Reduced global/far influence to strict 0.
-        // Reduced peak brightness (0.3 instead of 0.45).
         let finalAlpha = baseAlpha + (influence * 0.3) * master;
         finalAlpha = Math.max(0.02, Math.min(0.85, finalAlpha));
         
@@ -680,16 +682,7 @@ export const SkillsConstellation = () => {
 
   // PURE WIREFRAME TERRAIN
   parsedTerrain.forEach((t, i) => {
-    let strokeOpacity = 0.08;
-    if (!t.isCol) {
-       // Depth fades out towards the far background (-1800)
-       const depthRatio = (t.yDepth - (-1800)) / (1800 - (-1800));
-       // Distant ranges are very faint (~0.02), foreground is stronger
-       strokeOpacity = 0.02 + depthRatio * 0.28;
-    } else {
-       // Vertical grid lines slightly more subtle overall
-       strokeOpacity = 0.07;
-    }
+    let strokeOpacity = 0.12;
     
     renderQueue.push({
       yDepth: t.yDepth,
@@ -701,6 +694,7 @@ export const SkillsConstellation = () => {
           fill="none"
           stroke={`rgba(245, 237, 227, ${strokeOpacity})`}
           strokeWidth="0.8"
+          mask="url(#depth-mask)"
           className="topo-terrain"
           style={{ willChange: "stroke, stroke-width, stroke-opacity" }}
         />
@@ -1138,6 +1132,17 @@ export const SkillsConstellation = () => {
               viewBox="-1200 -800 2400 1600"
               preserveAspectRatio="xMidYMid slice" className="absolute inset-0"
             >
+              <defs>
+                <linearGradient id="world-depth-mask" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.02)" />
+                  <stop offset="30%" stopColor="rgba(255,255,255,0.15)" />
+                  <stop offset="70%" stopColor="rgba(255,255,255,1)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,1)" />
+                </linearGradient>
+                <mask id="depth-mask" maskUnits="userSpaceOnUse" x="-2600" y="-1200" width="5200" height="2400">
+                  <rect x="-2600" y="-1200" width="5200" height="2400" fill="url(#world-depth-mask)" />
+                </mask>
+              </defs>
               <g ref={worldRef}>
                 {/* Base Wireframe Mesh Queue */}
                 {renderQueue.map((item, i) => React.cloneElement(item.element as React.ReactElement, { key: `depth-${i}` }))}
