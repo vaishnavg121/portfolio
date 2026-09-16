@@ -20,7 +20,7 @@ const VelociraptorModel = () => {
     
     // Normalize scale so it fits nicely
     const maxDim = Math.max(size.x, size.y, size.z);
-    const targetDim = 100; // fit in a 100-unit sphere
+    const targetDim = 55; // Much smaller to prevent extreme cropping (55-70% width)
     const scale = targetDim / maxDim;
     
     scene.position.x = -center.x;
@@ -73,30 +73,30 @@ const VelociraptorModel = () => {
        let targetScale = 1.0;
        let blockX = 100; // hidden far right
        
-       if (prog < 0.1) {
+       if (prog < 0.10) {
            targetRotY = -Math.PI / 4;
            targetScale = 0.8;
            spinVelocity.current = 0;
            setImpactActive(false);
-       } else if (prog < 0.3) {
+       } else if (prog < 0.30) {
            targetRotY = -Math.PI / 6;
            targetScale = 1.0;
            spinVelocity.current = (prog - 0.1) * 2; // Spool up
            setImpactActive(false);
-       } else if (prog < 0.49) {
+       } else if (prog < 0.50) {
            targetRotY = 0;
            targetScale = 1.2;
            targetRotX = Math.PI / 12;
-           spinVelocity.current = 0.8; // Max spin
+           spinVelocity.current = 1.0; // Max spin
            setImpactActive(false);
-           blockX = 45; // moving into position
-       } else if (prog < 0.7) {
+           blockX = 35; // moving into position
+       } else if (prog < 0.65) {
            targetRotY = Math.PI / 4;
            targetScale = 1.1;
            spinVelocity.current = 0; // Freeze
-           blockX = 40; // contacted
+           blockX = 30; // contacted
            // Trigger impact if we just crossed 0.49
-           if (lastProg < 0.49) {
+           if (lastProg < 0.50) {
                setImpactActive(true);
                // Camera impulse
                gsap.fromTo(group.current.position, 
@@ -105,14 +105,18 @@ const VelociraptorModel = () => {
                );
                if (strikeBlockRef.current) {
                   gsap.fromTo(strikeBlockRef.current.position,
-                      { x: 45 },
-                      { x: 48, duration: 0.15, ease: "bounce.out", overwrite: "auto" }
+                      { x: 35 },
+                      { x: 30, duration: 0.15, ease: "bounce.out", overwrite: "auto" }
                   );
                }
            }
-       } else {
+       } else if (prog < 0.80) {
            targetRotY = Math.PI;
            targetScale = 0.9;
+           spinVelocity.current = 0;
+       } else {
+           targetRotY = Math.PI * 1.25;
+           targetScale = 0.8;
            spinVelocity.current = 0;
        }
        

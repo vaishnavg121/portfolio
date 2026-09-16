@@ -34,9 +34,9 @@ export const RoboticsShowcase = () => {
         scrollTrigger: {
           trigger: containerRef.current,
           start: "top top",
-          end: "+=3500",
+          end: "+=250vh",
           pin: true,
-          scrub: 1,
+          scrub: 0.5,
           onUpdate: (self) => {
              const prog = self.progress;
              if (prog < 0.1) setActiveScene("entry");
@@ -46,28 +46,40 @@ export const RoboticsShowcase = () => {
              else if (prog < 0.85) setActiveScene("powertrain");
              else setActiveScene("closing");
              
+             const devEl = document.getElementById('dev-progress');
+             if (devEl) devEl.innerText = prog.toFixed(3);
+             
              // Dispatch a custom event so the 3D scene can react without React re-renders
              window.dispatchEvent(new CustomEvent("robotics-scroll", { detail: prog }));
           }
         }
       });
       
-      // Text animations over the timeline
-      tl.to(".text-entry", { opacity: 0, y: -50, duration: 0.1 }, 0.1);
+      // Explicit 0 to 1 timeline mapping
+      // ENTRY: visible 0 to 0.15, fades out 0.10 -> 0.15
+      tl.to(".text-entry", { opacity: 0, y: -50, duration: 0.05 }, 0.10);
       
-      tl.fromTo(".text-reveal", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.05 }, 0.15);
-      tl.to(".text-reveal", { opacity: 0, y: -50, duration: 0.05 }, 0.25);
+      // REVEAL: fades in 0.10->0.15, visible 0.15 to 0.35, fades out 0.30->0.35
+      tl.fromTo(".text-reveal", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.05 }, 0.10);
+      tl.to(".text-reveal", { opacity: 0, y: -50, duration: 0.05 }, 0.30);
       
-      tl.fromTo(".text-weapon", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.05 }, 0.3);
-      tl.to(".text-weapon", { opacity: 0, duration: 0.01 }, 0.49); // Sudden disappear on impact
+      // WEAPON: fades in 0.30->0.35, visible 0.35 to 0.50, instantly disappears at 0.50
+      tl.fromTo(".text-weapon", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.05 }, 0.30);
+      tl.set(".text-weapon", { opacity: 0 }, 0.50);
       
-      tl.fromTo(".text-fea", { opacity: 0, x: 50 }, { opacity: 1, x: 0, duration: 0.05 }, 0.52);
+      // FEA: fades in 0.48->0.53, visible 0.53 to 0.70, fades out 0.65->0.70
+      tl.fromTo(".text-fea", { opacity: 0, x: 50 }, { opacity: 1, x: 0, duration: 0.05 }, 0.48);
       tl.to(".text-fea", { opacity: 0, x: -50, duration: 0.05 }, 0.65);
       
-      tl.fromTo(".text-powertrain", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.05 }, 0.7);
-      tl.to(".text-powertrain", { opacity: 0, y: -50, duration: 0.05 }, 0.82);
+      // POWERTRAIN: fades in 0.65->0.70, visible 0.70 to 0.85, fades out 0.80->0.85
+      tl.fromTo(".text-powertrain", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.05 }, 0.65);
+      tl.to(".text-powertrain", { opacity: 0, y: -50, duration: 0.05 }, 0.80);
       
-      tl.fromTo(".text-closing", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.05 }, 0.85);
+      // CLOSING: fades in 0.80->0.85, visible 0.85 to 1.00
+      tl.fromTo(".text-closing", { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.05 }, 0.80);
+      
+      // Dummy tween to pad timeline to exactly 1.0 duration
+      tl.to({}, {duration: 0.15}, 0.85);
 
     }, containerRef);
     
@@ -216,6 +228,14 @@ export const RoboticsShowcase = () => {
         </div>
         
       </div>
+      
+      {/* DEV OVERLAY - REMOVE BEFORE FINAL COMMIT */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed top-24 left-12 z-50 bg-black/80 text-white font-mono text-xs p-4 pointer-events-none">
+           <div>PROGRESS: <span id="dev-progress">0.000</span></div>
+           <div>SCENE: {activeScene}</div>
+        </div>
+      )}
     </section>
   );
 };
