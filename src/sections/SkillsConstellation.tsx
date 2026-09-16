@@ -43,24 +43,58 @@ export const SkillsConstellation = () => {
   const { terrain, parsedTerrain, nodesProj, edgesProj, domainsProj } = useMemo(() => {
     const getZ = (x: number, y: number) => {
       let z = 0;
-      let ai = 350 * Math.exp(-(Math.pow(x - 0, 2) + Math.pow(y - (-450), 2)) / 50000);
-      ai += 180 * Math.exp(-(Math.pow(x - (-120), 2) + Math.pow(y - (-550), 2)) / 30000);
-      ai += 200 * Math.exp(-(Math.pow(x - 150, 2) + Math.pow(y - (-400), 2)) / 40000);
+      
+      // Helper for anisotropic rotated ridges
+      const ridge = (cx: number, cy: number, amp: number, sx: number, sy: number, rotDeg: number) => {
+          const r = rotDeg * Math.PI / 180;
+          const cos = Math.cos(r);
+          const sin = Math.sin(r);
+          const dx = x - cx;
+          const dy = y - cy;
+          const rx = dx * cos - dy * sin;
+          const ry = dx * sin + dy * cos;
+          return amp * Math.exp(-( (rx*rx)/(sx*sx) + (ry*ry)/(sy*sy) ));
+      };
+
+      // 1. AI / ML - Dominant dramatic multi-ridge system
+      // Primary summit (tallest, slightly sharp)
+      let ai = ridge(20, -480, 420, 220, 320, 15);
+      // Secondary ridge (left-leaning, lower)
+      ai += ridge(-140, -400, 310, 150, 400, -25);
+      // Tertiary shoulder (reaching toward Data domain)
+      ai += ridge(220, -320, 240, 280, 140, -15);
+      // Back ridge (creates depth on the far side)
+      ai += ridge(-60, -620, 180, 350, 120, -5);
       z += ai;
 
+      // 2. AI/ML -> Data Saddle (connecting the shoulder to the plateau)
+      z += ridge(350, -280, 150, 180, 120, -30);
+
+      // 3. Data - Long horizontal plateau / wide ridge
+      // Primary long spine
+      let data = ridge(620, -180, 240, 450, 140, 10);
+      // Second plateau crest
+      data += ridge(850, -200, 190, 250, 120, 0);
+      // Front descending ridge
+      data += ridge(500, -80, 160, 200, 150, 35);
+      z += data;
+
+      // 4. Systems (UNCHANGED)
       let sys = 180 * Math.exp(-(Math.pow(x - (-500), 2) + Math.pow(y - (-100), 2)) / 80000);
       sys += 140 * Math.exp(-(Math.pow(x - (-650), 2) + Math.pow(y - (-200), 2)) / 50000);
       sys += 120 * Math.exp(-(Math.pow(x - (-350), 2) + Math.pow(y - 50, 2)) / 40000);
       z += sys;
 
-      z += 180 * Math.exp(-(Math.pow(x - 500, 2) / 120000 + Math.pow(y - (-250), 2) / 30000));
+      // 5. Finance, Web, Robotics (UNCHANGED)
       z += 220 * Math.exp(-(Math.pow(x - (-400), 2) + Math.pow(y - 300, 2)) / 20000);
       z += 90 * Math.exp(-(Math.pow(x - 0, 2) + Math.pow(y - 350, 2)) / 90000);
       z += 240 * Math.exp(-(Math.pow(x - 450, 2) + Math.pow(y - 300, 2)) / 25000);
 
-      const noise1 = Math.sin(x / 40) * Math.cos(y / 40) * 12;
-      const noise2 = Math.sin(x / 15 + y / 20) * 5;
-      z += (noise1 + noise2) * (z / 150);
+      // 6. Subordinate Detail Noise (10-15%)
+      const noise1 = Math.sin(x / 45) * Math.cos(y / 45) * 14;
+      const noise2 = Math.sin(x / 20 + y / 25) * 6;
+      z += (noise1 + noise2) * (z / 180);
+      
       return z;
     };
 
