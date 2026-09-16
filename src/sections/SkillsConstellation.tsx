@@ -322,15 +322,35 @@ export const SkillsConstellation = () => {
     }
   }, []);
 
+  const getCameraBounds = useCallback((z: number) => {
+    // Terrain was expanded to 5200x3600 grid.
+    // Projected safe bounds are roughly 4800x2500 in SVG space.
+    // We use a safe half-width of 2400 and half-height of 1250.
+    const safeWorldWidth = 2400; 
+    const safeWorldHeight = 1250;
+    
+    // limit = (SafeWorldExtents * z - ViewportSize) / 2
+    const limitX = Math.max(0, safeWorldWidth * z - 1200);
+    const limitY = Math.max(0, safeWorldHeight * z - 800);
+    
+    return {
+      minX: -limitX,
+      maxX: limitX,
+      minY: -limitY,
+      maxY: limitY
+    };
+  }, []);
+
   const clampCamera = useCallback(() => {
     const minZ = 0.85; 
     const maxZ = 2.5;
     camera.current.z = Math.max(minZ, Math.min(maxZ, camera.current.z));
-    const limitX = Math.max(0, 1800 * camera.current.z - 1200);
-    const limitY = Math.max(0, 1200 * camera.current.z - 800);
-    camera.current.x = Math.max(-limitX, Math.min(limitX, camera.current.x));
-    camera.current.y = Math.max(-limitY, Math.min(limitY, camera.current.y));
-  }, []);
+    
+    const bounds = getCameraBounds(camera.current.z);
+    
+    camera.current.x = Math.max(bounds.minX, Math.min(bounds.maxX, camera.current.x));
+    camera.current.y = Math.max(bounds.minY, Math.min(bounds.maxY, camera.current.y));
+  }, [getCameraBounds]);
 
   useEffect(() => {
     setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
@@ -372,11 +392,11 @@ export const SkillsConstellation = () => {
       const zoomAmount = 0.02;
       const newZ = Math.max(0.85, Math.min(2.5, camera.current.z - (e.deltaY * zoomAmount)));
       camera.current.z = newZ;
-      clampCamera();
 
       camera.current.x = svgP.x - xs * camera.current.z;
       camera.current.y = svgP.y - ys * camera.current.z;
 
+      clampCamera();
       applyCamera(false);
     }
   }, [applyCamera, clampCamera]);
@@ -503,9 +523,10 @@ export const SkillsConstellation = () => {
     setPinnedNode(null);
     setSearchQuery("");
     camera.current = { x: 0, y: 150, z: 0.85 };
+    clampCamera();
     applyCamera(true, 1.2);
     if (svgWrapperRef.current) gsap.to(svgWrapperRef.current, { rotateX: 0, rotateY: 0, duration: 1.2, ease: "power3.inOut" });
-  }, [applyCamera]);
+  }, [applyCamera, clampCamera]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -524,6 +545,7 @@ export const SkillsConstellation = () => {
     
     tl.to(worldRef.current, { opacity: 1, y: 0, duration: 1.5, ease: "power2.out", onComplete: () => {
       camera.current.z = 0.85;
+      clampCamera();
       applyCamera(false);
     }}, 0);
     
@@ -845,8 +867,26 @@ export const SkillsConstellation = () => {
           {/* CONTROLS */}
           <div className="absolute bottom-6 left-6 z-30 hidden md:flex items-end gap-4 interactive-ui">
             <div className="bg-[#0a0a0a]/90 backdrop-blur-md border border-border flex flex-col gap-1 p-1 shadow-2xl">
-              <button onClick={() => { camera.current.z *= 1.2; clampCamera(); applyCamera(true); }} className="p-2.5 text-text-muted hover:text-white" aria-label="Zoom In"><Plus className="w-3.5 h-3.5" /></button>
-              <button onClick={() => { camera.current.z *= 0.8; clampCamera(); applyCamera(true); }} className="p-2.5 text-text-muted hover:text-white" aria-label="Zoom Out"><Minus className="w-3.5 h-3.5" /></button>
+              <button onClick={() => { 
+                const oldZ = camera.current.z;
+                camera.current.z *= 1.2; 
+                clampCamera(); 
+                const ratio = camera.current.z / oldZ;
+                camera.current.x *= ratio;
+                camera.current.y *= ratio;
+                clampCamera();
+                applyCamera(true); 
+              }} className="p-2.5 text-text-muted hover:text-white" aria-label="Zoom In"><Plus className="w-3.5 h-3.5" /></button>
+              <button onClick={() => { 
+                const oldZ = camera.current.z;
+                camera.current.z *= 0.8; 
+                clampCamera(); 
+                const ratio = camera.current.z / oldZ;
+                camera.current.x *= ratio;
+                camera.current.y *= ratio;
+                clampCamera();
+                applyCamera(true); 
+              }} className="p-2.5 text-text-muted hover:text-white" aria-label="Zoom Out"><Minus className="w-3.5 h-3.5" /></button>
               <button onClick={resetCamera} className="p-2.5 text-text-muted hover:text-white" aria-label="Reset"><Maximize className="w-3.5 h-3.5" /></button>
             </div>
           </div>
