@@ -93,7 +93,7 @@ export const Hero = () => {
   return (
     <motion.section
       ref={(el) => { containerRef.current = el; visibilityRef(el); }}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16"
       id="hero"
       initial={{ x: 0, y: 0 }}
       animate={{ x: (!mounted || shouldReduceMotion) ? 0 : [0, 3, -2, 0], y: (!mounted || shouldReduceMotion) ? 0 : [0, -2, 1, 0] }}
@@ -127,7 +127,7 @@ export const Hero = () => {
         </svg>
       </motion.div>
 
-      <div className="container mx-auto px-6 md:px-12 z-10 w-full h-full flex flex-col justify-center pb-20">
+      <div className="container mx-auto px-6 md:px-12 z-10 w-full h-full flex flex-col justify-center pb-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 relative">
 
           <motion.div
@@ -161,7 +161,7 @@ export const Hero = () => {
           </motion.div>
 
           <motion.div
-            className="hero-subtitle-block md:col-span-5 md:col-start-7 lg:col-start-8 mt-0 md:-mt-[27rem] relative z-20"
+            className="hero-subtitle-block md:col-span-5 md:col-start-7 lg:col-start-8 md:row-start-1 mt-8 md:mt-[36vh] relative z-20"
             style={{ x: shouldReduceMotion ? 0 : subtitleX, y: shouldReduceMotion ? 0 : subtitleY }}
             data-familiar-avoid
           >
