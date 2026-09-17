@@ -106,140 +106,174 @@ export const HeroCards = () => {
     const cards = gsap.utils.toArray('.hero-card') as HTMLElement[];
     if (!cards.length) return;
 
-    // Stacked elegantly, slightly layered like a poster deck.
-    // X max is 75, keeping the furthest card's right edge at 75 + 210 = 285px.
-    // Safely avoiding the Ink Familiar zone at 320px.
-    const restingProps = [
-      { x: 0, y: 0, rotate: -3 },
-      { x: 25, y: 35, rotate: -1 },
-      { x: 50, y: 70, rotate: 1 },
-      { x: 75, y: 105, rotate: 3 }
-    ];
+    let mm = gsap.matchMedia();
 
-    gsap.set(cards, { opacity: 0, y: "+=40" });
-    cards.forEach((card, i) => {
-      gsap.to(card, {
-        opacity: 1,
-        x: restingProps[i].x,
-        y: restingProps[i].y,
-        rotate: restingProps[i].rotate,
-        duration: 0.9,
-        delay: 1.1 + (i * 0.15),
-        ease: "power3.out",
-        onComplete: () => {
-          gsap.set(card, { clearProps: "y" });
-          gsap.set(card, { x: restingProps[i].x, y: restingProps[i].y, rotate: restingProps[i].rotate });
-        }
-      });
-    });
+    mm.add(
+      {
+        isDesktop: "(min-width: 768px)",
+        isMobile: "(max-width: 767px)"
+      },
+      (context) => {
+        const { isDesktop } = context.conditions as { isDesktop: boolean };
 
-    const ctx = gsap.context(() => {
-      const container = containerRef.current;
-      if (!container) return;
+        // Desktop: Staggered horizontal fan.
+        // Mobile: Stepped vertical stack to prevent overflow.
+        const restingProps = isDesktop
+          ? [
+              { x: 0, y: 40, rotate: -2 },
+              { x: 180, y: 10, rotate: 1 },
+              { x: 360, y: 50, rotate: -1 },
+              { x: 540, y: 20, rotate: 2 }
+            ]
+          : [
+              { x: 0, y: 0, rotate: -2 },
+              { x: 25, y: 35, rotate: -1 },
+              { x: 50, y: 70, rotate: 1 },
+              { x: 75, y: 105, rotate: 3 }
+            ];
 
-      container.addEventListener('mouseenter', () => {
-        // Very subtle spreading on container hover
-        cards.forEach((c, i) => {
-          gsap.to(c, {
-            x: restingProps[i].x + (i * 4), 
-            y: restingProps[i].y + (i * 4),
-            rotate: restingProps[i].rotate * 0.5,
-            duration: 0.6,
-            ease: "power2.out"
-          });
-        });
-      });
-
-      container.addEventListener('mouseleave', () => {
-        // Return to resting state
-        cards.forEach((c, i) => {
-          gsap.to(c, {
+        gsap.set(cards, { opacity: 0, y: "+=40" });
+        cards.forEach((card, i) => {
+          gsap.to(card, {
+            opacity: 1,
             x: restingProps[i].x,
             y: restingProps[i].y,
             rotate: restingProps[i].rotate,
-            scale: 1,
-            zIndex: CARDS.length - i,
-            borderColor: "rgba(255,255,255,0.05)",
-            backgroundColor: "rgba(5,5,5,0.95)",
-            duration: 0.6,
-            ease: "power2.out"
-          });
-          
-          const arrow = c.querySelector('.card-arrow');
-          if (arrow) gsap.to(arrow, { opacity: 0, x: -5, duration: 0.2 });
-          
-          const highlight = c.querySelector('.card-highlight');
-          if (highlight) gsap.to(highlight, { opacity: 0, duration: 0.3 });
-        });
-      });
-
-      cards.forEach((card, i) => {
-        card.addEventListener('mouseenter', () => {
-          // Hovered card pops up and forwards
-          gsap.to(card, {
-            y: restingProps[i].y - 20, 
-            x: restingProps[i].x - 10,
-            rotate: 0,
-            scale: 1.05,
-            zIndex: 20, 
-            borderColor: "rgba(255,255,255,0.25)",
-            backgroundColor: "rgba(10,10,10,0.98)",
-            duration: 0.4,
-            ease: "power3.out"
-          });
-          
-          const arrow = card.querySelector('.card-arrow');
-          if (arrow) gsap.to(arrow, { opacity: 1, x: 0, duration: 0.3 });
-          
-          const highlight = card.querySelector('.card-highlight');
-          if (highlight) gsap.to(highlight, { opacity: 1, duration: 0.3 });
-
-          // Siblings separate and sink slightly
-          cards.forEach((sibling, j) => {
-            if (i !== j) {
-              const distance = j - i;
-              gsap.to(sibling, {
-                x: restingProps[j].x + (distance > 0 ? 15 : -5),
-                y: restingProps[j].y + (distance > 0 ? 15 : -5),
-                scale: 0.98,
-                zIndex: CARDS.length - j,
-                borderColor: "rgba(255,255,255,0.02)",
-                duration: 0.4,
-                ease: "power2.out"
-              });
+            duration: 0.9,
+            delay: 1.1 + (i * 0.15),
+            ease: "power3.out",
+            onComplete: () => {
+              gsap.set(card, { clearProps: "y" });
+              gsap.set(card, { x: restingProps[i].x, y: restingProps[i].y, rotate: restingProps[i].rotate });
             }
           });
         });
 
-        card.addEventListener('mousedown', () => gsap.to(card, { scale: 0.98, duration: 0.1 }));
-        card.addEventListener('mouseup', () => {
-          gsap.to(card, { scale: 1.05, duration: 0.1 });
-          document.getElementById(CARDS[i].id)?.scrollIntoView({ behavior: 'smooth' });
-        });
-        
-        card.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            document.getElementById(CARDS[i].id)?.scrollIntoView({ behavior: 'smooth' });
-          }
-        });
-      });
-    }, containerRef);
+        const container = containerRef.current;
+        if (!container) return;
 
-    return () => ctx.revert();
+        // Container enter/leave handlers
+        const onContainerEnter = () => {
+          cards.forEach((c, i) => {
+            gsap.to(c, {
+              x: restingProps[i].x + (isDesktop ? (i * 10) : (i * 4)), 
+              y: restingProps[i].y + (isDesktop ? (i % 2 === 0 ? -5 : 5) : (i * 4)),
+              rotate: isDesktop ? restingProps[i].rotate * 0.5 : restingProps[i].rotate * 0.5,
+              duration: 0.6,
+              ease: "power2.out"
+            });
+          });
+        };
+
+        const onContainerLeave = () => {
+          cards.forEach((c, i) => {
+            gsap.to(c, {
+              x: restingProps[i].x,
+              y: restingProps[i].y,
+              rotate: restingProps[i].rotate,
+              scale: 1,
+              zIndex: CARDS.length - i,
+              borderColor: "rgba(255,255,255,0.05)",
+              backgroundColor: "rgba(5,5,5,0.95)",
+              duration: 0.6,
+              ease: "power2.out"
+            });
+            
+            const arrow = c.querySelector('.card-arrow');
+            if (arrow) gsap.to(arrow, { opacity: 0, x: -5, duration: 0.2 });
+            
+            const highlight = c.querySelector('.card-highlight');
+            if (highlight) gsap.to(highlight, { opacity: 0, duration: 0.3 });
+          });
+        };
+
+        container.addEventListener('mouseenter', onContainerEnter);
+        container.addEventListener('mouseleave', onContainerLeave);
+
+        // Individual card handlers
+        const cardHandlers = cards.map((card, i) => {
+          const onEnter = () => {
+            gsap.to(card, {
+              y: restingProps[i].y - (isDesktop ? 12 : 20),
+              x: restingProps[i].x - (isDesktop ? 5 : 10),
+              rotate: 0,
+              scale: 1.05,
+              zIndex: 20, 
+              borderColor: "rgba(255,255,255,0.25)",
+              backgroundColor: "rgba(10,10,10,0.98)",
+              duration: 0.4,
+              ease: "power3.out"
+            });
+            
+            const arrow = card.querySelector('.card-arrow');
+            if (arrow) gsap.to(arrow, { opacity: 1, x: 0, duration: 0.3 });
+            
+            const highlight = card.querySelector('.card-highlight');
+            if (highlight) gsap.to(highlight, { opacity: 1, duration: 0.3 });
+
+            cards.forEach((sibling, j) => {
+              if (i !== j) {
+                const distance = j - i;
+                gsap.to(sibling, {
+                  x: restingProps[j].x + (isDesktop ? (distance > 0 ? 15 : -10) : (distance > 0 ? 15 : -5)),
+                  y: restingProps[j].y + (isDesktop ? (distance > 0 ? 5 : -5) : (distance > 0 ? 15 : -5)),
+                  scale: 0.98,
+                  zIndex: CARDS.length - j,
+                  borderColor: "rgba(255,255,255,0.02)",
+                  duration: 0.4,
+                  ease: "power2.out"
+                });
+              }
+            });
+          };
+
+          const onDown = () => gsap.to(card, { scale: 0.98, duration: 0.1 });
+          const onUp = () => {
+            gsap.to(card, { scale: 1.05, duration: 0.1 });
+            document.getElementById(CARDS[i].id)?.scrollIntoView({ behavior: 'smooth' });
+          };
+          const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              document.getElementById(CARDS[i].id)?.scrollIntoView({ behavior: 'smooth' });
+            }
+          };
+
+          card.addEventListener('mouseenter', onEnter);
+          card.addEventListener('mousedown', onDown);
+          card.addEventListener('mouseup', onUp);
+          card.addEventListener('keydown', onKeyDown);
+
+          return { card, onEnter, onDown, onUp, onKeyDown };
+        });
+
+        // Cleanup event listeners for matchMedia
+        return () => {
+          container.removeEventListener('mouseenter', onContainerEnter);
+          container.removeEventListener('mouseleave', onContainerLeave);
+          cardHandlers.forEach(({ card, onEnter, onDown, onUp, onKeyDown }) => {
+            card.removeEventListener('mouseenter', onEnter);
+            card.removeEventListener('mousedown', onDown);
+            card.removeEventListener('mouseup', onUp);
+            card.removeEventListener('keydown', onKeyDown as EventListener);
+          });
+        };
+      },
+      containerRef
+    );
+
+    return () => mm.revert();
   }, { scope: containerRef });
 
   return (
     <div 
       ref={containerRef} 
-      // Container sized for the new stacked setup (max X: 285px, max Y: 415px)
-      className="relative mt-8 md:mt-12 ml-2 perspective-1000 w-[300px] h-[380px] md:w-[320px] md:h-[420px] z-20"
+      className="relative mt-8 md:mt-12 ml-2 perspective-1000 w-[300px] h-[380px] md:w-[800px] md:h-[400px] z-20"
       aria-label="Quick Navigation"
     >
       {CARDS.map((card, i) => (
         <button
           key={card.id}
-          // Larger, more vertical, poster-like cards
           className="hero-card absolute top-0 left-0 w-[180px] h-[260px] md:w-[210px] md:h-[310px] bg-[#050505]/95 backdrop-blur-md border border-white/5 rounded-sm p-5 md:p-6 text-left shadow-[0_12px_40px_rgba(0,0,0,0.6)] flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent overflow-hidden group"
           style={{ 
             zIndex: CARDS.length - i,

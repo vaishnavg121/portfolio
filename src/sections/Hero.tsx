@@ -156,11 +156,11 @@ export const Hero = () => {
               <span className="text-text-muted">{profile.name.split(" ")[2]}</span>
             </motion.h1>
             <HeroCards />
-            <div data-familiar-anchor className="absolute -bottom-16 left-80 w-4 h-4 pointer-events-none" />
+            <div data-familiar-anchor className="absolute -bottom-16 left-[75%] w-4 h-4 pointer-events-none" />
           </motion.div>
 
           <motion.div
-            className="hero-subtitle-block md:col-span-5 md:col-start-7 lg:col-start-8 mt-6 md:mt-4 relative z-20"
+            className="hero-subtitle-block md:col-span-5 md:col-start-7 lg:col-start-8 mt-0 md:-mt-32 relative z-20"
             style={{ x: shouldReduceMotion ? 0 : subtitleX, y: shouldReduceMotion ? 0 : subtitleY }}
             data-familiar-avoid
           >
