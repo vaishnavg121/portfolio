@@ -110,22 +110,22 @@ export const socials = {
 
 export const projects = [
   {
-    slug: "alphacouncil",
+    slug: "imdpune",
     id: "01",
-    title: "AlphaCouncil",
-    category: "FINANCE / AI / AGENTIC SYSTEMS",
-    year: "2024",
-    status: "Active / Paper Trading",
-    description: "An AI-driven paper-trading research and execution system using a committee of specialized agents, deterministic risk controls and fail-closed execution. PAPER TRADING ONLY.",
-    tags: ["Python", "FastAPI", "Alpaca", "NVIDIA models", "SQLite", "Next.js"],
-    theme: "red / ember / market-line",
-    architecture: ["MARKET", "DISCOVERY", "COMMITTEE", "RISK", "EXECUTION"],
-    github: "https://github.com/vaishnavg121/AlphaCouncil",
-    problem: "Market research requires analyzing massive amounts of streaming qualitative and quantitative data simultaneously, and naive LLM wrappers fail at deterministic risk sizing and execution.",
-    idea: "A committee of specialized agents (Quant, Bull, Bear, Regime) that debate market conditions before passing consensus to a deterministic execution engine.",
-    engineering: "Implemented deterministic risk controls that override agent suggestions if bounds are exceeded. Engineered fail-closed execution to prevent hallucinated trades.",
-    challenges: "Handling adversarial interactions between agents without entering infinite loops. Managing memory efficiently across the committee.",
-    currentState: "Active paper-trading execution with robust safeguards. No live money."
+    title: "Vertical Visibility",
+    category: "ML / AVIATION / TIME-SERIES",
+    year: "2026",
+    status: "Completed",
+    description: "An advanced machine learning pipeline developed for the India Meteorological Department to predict vertical visibility and RVR at IGIA, New Delhi, using heterogeneous meteorological sensor data.",
+    tags: ["Python", "PyTorch", "Time-Series", "Machine Learning", "Data Science"],
+    theme: "blue / atmosphere / grid",
+    architecture: ["DATA INGESTION", "PREPROCESSING", "MODELLING", "EVALUATION"],
+    github: "", // Internal IMD Project, no public repo
+    problem: "Accurate forecasting of runway visual range (RVR) and vertical visibility is critical for aviation safety, especially during dense fog events at major airports like IGIA.",
+    idea: "Implement and evaluate various time-series forecasting models (Classical, Machine Learning, and Deep Learning) to predict vertical visibility based on historical multi-sensor meteorological data.",
+    engineering: "Processed large-scale heterogeneous sensor data. Implemented handling for missing observations and extreme weather conditions. Built and evaluated models ranging from XGBoost and Random Forest to LSTMs and Attention networks.",
+    challenges: "Dealing with highly imbalanced datasets where low-visibility events (dense fog) are rare but critical. Handling missing data from disparate sensors.",
+    currentState: "Completed analysis and modeling phase, identifying optimal model architectures for RVR and Vertical Visibility prediction."
   },
   {
     slug: "swaneeti",
@@ -135,15 +135,15 @@ export const projects = [
     year: "2024",
     status: "Completed",
     description: "An agentic legal-research and case-reasoning system for Indian law, designed to reduce unsupported claims through provenance-aware retrieval and deterministic evidence validation.",
-    tags: ["RAG", "Next.js", "PostgreSQL", "Reasoning"],
+    tags: ["RAG", "Next.js", "PostgreSQL", "Reasoning", "Python", "FastAPI"],
     theme: "ink / paper spread",
     architecture: ["QUERY", "RETRIEVAL", "AUTHORITIES", "REASONING", "VALIDATION"],
     github: "https://github.com/vaishnavg121/swa-neeti",
-    problem: "Standard LLMs hallucinate case law and misinterpret legal precedents, which is unacceptable for legal research.",
-    idea: "An agentic legal-research and case-reasoning system combining hybrid retrieval, provenance-aware evidence and bounded research loops.",
-    engineering: "Built hybrid retrieval pipeline combining lexical and dense retrieval with reciprocal-rank fusion and authority-aware reranking.",
-    challenges: "Structuring case facts correctly and implementing adversarial reasoning loops without losing context.",
-    currentState: "Completed system capable of producing heavily grounded, precedent-aware responses."
+    problem: "Standard LLMs frequently hallucinate case law and misinterpret legal precedents, inventing fictitious citations that make them unviable for actual legal research.",
+    idea: "Build an intake-to-analysis vertical slice that extracts facts supported ONLY by the user's text, asks materially useful follow-up questions, and identifies preliminary issue categories using strict boundaries.",
+    engineering: "Constructed an agentic legal-research engine using NVIDIA Nemotron models. Implemented page-aware sliding window chunking and hybrid retrieval (Cosine/Dot-product). Built a safe, deterministic pipeline that keeps LLM generation grounded by validating evidence and limiting answers strictly to provided context.",
+    challenges: "Structuring case facts correctly and preventing the LLM from stating sweeping legal conclusions. Resolving adversarial reasoning loops required strict enforcement of source provenance.",
+    currentState: "Delivered Milestone 0: a functional, safe intake-to-analysis vertical slice capable of analyzing legal text without searching external unverified law."
   },
   {
     slug: "windy",
@@ -152,16 +152,16 @@ export const projects = [
     category: "ML / DATA / AVIATION / RAG",
     year: "2026",
     status: "Research Phase",
-    description: "An agentic aviation-weather analytics platform operating over large-scale airport meteorological observations (~15M weather observations).",
-    tags: ["DuckDB", "Polars", "RAG", "NVIDIA embeddings"],
+    description: "An evidence-grounded aviation meteorological analytics system combining deterministic sensor analytics, retrieval-augmented generation, and unsupervised pattern discovery.",
+    tags: ["DuckDB", "Polars", "RAG", "NVIDIA Embeddings", "FastAPI", "React"],
     theme: "wind / flowing-line motion",
-    architecture: ["DATA INGESTION", "FEATURE ENG", "MODEL", "PREDICTION"],
+    architecture: ["INTENT CLASSIFICATION", "DUCKDB AGGREGATION", "SEMANTIC RAG", "K-MEANS PCA(2)"],
     github: "https://github.com/vaishnavg121/Windy",
-    problem: "Analyzing raw METAR/SPECI observations manually is slow, and correlating conditions across multiple airports requires heavy processing.",
-    idea: "Process ~15M weather observations across 5 airports using DuckDB and Polars for fast analytics, coupled with an agentic query interface.",
-    engineering: "Used DuckDB for high-performance vectorized analytics and NVIDIA embeddings for semantic search over condition reports. Extracted features using PCA and K-Means.",
-    challenges: "Managing memory and heterogeneous sensor data during time-series forecasting. Handling missing observations gracefully.",
-    currentState: "Research phase with functional analytics pipeline."
+    problem: "Large heterogeneous meteorological datasets (millions of observations across multiple airports) are hard to query through natural language without LLMs hallucinating the math.",
+    idea: "Route natural-language questions to specialized tools: deterministic numerical aggregation goes to DuckDB, and unstructured knowledge queries go to a Semantic RAG vector index.",
+    engineering: "Engineered an intelligent routing layer using NVIDIA Nemotron 3.5 Lightning. Exact numerical operations over 15M raw METAR/SPECI observations are handled by DuckDB and Polars. Natural-language investigation of recurrent patterns triggers a StandardScaler + PCA(2) + K-Means pipeline over sample blocks of 5,000 observations for rapid multivariate clustering.",
+    challenges: "Ensuring real-time API responsiveness while performing complex unsupervised ML on massive time-series data. Maintaining a safe architecture that streams SSE metadata instead of raw LLM scratchpads.",
+    currentState: "Active functional demonstrator pipeline processing a 15-million observation dataset across five major Indian airports."
   },
   {
     slug: "spenza",
@@ -170,15 +170,15 @@ export const projects = [
     category: "FINTECH / FINANCIAL SOFTWARE",
     year: "2024",
     status: "Completed",
-    description: "An expense-sharing application focused on reliable financial accounting, group balances and deterministic transaction workflows.",
+    description: "An expense-sharing PWA platform built to handle robust financial accounting, utilizing deterministic minor-unit integers and double-entry ledger principles.",
     tags: ["Next.js", "React", "TypeScript", "PostgreSQL", "Prisma"],
     theme: "clean grid / balance",
-    architecture: ["USER", "TRANSACTION", "SPLIT LOGIC", "LEDGER"],
+    architecture: ["USER ENTITY", "SPLIT LOGIC", "IDEMPOTENT WORKFLOWS", "LEDGER"],
     github: "https://github.com/vaishnavg121/spenza",
-    problem: "Most expense tracking apps handle floating point math poorly, leading to lost cents and unbalanced group ledgers over time.",
-    idea: "Build a reliable expense-sharing application using integer minor-unit accounting and deterministic rounding.",
-    engineering: "Implemented double-entry principles on top of PostgreSQL, utilizing idempotency keys to prevent duplicate transactions during split logic.",
-    challenges: "Handling complex multi-way splits while ensuring the ledger sums to exactly zero.",
-    currentState: "Completed application with robust financial backend."
+    problem: "Naive expense tracking applications struggle with floating-point inaccuracies and concurrency errors, leading to unbalanced group ledgers and lost minor units over time.",
+    idea: "Build a robust, reliable expense-sharing PWA backed by strict minor-unit integer arithmetic, double-entry principles, and idempotent transactions.",
+    engineering: "Structured the repository as a pnpm workspace with shared API contracts (Zod schemas). Engineered an Express API backed by Prisma and PostgreSQL to handle complex multi-way splits. Developed an idempotency mechanism ensuring that ledger transactions remain perfectly balanced even under concurrent load.",
+    challenges: "Enforcing that the ledger sums to exactly zero during uneven fractional multi-way splits. Managing strict monorepo dependency boundaries between contracts and API logic.",
+    currentState: "Fully tested (200+ integration and web tests) with a promoted PWA frontend and production-ready Express API."
   }
 ];

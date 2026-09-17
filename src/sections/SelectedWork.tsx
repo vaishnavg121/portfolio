@@ -18,7 +18,7 @@ if (typeof window !== "undefined") {
 }
 
 const EFFECTS_MAP: Record<string, React.ElementType> = {
-  alphacouncil: EmberField,
+  imdpune: FlowLines, // Giving it FlowLines for aviation atmosphere
   swaneeti: SwaNeetiInk,
   windy: FlowLines,
   spenza: GridEffect,

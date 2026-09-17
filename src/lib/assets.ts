@@ -49,9 +49,13 @@ export const THEME_ASSETS = {
 };
 
 export const PROJECT_ASSETS: Record<string, ProjectAssetSet> = {
-  alphacouncil: {
-    hero: undefined,
-    diagram: undefined,
+  imdpune: {
+    hero: "/assets/projects/imdpune/architecture.png",
+    diagram: "/assets/projects/imdpune/analysis.png",
+    gallery: [
+      "/assets/projects/imdpune/timeseries.png",
+      "/assets/projects/imdpune/sensors.png"
+    ]
   },
   swaneeti: {
     hero: undefined,

@@ -65,8 +65,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
             <section>
               <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">The Problem</h2>
               <div className="prose prose-invert prose-p:text-text-primary prose-p:leading-relaxed prose-p:font-light">
-                
-                <p>{project.problem}</p>
+                {project.problem.split('\n\n').map((p, i) => <p key={i} className="mb-4">{p}</p>)}
               </div>
             </section>
           )}
@@ -76,8 +75,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
             <section>
               <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">The Idea</h2>
               <div className="prose prose-invert prose-p:text-text-primary prose-p:leading-relaxed prose-p:font-light">
-                
-                <p>{project.idea}</p>
+                {project.idea.split('\n\n').map((p, i) => <p key={i} className="mb-4">{p}</p>)}
               </div>
             </section>
           )}
@@ -110,12 +108,12 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
             {assets?.gallery && assets.gallery.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
                 {assets.gallery.map((img: string, i: number) => (
-                  <div key={i} className="relative aspect-video border border-border">
+                  <div key={i} className="relative aspect-video border border-border bg-[#050505]">
                     <Image 
                       src={img} 
                       alt={`${project.title} screenshot ${i+1}`} 
                       fill 
-                      className="object-cover" 
+                      className="object-contain" 
                     />
                   </div>
                 ))}
@@ -128,8 +126,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
             <section>
               <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">Engineering Decisions</h2>
               <div className="prose prose-invert prose-p:text-text-primary prose-p:leading-relaxed prose-p:font-light">
-                
-                <p>{project.engineering}</p>
+                {project.engineering.split('\n\n').map((p, i) => <p key={i} className="mb-4">{p}</p>)}
               </div>
             </section>
           )}
@@ -139,8 +136,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
             <section>
               <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">Challenges & Learnings</h2>
               <div className="prose prose-invert prose-p:text-text-primary prose-p:leading-relaxed prose-p:font-light">
-                
-                <p>{project.challenges}</p>
+                {project.challenges.split('\n\n').map((p, i) => <p key={i} className="mb-4">{p}</p>)}
               </div>
             </section>
           )}
@@ -148,8 +144,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
           <section>
             <h2 className="text-sm font-mono text-text-muted mb-6 tracking-widest uppercase border-b border-border pb-4">Current State</h2>
             <div className="prose prose-invert prose-p:text-text-primary prose-p:leading-relaxed prose-p:font-light">
-              
-              <p>{project.currentState || project.description}</p>
+              {(project.currentState || project.description).split('\n\n').map((p, i) => <p key={i} className="mb-4">{p}</p>)}
             </div>
           </section>
 
