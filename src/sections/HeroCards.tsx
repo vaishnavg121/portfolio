@@ -243,7 +243,7 @@ export const HeroCards = () => {
           className="hero-card absolute top-0 left-0 w-[180px] h-[260px] md:w-[210px] md:h-[310px] bg-[#050505]/95 backdrop-blur-md border border-white/5 rounded-sm p-5 md:p-6 text-left shadow-[0_12px_40px_rgba(0,0,0,0.6)] flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent overflow-hidden group"
           style={{ 
             zIndex: CARDS.length - i,
-            transform: shouldReduceMotion ? \`translate(${i * 20}px, ${i * 30}px)\` : 'none' 
+            transform: shouldReduceMotion ? `translate(${i * 20}px, ${i * 30}px)` : 'none' 
           }}
           aria-label={`Scroll to ${card.title}`}
         >
