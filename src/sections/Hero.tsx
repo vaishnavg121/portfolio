@@ -161,7 +161,7 @@ export const Hero = () => {
           </motion.div>
 
           <motion.div
-            className="hero-subtitle-block md:col-span-5 md:col-start-7 lg:col-start-8 mt-0 md:-mt-[21rem] relative z-20"
+            className="hero-subtitle-block md:col-span-5 md:col-start-7 lg:col-start-8 mt-0 md:-mt-[22rem] relative z-20"
             style={{ x: shouldReduceMotion ? 0 : subtitleX, y: shouldReduceMotion ? 0 : subtitleY }}
             data-familiar-avoid
           >
