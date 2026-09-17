@@ -160,7 +160,7 @@ export const Hero = () => {
           </motion.div>
 
           <motion.div
-            className="hero-subtitle-block md:col-span-5 md:col-start-7 lg:col-start-8 mt-12 md:mt-24 relative z-20"
+            className="hero-subtitle-block md:col-span-5 md:col-start-7 lg:col-start-8 mt-6 md:mt-4 relative z-20"
             style={{ x: shouldReduceMotion ? 0 : subtitleX, y: shouldReduceMotion ? 0 : subtitleY }}
             data-familiar-avoid
           >
@@ -169,16 +169,16 @@ export const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: shouldReduceMotion ? 0.2 : 0.6, delay: shouldReduceMotion ? 0.15 : 0.91, ease: "easeOut" }}
             >
-              <h2 className="text-xl md:text-2xl text-text-primary font-light leading-snug mb-6 border-l-2 border-accent pl-6">
+              <h2 className="text-lg md:text-xl text-text-primary font-light leading-snug mb-3 border-l-2 border-accent pl-5">
                 Building at the intersection of <br />
                 <span className="italic font-serif">INTELLIGENCE, MARKETS & MACHINES.</span>
               </h2>
 
-              <p className="text-text-muted text-sm leading-relaxed pl-6 mb-10 max-w-sm whitespace-pre-line">
+              <p className="text-text-muted text-xs md:text-sm leading-relaxed pl-5 mb-6 max-w-sm whitespace-pre-line">
                 {profile.about}
               </p>
 
-              <div className="hero-links flex flex-wrap items-center gap-6 text-xs font-mono tracking-widest uppercase pl-6 relative z-30">
+              <div className="hero-links flex flex-wrap items-center gap-4 text-[10px] md:text-xs font-mono tracking-widest uppercase pl-5 relative z-30">
                 <MagneticEffect intensity={0.4}>
                   <button
                     onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" })}
