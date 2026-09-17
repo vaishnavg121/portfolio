@@ -6,6 +6,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { CustomCursor } from "@/components/CustomCursor";
 import { CompanionTester } from "@/components/companion/CompanionTester";
 import { PointerProvider, SystemRail } from "@/components/effects";
+import { ChatbotLauncher } from "@/components/ChatbotLauncher";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -53,6 +54,7 @@ export default function RootLayout({
           {children}
           <CommandPalette />
           <CompanionTester />
+          <ChatbotLauncher />
         </PointerProvider>
       </body>
     </html>
