@@ -7,6 +7,7 @@ import { projects } from "@/lib/profile";
 import { ImdPuneCaseStudy } from "@/sections/work/ImdPuneCaseStudy";
 import { SwaNeetiCaseStudy } from "@/sections/work/SwaNeetiCaseStudy";
 import { WindyCaseStudy } from "@/sections/work/WindyCaseStudy";
+import { SpenzaCaseStudy } from "@/sections/work/SpenzaCaseStudy";
 
 export default async function ProjectDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -26,6 +27,10 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
   
   if (slug === 'windy') {
     return <WindyCaseStudy />;
+  }
+  
+  if (slug === 'spenza') {
+    return <SpenzaCaseStudy />;
   }
   
   const assets = PROJECT_ASSETS[slug];
