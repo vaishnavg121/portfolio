@@ -50,12 +50,8 @@ export const THEME_ASSETS = {
 
 export const PROJECT_ASSETS: Record<string, ProjectAssetSet> = {
   imdpune: {
-    hero: "/assets/projects/imdpune/architecture.png",
-    diagram: "/assets/projects/imdpune/analysis.png",
-    gallery: [
-      "/assets/projects/imdpune/timeseries.png",
-      "/assets/projects/imdpune/sensors.png"
-    ]
+    hero: undefined,
+    diagram: undefined,
   },
   swaneeti: {
     hero: undefined,

@@ -4,6 +4,7 @@ import { MoveLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { PROJECT_ASSETS } from "@/lib/assets";
 import { projects } from "@/lib/profile";
+import { ImdPuneCaseStudy } from "@/sections/work/ImdPuneCaseStudy";
 
 export default async function ProjectDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -11,6 +12,10 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
   const project = projects.find(p => p.slug === slug);
   if (!project) {
     notFound();
+  }
+  
+  if (slug === 'imdpune') {
+    return <ImdPuneCaseStudy />;
   }
   
   const assets = PROJECT_ASSETS[slug];
