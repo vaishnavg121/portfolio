@@ -8,14 +8,12 @@ import { GithubActivity } from "@/sections/GithubActivity";
 import { EngineeringNotes } from "@/sections/EngineeringNotes";
 import { ContactFooter } from "@/sections/ContactFooter";
 import { Companion } from "@/components/companion";
-import { FloatingNav } from "@/components/ui/FloatingNav";
 
 export default function Home() {
   return (
     <main className="relative bg-background">
       <EntrySequence />
       <Companion />
-      <FloatingNav />
       <Hero />
       <SelectedWork />
       <SkillsConstellation />

@@ -9,6 +9,7 @@ import { THEME_ASSETS } from "@/lib/assets";
 import { profile, socials } from "@/lib/profile";
 import { usePointer, MagneticEffect } from "@/components/effects";
 import { useSectionVisibility } from "@/lib/visibility";
+import { HeroCards } from "./HeroCards";
 
 export const Hero = () => {
   const containerRef = useRef<HTMLElement>(null);
@@ -154,7 +155,8 @@ export const Hero = () => {
               <br />
               <span className="text-text-muted">{profile.name.split(" ")[2]}</span>
             </motion.h1>
-            <div data-familiar-anchor className="absolute -bottom-8 left-12 w-4 h-4 pointer-events-none" />
+            <HeroCards />
+            <div data-familiar-anchor className="absolute -bottom-16 left-80 w-4 h-4 pointer-events-none" />
           </motion.div>
 
           <motion.div
