@@ -61,7 +61,7 @@ export const ImdPuneCaseStudy = () => {
       });
 
       // Section reveals on scroll
-      gsap.utils.toArray('.case-section').forEach((section: HTMLElement) => {
+      (gsap.utils.toArray('.case-section') as HTMLElement[]).forEach((section) => {
         gsap.from(section, {
           y: 60,
           opacity: 0,
@@ -75,7 +75,7 @@ export const ImdPuneCaseStudy = () => {
       });
 
       // Parallax image slots
-      gsap.utils.toArray('.parallax-slot').forEach((slot: HTMLElement) => {
+      (gsap.utils.toArray('.parallax-slot') as HTMLElement[]).forEach((slot) => {
         gsap.to(slot, {
           yPercent: 15,
           ease: "none",
@@ -89,7 +89,7 @@ export const ImdPuneCaseStudy = () => {
       });
 
       // Line traces
-      gsap.utils.toArray('.trace-line').forEach((line: HTMLElement) => {
+      (gsap.utils.toArray('.trace-line') as HTMLElement[]).forEach((line) => {
         gsap.fromTo(line, 
           { scaleX: 0, transformOrigin: "left center" },
           { 
@@ -117,19 +117,27 @@ export const ImdPuneCaseStudy = () => {
           Back to Work
         </Link>
 
-        <div className="hero-elem font-mono text-accent text-xs md:text-sm tracking-widest mb-6 md:mb-8 flex flex-col md:flex-row md:items-center gap-2 md:gap-4 uppercase">
-          <span>IMD Pune</span>
-          <span className="hidden md:inline text-white/30">/</span>
-          <span>AI/ML &middot; Aviation Meteorology</span>
-          <span className="hidden md:inline text-white/30">/</span>
-          <span>May&ndash;Jul 2026</span>
+        {/* Recovered AlphaCouncil Hero/Banner Treatment */}
+        <div className="hero-elem w-full aspect-video bg-[#050505] border border-white/10 mb-16 flex flex-col items-center justify-center relative overflow-hidden group">
+           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(45deg, #111 25%, transparent 25%, transparent 75%, #111 75%, #111), linear-gradient(45deg, #111 25%, transparent 25%, transparent 75%, #111 75%, #111)", backgroundSize: "20px 20px", backgroundPosition: "0 0, 10px 10px" }} />
+           
+           <div className="absolute inset-0 border border-accent/20 scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-700" />
+           
+           <div className="relative z-10 flex flex-col items-center text-center max-w-3xl px-6">
+             <div className="font-mono text-accent text-xs tracking-widest mb-6 uppercase flex items-center gap-4">
+               <div className="w-8 h-[1px] bg-accent/50" />
+               <span>IMD PUNE</span>
+               <div className="w-8 h-[1px] bg-accent/50" />
+             </div>
+             <h1 className="text-3xl md:text-5xl lg:text-6xl font-display uppercase tracking-tighter leading-tight mb-4 text-white">
+               AI/ML FOR<br/>
+               <span className="text-white/80">VERTICAL VISIBILITY</span>
+             </h1>
+             <div className="font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase mt-4 px-4 py-1.5 border border-white/10 bg-white/5">
+               AVIATION METEOROLOGY
+             </div>
+           </div>
         </div>
-
-        <h1 className="hero-elem text-4xl md:text-6xl lg:text-7xl font-display uppercase tracking-tighter leading-[0.9] mb-8">
-          Using AI/ML To Predict<br />
-          <span className="text-white/60">Vertical Visibility</span><br />
-          In Airports
-        </h1>
 
         <p className="hero-elem text-lg md:text-xl text-text-muted font-light max-w-2xl leading-relaxed">
           An advanced machine learning pipeline developed for the India Meteorological Department to predict vertical visibility and Runway Visual Range at IGIA, New Delhi, using massive heterogeneous meteorological sensor data.

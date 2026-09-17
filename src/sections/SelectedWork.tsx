@@ -18,7 +18,7 @@ if (typeof window !== "undefined") {
 }
 
 const EFFECTS_MAP: Record<string, React.ElementType> = {
-  imdpune: FlowLines, // Giving it FlowLines for aviation atmosphere
+  imdpune: EmberField,
   swaneeti: SwaNeetiInk,
   windy: FlowLines,
   spenza: GridEffect,
