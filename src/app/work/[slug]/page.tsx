@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { PROJECT_ASSETS } from "@/lib/assets";
 import { projects } from "@/lib/profile";
 import { ImdPuneCaseStudy } from "@/sections/work/ImdPuneCaseStudy";
+import { SwaNeetiCaseStudy } from "@/sections/work/SwaNeetiCaseStudy";
 
 export default async function ProjectDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -16,6 +17,10 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
   
   if (slug === 'imdpune') {
     return <ImdPuneCaseStudy />;
+  }
+  
+  if (slug === 'swaneeti') {
+    return <SwaNeetiCaseStudy />;
   }
   
   const assets = PROJECT_ASSETS[slug];
