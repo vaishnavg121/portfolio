@@ -5,10 +5,11 @@ import { motion, useReducedMotion, useTransform } from "framer-motion";
 import { MoveRight } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { THEME_ASSETS } from "@/lib/assets";
 import { profile, socials } from "@/lib/profile";
 import { usePointer, MagneticEffect } from "@/components/effects";
 import { useSectionVisibility } from "@/lib/visibility";
+import { THEME_ASSETS } from "@/lib/assets";
+import { HeroBackground } from "@/components/HeroBackground";
 import { HeroCards } from "./HeroCards";
 
 export const Hero = () => {
@@ -101,31 +102,7 @@ export const Hero = () => {
     >
       <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.04] mix-blend-overlay" style={{ backgroundImage: `url(${THEME_ASSETS.global.paperGrain})`, backgroundSize: "300px" }} />
 
-      <motion.div
-        className="absolute inset-0 z-0 opacity-20 pointer-events-none flex items-center justify-center"
-        style={{ x: mounted && !shouldReduceMotion ? bgX : 0, y: mounted && !shouldReduceMotion ? bgY : 0 }}
-      >
-        <svg viewBox="0 0 100 100" className="w-full h-full max-w-4xl" preserveAspectRatio="xMidYMid slice">
-          <motion.path
-            d="M 10 50 Q 30 10, 50 50 T 90 50"
-            fill="transparent"
-            stroke="var(--accent)"
-            strokeWidth="0.2"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 0.5 }}
-            transition={{ duration: (!mounted || shouldReduceMotion) ? 0 : 3, ease: "easeInOut", delay: (!mounted || shouldReduceMotion) ? 0 : 1 }}
-          />
-          <motion.path
-            d="M 10 70 Q 40 20, 60 70 T 90 30"
-            fill="transparent"
-            stroke="var(--text-muted)"
-            strokeWidth="0.1"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 0.3 }}
-            transition={{ duration: (!mounted || shouldReduceMotion) ? 0 : 4, ease: "easeInOut", delay: (!mounted || shouldReduceMotion) ? 0 : 1.5 }}
-          />
-        </svg>
-      </motion.div>
+      <HeroBackground bgX={bgX} bgY={bgY} mounted={mounted} shouldReduceMotion={shouldReduceMotion} />
 
       <div className="container mx-auto px-6 md:px-12 z-10 w-full h-full flex flex-col justify-center pb-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 relative">
