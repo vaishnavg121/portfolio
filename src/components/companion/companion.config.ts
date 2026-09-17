@@ -1,21 +1,48 @@
 import { CompanionState } from "./companion.types";
 
-// Map section IDs to specific companion states
-export const SECTION_BEHAVIORS: Record<string, CompanionState> = {
-  hero: "IDLE", // Starts with SLEEP -> IDLE in Hero
-  work: "WALK",
-  alphacouncil: "INSPECT",
-  swaneeti: "READ",
-  windy: "WIND_BLOWN",
-  spenza: "WALK",
-  robotics: "INSPECT",
-  github: "INSPECT",
-  notes: "READ",
-  contact: "WAVE",
+export type CompanionBehaviorMode = "FREE_FOLLOW" | "CONSTRAINED_FOLLOW" | "DOCKED";
+
+export interface CompanionProfile {
+  mode: CompanionBehaviorMode;
+  defaultState: CompanionState;
+  safeAnchors: string[];
+}
+
+export const COMPANION_PROFILES: Record<string, CompanionProfile> = {
+  home: {
+    mode: "FREE_FOLLOW",
+    defaultState: "IDLE",
+    safeAnchors: ["bottom-left-middle", "lower-center", "lower-right"]
+  },
+  imd: {
+    mode: "CONSTRAINED_FOLLOW",
+    defaultState: "IDLE",
+    safeAnchors: ["margin-left", "margin-right"]
+  },
+  swaNeeti: {
+    mode: "CONSTRAINED_FOLLOW",
+    defaultState: "READ",
+    safeAnchors: ["margin-left", "margin-right"]
+  },
+  windy: {
+    mode: "CONSTRAINED_FOLLOW",
+    defaultState: "IDLE",
+    safeAnchors: ["margin-left", "margin-right"]
+  },
+  spenza: {
+    mode: "CONSTRAINED_FOLLOW",
+    defaultState: "IDLE",
+    safeAnchors: ["margin-left", "margin-right"]
+  },
+  robotics: {
+    mode: "CONSTRAINED_FOLLOW",
+    defaultState: "INSPECT",
+    safeAnchors: ["margin-left", "margin-right"]
+  }
 };
 
-// Map scroll velocity ranges to states
 export const VELOCITY_THRESHOLDS = {
-  RUN: 800,  // pixels per second threshold to trigger RUN
-  WALK: 50,  // threshold to trigger WALK instead of IDLE
+  RUN: 800,
+  WALK: 50,
 };
+
