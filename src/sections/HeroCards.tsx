@@ -268,7 +268,7 @@ export const HeroCards = () => {
   return (
     <div 
       ref={containerRef} 
-      className="relative mt-8 md:mt-12 ml-2 perspective-1000 w-[300px] h-[380px] md:w-[800px] md:h-[400px] z-20"
+      className="relative mt-8 md:mt-24 ml-2 perspective-1000 w-[300px] h-[380px] md:w-[800px] md:h-[400px] z-20"
       aria-label="Quick Navigation"
     >
       {CARDS.map((card, i) => (
