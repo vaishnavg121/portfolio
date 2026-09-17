@@ -151,7 +151,7 @@ export const ThriveForceEngineering = () => {
                     { title: "Hobbywing", sub: "50A ESC" },
                     { title: "DYS 3530", sub: "1100KV" },
                     { title: "1.7:1", sub: "Increase" },
-                    { title: "Undercutter", sub: "Weapon" }
+                    { title: "470 J", sub: "Design Energy" }
                 ].map((item, i) => (
                     <div key={i} className="pt-item relative bg-[#050505] z-10 px-4 md:px-6 py-4 md:py-0 w-full md:w-auto text-left md:text-center">
                         <div className="absolute left-0 md:left-1/2 top-1/2 md:-top-4 w-2 h-2 rounded-full bg-accent -translate-y-1/2 md:translate-y-0 md:-translate-x-1/2" />
@@ -159,6 +159,25 @@ export const ThriveForceEngineering = () => {
                         <div className="font-mono text-[9px] tracking-widest text-text-muted uppercase ml-6 md:ml-0 mt-1">{item.sub}</div>
                     </div>
                 ))}
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 border-t border-white/5 pt-8">
+                <div className="text-left md:text-center">
+                    <div className="text-[#e0e0e0] font-mono text-xl mb-1">0.297 kg</div>
+                    <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">Weapon Mass</div>
+                </div>
+                <div className="text-left md:text-center">
+                    <div className="text-[#e0e0e0] font-mono text-xl mb-1">140.6 mm</div>
+                    <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">Diameter</div>
+                </div>
+                <div className="text-left md:text-center">
+                    <div className="text-[#e0e0e0] font-mono text-xl mb-1">15.8 mm</div>
+                    <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">Bite</div>
+                </div>
+                <div className="text-left md:text-center">
+                    <div className="text-[#e0e0e0] font-mono text-xl mb-1">4.629e-4</div>
+                    <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">Izz (kg·m²)</div>
+                </div>
             </div>
         </div>
 
