@@ -117,8 +117,8 @@ export const ExperienceTimeline = () => {
 
         <div className="exp-timeline-container flex flex-col gap-32 md:gap-40 relative md:pr-24">
 
-          <div className="absolute left-6 md:left-[41.5%] top-0 bottom-0 w-[1px] bg-border/30 z-0 hidden md:block" />
-          <div className="exp-timeline-rail-active absolute left-6 md:left-[41.5%] top-0 bottom-0 w-[1px] bg-accent z-0 hidden md:block origin-top" />
+          <div className="absolute left-6 md:left-[45%] top-0 bottom-0 w-[1px] bg-border/30 z-0 hidden md:block" />
+          <div className="exp-timeline-rail-active absolute left-6 md:left-[45%] top-0 bottom-0 w-[1px] bg-accent z-0 hidden md:block origin-top" />
 
           {CHAPTERS.map((chapter, i) => (
             <div key={chapter.num} className="relative group chapter-block">
@@ -126,17 +126,17 @@ export const ExperienceTimeline = () => {
                 0{i + 1}
               </div>
 
-              <div className="chap-content relative z-10 grid grid-cols-1 md:grid-cols-12 gap-8 items-start" data-familiar-avoid>
-                <div className="md:col-span-5 pt-2">
+              <div className="chap-content relative z-10 grid grid-cols-1 md:grid-cols-[45%_1fr] gap-8 md:gap-0 items-start" data-familiar-avoid>
+                <div className="pt-2 md:pr-12 lg:pr-16 max-w-full md:max-w-[480px] lg:max-w-[540px]">
                   <div className="font-mono text-accent text-xs tracking-widest mb-4">
                     {chapter.num}
                   </div>
-                  <h3 className="text-3xl md:text-5xl font-display font-medium text-text-primary mb-2 tracking-tight leading-none uppercase pr-4">
+                  <h3 className="text-3xl md:text-5xl font-display font-medium text-text-primary mb-2 tracking-tight leading-none uppercase">
                     {chapter.title}
                   </h3>
                 </div>
 
-                <div className="md:col-span-6 md:col-start-7 border-l border-border pl-6">
+                <div className="pt-2 pl-6 border-l border-border md:border-none md:pl-16 lg:pl-20">
                   <div className="text-text-primary font-mono text-xs tracking-wider mb-4 uppercase">
                     {chapter.subtitle}
                   </div>
