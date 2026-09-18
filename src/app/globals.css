@@ -12,12 +12,12 @@
   --danger: #e63946;
   --blue-accent: #3b82f6;
 
-  /* Mascot Colors */
   --mascot-ink: #1A1A1A;
   --mascot-charcoal: #2D2D2D;
   --mascot-cream: #F5EDE3;
   --mascot-crimson: #B22234;
   --mascot-mist: #6B6B6B;
+  --z-familiar: 2147482000;
 }
 
 @theme inline {

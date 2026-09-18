@@ -28,15 +28,25 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
   }, [messages]);
 
   useEffect(() => {
+    // Notify companion to update its safe zones
+    window.dispatchEvent(new Event("resize"));
+    window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "chat-open" } }));
+
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
+    return () => {
+       window.removeEventListener("keydown", handleEsc);
+       window.dispatchEvent(new Event("resize"));
+       window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "chat-close" } }));
+    };
   }, [onClose]);
 
   const handleSend = async (text: string) => {
     if (!text.trim() || isLoading) return;
+
+    window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "chat-send" } }));
 
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
@@ -67,6 +77,7 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
         if (value) {
+          window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "chat-streaming" } }));
           const chunk = decoder.decode(value, { stream: true });
           const lines = chunk.split("\n").filter((l) => l.trim() !== "");
           for (const line of lines) {
@@ -128,6 +139,10 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
         exit={{ opacity: 0, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="w-full md:w-[400px] bg-surface-elevated border-t md:border border-border shadow-2xl flex flex-col overflow-hidden h-[100dvh] md:h-[550px] md:max-h-[calc(100vh-4rem)]"
+        data-familiar-protect="true"
+        onMouseEnter={() => {
+           window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "chat-hover" } }));
+        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border bg-surface">
@@ -187,13 +202,20 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-border bg-surface shrink-0">
+        <div className="p-4 border-t border-border bg-surface relative z-10">
           <div className="relative">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSend(input);
+                } else {
+                  window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "chat-typing" } }));
+                }
+              }}
+              placeholder="Ask about my work..."
               className="w-full bg-background border border-border text-sm p-3 pr-10 focus:outline-none focus:border-text-muted resize-none custom-scrollbar rounded-none"
               rows={2}
               maxLength={500}

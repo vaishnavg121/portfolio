@@ -7,13 +7,11 @@ import { ThriveForceSection } from "@/sections/robotics/ThriveForceSection";
 import { GithubActivity } from "@/sections/GithubActivity";
 import { EngineeringNotes } from "@/sections/EngineeringNotes";
 import { ContactFooter } from "@/sections/ContactFooter";
-import { Companion } from "@/components/companion";
 
 export default function Home() {
   return (
     <main className="relative bg-background">
       <EntrySequence />
-      <Companion />
       <Hero />
       <SelectedWork />
       <SkillsConstellation />
