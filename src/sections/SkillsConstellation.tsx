@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/refs */
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import React, { useRef, useState, useMemo, useEffect, useCallback } from "react";
 import gsap from "gsap";
@@ -35,7 +37,13 @@ export const SkillsConstellation = () => {
   const [searchResults, setSearchResults] = useState<typeof NODES>([]);
   
   const [viewportSize, setViewportSize] = useState({ w: 0, h: 0 });
-  const camera = useRef({ x: 0, y: 150, z: 0.85 });
+  const getDefaultCamera = useCallback(() => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    return isMobile 
+      ? { x: -60, y: 180, z: 0.65 } 
+      : { x: -120, y: 240, z: 0.82 };
+  }, []);
+  const camera = useRef(typeof window !== 'undefined' ? getDefaultCamera() : { x: -120, y: 240, z: 0.82 });
   const isPanning = useRef(false);
   const lastPan = useRef({ x: 0, y: 0 });
 
@@ -565,11 +573,11 @@ export const SkillsConstellation = () => {
     setActiveDomain(null);
     setPinnedNode(null);
     setSearchQuery("");
-    camera.current = { x: 0, y: 150, z: 0.85 };
+    camera.current = getDefaultCamera();
     clampCamera();
     applyCamera(true, 1.2);
     if (svgWrapperRef.current) gsap.to(svgWrapperRef.current, { rotateX: 0, rotateY: 0, duration: 1.2, ease: "power3.inOut" });
-  }, [applyCamera, clampCamera]);
+  }, [applyCamera, clampCamera, getDefaultCamera]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -584,10 +592,13 @@ export const SkillsConstellation = () => {
 
   useGSAP(() => {
     const tl = gsap.timeline();
-    gsap.set(worldRef.current, { opacity: 0, y: 150 });
+    const defaultCam = getDefaultCamera();
     
-    tl.to(worldRef.current, { opacity: 1, y: 0, duration: 1.5, ease: "power2.out", onComplete: () => {
-      camera.current.z = 0.85;
+    // Start slightly higher so we drop into place smoothly
+    gsap.set(worldRef.current, { opacity: 0, y: defaultCam.y - 60, x: defaultCam.x });
+    
+    tl.to(worldRef.current, { opacity: 1, y: defaultCam.y, duration: 1.5, ease: "power2.out", onComplete: () => {
+      camera.current = { ...defaultCam };
       clampCamera();
       applyCamera(false);
     }}, 0);
@@ -818,7 +829,7 @@ export const SkillsConstellation = () => {
             y={layout.ly}
             fontSize={fontSize}
             fill={isHovered ? "var(--text-primary)" : isFirstOrder ? "var(--text-primary)" : (isRich ? "var(--text-primary)" : "var(--text-muted)")}
-            textAnchor={textAnchor as any}
+            textAnchor={textAnchor as "start" | "middle" | "end"}
             className={`font-mono tracking-widest pointer-events-none transition-all duration-500 uppercase ${isRich ? 'font-bold' : 'font-medium'}`}
             style={{ textShadow: "0 1px 3px rgba(0,0,0,1), 0 0 7px rgba(0,0,0,0.8)" }}
           >
