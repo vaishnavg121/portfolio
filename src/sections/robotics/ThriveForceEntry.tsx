@@ -154,34 +154,60 @@ export const ThriveForceEntry = () => {
                   
                   <div 
                      ref={robotRef}
-                     className="relative w-full h-[80%] border border-white/10 rounded-sm overflow-hidden bg-[#050505] p-8 pointer-events-auto"
+                     className="relative w-full h-[80%] border border-white/5 rounded-sm overflow-hidden bg-[#020202] flex flex-col items-center justify-center pointer-events-auto"
                      onPointerMove={handlePointerMove}
                      onPointerEnter={handlePointerEnter}
                      onPointerLeave={handlePointerLeave}
                   >
-                      <div className="absolute bottom-4 right-8 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">VELOCIRAPTOR / CAD</div>
+                      {/* Grid / Tech Background */}
+                      <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
                       
-                      {/* Wireframe (Base Layer, revealed when solid fades) */}
-                      <div className="robot-wireframe absolute inset-0 w-full h-full opacity-0">
-                          <Image src={velociraptorAssets.technical.heroWireframe} alt="Velociraptor Wireframe" fill className="object-contain object-center scale-110" />
-                      </div>
+                      <div className="absolute top-4 left-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">VELOCIRAPTOR / CAD</div>
+                      <div className="absolute top-4 right-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">03/TF</div>
+                      <div className="absolute bottom-4 left-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">3 LB UNDERCUTTER &middot; ENGINEERED SYSTEM</div>
+                      <div className="absolute bottom-4 right-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">VERIFIED</div>
 
-                      {/* Solid Render */}
-                      <div className="robot-solid absolute inset-0 w-full h-full">
-                          <Image src={velociraptorAssets.renders.hero34} alt="Velociraptor" fill className="object-contain object-center scale-110" priority />
-                      </div>
+                      {/* SVG Filter for Red Wireframe Effect */}
+                      <svg className="hidden">
+                          <filter id="red-wireframe" colorInterpolationFilters="sRGB">
+                              {/* Edge detection */}
+                              <feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="-1 -1 -1  -1 8 -1  -1 -1 -1" />
+                              {/* Colorize to pure red */}
+                              <feColorMatrix type="matrix" values="
+                                1 1 1 0 0
+                                0 0 0 0 0
+                                0 0 0 0 0
+                                0 0 0 1 0" />
+                          </filter>
+                      </svg>
+                      
+                      {/* Container for the robot, keeping it contained to ~70-80% of the box */}
+                      <div className="relative w-[85%] h-[75%] mx-auto my-auto z-10" data-familiar-protect data-familiar-reaction="inspect">
+                          
+                          {/* Wireframe (Base Layer, revealed when solid fades) */}
+                          <div className="robot-wireframe absolute inset-0 w-full h-full opacity-0" style={{ filter: 'url(#red-wireframe)' }}>
+                              <Image src={velociraptorAssets.renders.hero34} alt="Velociraptor Wireframe" fill className="object-contain object-center drop-shadow-[0_0_8px_rgba(204,51,51,0.4)]" />
+                          </div>
 
-                      {/* X-Ray Mask Layer */}
-                      <div 
-                         ref={xrayRef}
-                         className="absolute inset-0 w-full h-full pointer-events-none opacity-0 z-10"
-                         style={{
-                             maskImage: 'radial-gradient(circle 180px at var(--cursor-x, 50%) var(--cursor-y, 50%), black 20%, transparent 80%)',
-                             WebkitMaskImage: 'radial-gradient(circle 180px at var(--cursor-x, 50%) var(--cursor-y, 50%), black 20%, transparent 80%)'
-                         }}
-                      >
-                          <Image src={velociraptorAssets.technical.heroWireframe} alt="X-ray wireframe" fill className="object-contain object-center scale-110" />
-                          <div className="absolute inset-0 bg-accent/5 mix-blend-screen" />
+                          {/* Solid Render */}
+                          <div className="robot-solid absolute inset-0 w-full h-full">
+                              <Image src={velociraptorAssets.renders.hero34} alt="Velociraptor" fill className="object-contain object-center" priority />
+                          </div>
+
+                          {/* X-Ray Mask Layer */}
+                          <div 
+                             ref={xrayRef}
+                             className="absolute inset-0 w-full h-full pointer-events-none opacity-0 z-10"
+                             style={{
+                                 maskImage: 'radial-gradient(circle 180px at var(--cursor-x, 50%) var(--cursor-y, 50%), black 20%, transparent 80%)',
+                                 WebkitMaskImage: 'radial-gradient(circle 180px at var(--cursor-x, 50%) var(--cursor-y, 50%), black 20%, transparent 80%)'
+                             }}
+                          >
+                              <div className="absolute inset-0" style={{ filter: 'url(#red-wireframe)' }}>
+                                  <Image src={velociraptorAssets.renders.hero34} alt="X-ray wireframe" fill className="object-contain object-center" />
+                              </div>
+                              <div className="absolute inset-0 bg-accent/5 mix-blend-screen" />
+                          </div>
                       </div>
 
                       {/* Impact FX overlay (positioned over weapon) */}
