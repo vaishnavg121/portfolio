@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { retrieveChunks } from "@/lib/retrieval";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 const SYSTEM_PROMPT = `You are the conversational guide for Vaishnav Gadamsetty's portfolio.
 Answer questions about Vaishnav only from the supplied portfolio evidence.
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Message too long" }, { status: 400 });
     }
     
-    const chunks = retrieveChunks(message, 4);
+    const { domain, chunks, debug } = retrieveChunks(message, "context"); // route context can be added later if passed from frontend
     
     const contextText = chunks.map(c => `Title: ${c.title}\nContent: ${c.content}`).join("\n\n");
     
@@ -35,21 +35,43 @@ export async function POST(req: Request) {
     const apiKey = process.env.NVIDIA_API_KEY || process.env.OPENAI_API_KEY || "";
     const model = process.env.PORTFOLIO_CHAT_MODEL || "nvidia/nemotron-4-340b-instruct"; // Default fallback
     
+    // Deduplicate actions by target route
+    const uniqueTargets = new Set();
     const actions = chunks
       .filter(c => c.route || c.section)
       .map(c => ({
         type: "navigate",
         label: c.route ? `Explore ${c.title.split(" -")[0]}` : `Jump to ${c.title}`,
         target: c.route || `#${c.section}`
-      })).slice(0, 2);
+      }))
+      .filter(action => {
+          if (uniqueTargets.has(action.target)) return false;
+          uniqueTargets.add(action.target);
+          return true;
+      })
+      .slice(0, 2);
+
+    // Fallback deterministic answer generation
+    const generateFallback = () => {
+        if (chunks.length === 0) {
+            return "I couldn't find enough information about that in Vaishnav's portfolio.";
+        }
+        if (domain === "SYSTEM") {
+            return chunks[0].content;
+        }
+        
+        // Extract 1-3 highly relevant sentences directly from chunks
+        // Chunks are now extremely atomic so we can just use them directly.
+        const answerText = chunks.map(c => c.content).join(" ");
+        return answerText;
+    };
 
     if (!apiKey) {
       // Mock response if no API key is provided
       const mockStream = new ReadableStream({
         async start(controller) {
-          const text = "API key not configured. I am a grounded assistant but I need an LLM provider to process this request. Based on my retrieval, here is what I found:\n\n" + chunks.map(c => c.content).join(" ");
           const encoder = new TextEncoder();
-          controller.enqueue(encoder.encode(JSON.stringify({ text, actions }) + "\n"));
+          controller.enqueue(encoder.encode(JSON.stringify({ text: generateFallback(), actions, debug }) + "\n"));
           controller.close();
         }
       });
@@ -78,7 +100,15 @@ export async function POST(req: Request) {
     if (!res.ok) {
       const error = await res.text();
       console.error("Provider Error:", error);
-      return NextResponse.json({ error: "Provider error" }, { status: 500 });
+      // Clean Deterministic Fallback without scary banners
+      const mockStream = new ReadableStream({
+        async start(controller) {
+          const encoder = new TextEncoder();
+          controller.enqueue(encoder.encode(JSON.stringify({ text: generateFallback(), actions, debug }) + "\n"));
+          controller.close();
+        }
+      });
+      return new Response(mockStream, { headers: { "Content-Type": "application/x-ndjson" } });
     }
 
     const stream = new ReadableStream({
@@ -90,7 +120,7 @@ export async function POST(req: Request) {
         let done = false;
         
         // Send actions first
-        controller.enqueue(encoder.encode(JSON.stringify({ actions }) + "\n"));
+        controller.enqueue(encoder.encode(JSON.stringify({ actions, debug }) + "\n"));
 
         while (reader && !done) {
           const { value, done: doneReading } = await reader.read();
