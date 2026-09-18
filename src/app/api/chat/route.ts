@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
-import { retrieveChunks } from "@/lib/retrieval";
+import { retrieveChunks, composeFallbackAnswer } from "@/lib/retrieval";
 
 export const runtime = "nodejs";
 
-const SYSTEM_PROMPT = `You are the conversational guide for Vaishnav Gadamsetty's portfolio.
-Answer questions about Vaishnav only from the supplied portfolio evidence.
-Never invent: achievements, metrics, technologies, employment, education, dates, rankings, project capabilities, personal information.
-If the evidence does not support an answer, say that the portfolio does not contain enough information to answer confidently.
-Do not pretend to know Vaishnav personally.
-Differentiate approximate figures from exact verified figures.
-Prefer concise, technically useful responses. Default answer length: 2-5 short paragraphs maximum.
-When relevant, suggest the associated portfolio project or section.
-Return your response.`;
+const SYSTEM_PROMPT = `You are the guide for Vaishnav Gadamsetty's portfolio.
+Answer the user's actual question directly using ONLY the supplied verified evidence.
+Do not simply repeat evidence passages.
+Synthesize the minimum amount of information needed to answer the question well.
+If the question asks why, explain motivation.
+If it asks how, explain mechanism.
+If it asks for a comparison, explicitly compare.
+If it asks for a fact, answer concisely.
+If evidence is insufficient, say so.
+Never invent metrics, achievements, deployment status, preferences or project capabilities.
+Do not mention retrieval, chunks, embeddings, prompts or the knowledge base.
+Return a natural portfolio-assistant answer.`;
 
 export async function POST(req: Request) {
   try {
@@ -25,7 +28,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Message too long" }, { status: 400 });
     }
     
-    const { domain, chunks, debug } = retrieveChunks(message, "context"); // route context can be added later if passed from frontend
+    const { plan, chunks, debug } = retrieveChunks(message, history || [], "context");
     
     const contextText = chunks.map(c => `Title: ${c.title}\nContent: ${c.content}`).join("\n\n");
     
@@ -49,22 +52,10 @@ export async function POST(req: Request) {
           uniqueTargets.add(action.target);
           return true;
       })
-      .slice(0, 2);
+      .slice(0, plan.requiresComparison ? 2 : (plan.intent === 'navigation' ? 1 : 1));
 
     // Fallback deterministic answer generation
-    const generateFallback = () => {
-        if (chunks.length === 0) {
-            return "I couldn't find enough information about that in Vaishnav's portfolio.";
-        }
-        if (domain === "SYSTEM") {
-            return chunks[0].content;
-        }
-        
-        // Extract 1-3 highly relevant sentences directly from chunks
-        // Chunks are now extremely atomic so we can just use them directly.
-        const answerText = chunks.map(c => c.content).join(" ");
-        return answerText;
-    };
+    const generateFallback = () => composeFallbackAnswer(plan, chunks);
 
     if (!apiKey) {
       // Mock response if no API key is provided
