@@ -1,9 +1,10 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import React, { useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { MoveLeft, ArrowRight } from 'lucide-react';
+import { MoveLeft } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -12,18 +13,18 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
 }
 
-// Helper for image slots that fail gracefully
-const VisualSlot = ({ src, alt, className = "" }: { src: string, alt: string, className?: string }) => {
+const VisualSlot = ({ src, alt, className = "", objectFit = "contain" }: { src: string, alt: string, className?: string, objectFit?: "cover" | "contain" }) => {
   return (
-    <div className={`relative w-full bg-[#050505] border border-white/10 overflow-hidden flex items-center justify-center group ${className}`}>
-      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(45deg, #111 25%, transparent 25%, transparent 75%, #111 75%, #111)", backgroundSize: "10px 10px" }} />
-      <div className="absolute inset-0 border border-accent/20 scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-700" />
-      <span className="font-mono text-[10px] text-text-muted tracking-widest z-10 uppercase mix-blend-difference">{alt}</span>
+    <div className={`relative w-full bg-[#030303] border border-white/5 overflow-hidden flex items-center justify-center group ${className}`} data-familiar-protect data-familiar-reaction="inspect">
+      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff)", backgroundSize: "4px 4px" }} />
+      <div className="absolute inset-0 border border-accent/20 scale-[0.98] opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-700 pointer-events-none" />
+      <span className="absolute bottom-4 left-4 font-mono text-[10px] text-text-muted tracking-widest z-10 uppercase mix-blend-difference pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500">{alt}</span>
       <Image 
         src={src} 
         alt={alt} 
         fill 
-        className="object-cover opacity-0 transition-opacity duration-500 on-load-show" 
+        sizes="100vw"
+        className={`object-${objectFit} opacity-0 transition-opacity duration-700`} 
         onError={(e) => {
           (e.target as HTMLElement).style.display = 'none';
         }}
@@ -36,13 +37,19 @@ const VisualSlot = ({ src, alt, className = "" }: { src: string, alt: string, cl
 };
 
 const SectionHeader = ({ number, title }: { number: string, title: string }) => (
-  <div className="mb-12 md:mb-16 case-section-header">
-    <div className="flex items-center gap-4 text-accent font-mono text-sm tracking-widest mb-4">
+  <div className="mb-10 md:mb-14 case-section-header">
+    <div className="flex items-center gap-4 text-accent font-mono text-xs tracking-widest mb-4">
       <span>{number}</span>
       <div className="w-12 h-[1px] bg-accent/50" />
     </div>
-    <h2 className="text-2xl md:text-3xl font-display uppercase tracking-tight text-white">{title}</h2>
+    <h2 className="text-xl md:text-2xl font-display uppercase tracking-wider text-white/90">{title}</h2>
   </div>
+);
+
+const CaseSection = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+  <section className={`case-section relative w-full ${className}`}>
+    {children}
+  </section>
 );
 
 export const ImdPuneCaseStudy = () => {
@@ -50,7 +57,6 @@ export const ImdPuneCaseStudy = () => {
 
   useGSAP(() => {
     const ctx = gsap.context(() => {
-      // Hero entrance
       gsap.from('.hero-elem', {
         y: 40,
         opacity: 0,
@@ -60,10 +66,9 @@ export const ImdPuneCaseStudy = () => {
         delay: 0.2
       });
 
-      // Section reveals on scroll
       (gsap.utils.toArray('.case-section') as HTMLElement[]).forEach((section) => {
         gsap.from(section, {
-          y: 60,
+          y: 40,
           opacity: 0,
           duration: 1,
           ease: "power3.out",
@@ -73,347 +78,315 @@ export const ImdPuneCaseStudy = () => {
           }
         });
       });
-
-      // Parallax image slots
-      (gsap.utils.toArray('.parallax-slot') as HTMLElement[]).forEach((slot) => {
-        gsap.to(slot, {
-          yPercent: 15,
-          ease: "none",
-          scrollTrigger: {
-            trigger: slot,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: true
-          }
-        });
-      });
-
-      // Line traces
-      (gsap.utils.toArray('.trace-line') as HTMLElement[]).forEach((line) => {
-        gsap.fromTo(line, 
-          { scaleX: 0, transformOrigin: "left center" },
-          { 
-            scaleX: 1, 
-            duration: 1.5,
-            ease: "power3.inOut",
-            scrollTrigger: {
-              trigger: line,
-              start: "top 90%"
-            }
-          }
-        );
-      });
     }, containerRef);
     return () => ctx.revert();
   }, { scope: containerRef });
 
   return (
-    <div className="bg-[#030303] min-h-screen text-[#f5ede3] selection:bg-accent-soft selection:text-accent" ref={containerRef}>
+    <div className="bg-[#020202] min-h-screen text-[#e5e5e5] selection:bg-accent-soft selection:text-accent font-sans" ref={containerRef}>
       
       {/* 01 HERO */}
-      <section className="pt-32 pb-24 md:pt-48 md:pb-32 px-6 md:px-12 max-w-5xl mx-auto border-b border-white/5 relative">
-        <Link href="/#work" className="hero-elem inline-flex items-center gap-2 text-text-muted hover:text-white font-mono text-sm tracking-widest uppercase mb-16 md:mb-24 group transition-colors">
+      <section className="pt-32 pb-24 md:pt-48 md:pb-32 px-6 md:px-12 max-w-7xl mx-auto border-b border-white/5 relative">
+        <Link href="/#work" className="hero-elem inline-flex items-center gap-2 text-text-muted hover:text-white font-mono text-xs tracking-widest uppercase mb-12 md:mb-20 group transition-colors">
           <MoveLeft className="w-4 h-4 group-hover:-translate-x-2 transition-transform" />
           Back to Work
         </Link>
 
-        {/* Recovered AlphaCouncil Hero/Banner Treatment */}
-        <div className="hero-elem w-full aspect-video bg-[#050505] border border-white/10 mb-16 flex flex-col items-center justify-center relative overflow-hidden group">
-           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(45deg, #111 25%, transparent 25%, transparent 75%, #111 75%, #111), linear-gradient(45deg, #111 25%, transparent 25%, transparent 75%, #111 75%, #111)", backgroundSize: "20px 20px", backgroundPosition: "0 0, 10px 10px" }} />
-           
-           <div className="absolute inset-0 border border-accent/20 scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-700" />
-           
-           <div className="relative z-10 flex flex-col items-center text-center max-w-3xl px-6">
-             <div className="font-mono text-accent text-xs tracking-widest mb-6 uppercase flex items-center gap-4">
-               <div className="w-8 h-[1px] bg-accent/50" />
-               <span>IMD PUNE</span>
-               <div className="w-8 h-[1px] bg-accent/50" />
-             </div>
-             <h1 className="text-3xl md:text-5xl lg:text-6xl font-display uppercase tracking-tighter leading-tight mb-4 text-white">
-               AI/ML FOR<br/>
-               <span className="text-white/80">VERTICAL VISIBILITY</span>
-             </h1>
-             <div className="font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase mt-4 px-4 py-1.5 border border-white/10 bg-white/5">
-               AVIATION METEOROLOGY
-             </div>
-           </div>
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-24">
+          <div className="lg:w-1/3 flex flex-col justify-center">
+            <div className="hero-elem font-mono text-accent text-xs tracking-widest mb-6 uppercase flex items-center gap-4">
+              <div className="w-8 h-[1px] bg-accent/50" />
+              <span>IMD PUNE</span>
+            </div>
+            
+            <h1 className="hero-elem text-3xl md:text-5xl font-display uppercase tracking-tighter leading-tight mb-8 text-white/90">
+              Using AI/ML To Predict Vertical Visibility In Airports
+            </h1>
+            
+            <div className="hero-elem font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase mb-8 space-y-2">
+              <p>Practice School I</p>
+              <p>25 May 2026 — 18 July 2026</p>
+              <p className="text-white/30">DURATION: 54 DAYS</p>
+            </div>
+            
+            <div className="hero-elem flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-wider">
+              <span className="px-3 py-1 bg-white/5 border border-white/10">Aviation Meteorology</span>
+              <span className="px-3 py-1 bg-white/5 border border-white/10">Time-Series</span>
+              <span className="px-3 py-1 bg-white/5 border border-white/10">Deep Learning</span>
+              <span className="px-3 py-1 bg-white/5 border border-white/10">Sensor Integration</span>
+            </div>
+            
+            <div className="hero-elem mt-16 font-mono text-xs text-text-muted tracking-widest uppercase flex items-center gap-3">
+              <span className="w-4 h-[1px] bg-text-muted" /> SCROLL TO EXPLORE
+            </div>
+          </div>
+          
+          <div className="lg:w-2/3">
+            <div className="hero-elem w-full aspect-[4/3] md:aspect-[16/10] relative rounded-sm overflow-hidden border border-white/10 bg-[#050505]">
+               <VisualSlot src="/assets/projects/imd-pune/imd-hero-aviation-weather.png" alt="IMD Pune Aviation Weather Hero" className="h-full p-4" objectFit="contain" />
+            </div>
+          </div>
         </div>
-
-        <p className="hero-elem text-lg md:text-xl text-text-muted font-light max-w-2xl leading-relaxed">
-          An advanced machine learning pipeline developed for the India Meteorological Department to predict vertical visibility and Runway Visual Range at IGIA, New Delhi, using massive heterogeneous meteorological sensor data.
-        </p>
-
-        {/* Decorative structural lines */}
-        <div className="absolute top-0 right-12 w-[1px] h-full bg-white/5 hidden lg:block" />
-        <div className="absolute top-0 right-64 w-[1px] h-full bg-white/5 hidden lg:block" />
       </section>
 
-      <div className="max-w-4xl mx-auto px-6 md:px-12 py-24 md:py-32 space-y-32 md:space-y-48">
+      <div className="max-w-4xl mx-auto px-6 md:px-12 py-24 md:py-32 space-y-32 md:space-y-40">
         
         {/* 02 THE PROBLEM */}
-        <section className="case-section">
+        <CaseSection>
           <SectionHeader number="02" title="The Problem" />
-          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl">
-            <p>
-              Airport visibility, particularly Vertical Visibility and Cloud Ceiling, is arguably the most critical meteorological parameter for aviation operations. During severe weather phenomena like the dense winter fogs common at IGIA, New Delhi, these parameters dictate runway operability, flight diversions, and overall airspace safety.
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p className="text-xl text-white/90 leading-relaxed mb-8">
+              Visibility is one of the most critical meteorological parameters in aviation. Reduced visibility from fog, haze, mist, precipitation, or low cloud severely affects aircraft take-off, landing, and taxiing operations, directly impacting operational capacity, diversions, delays, and aviation safety.
             </p>
             <p>
-              However, operational weather data is notoriously difficult to process. Raw sensor streams arrive at different frequencies, suffer from transient outages, contain complex encoded telegrams, and are highly sensitive to local micro-climates. Predicting these values accurately requires transforming this chaotic data landscape into a strictly synchronized, ML-ready temporal state.
+              While horizontal visibility is widely monitored, vertical visibility and cloud ceiling become equally critical in dense fog, low-cloud, and obscured-sky conditions. The engineering problem presented by the India Meteorological Department was twofold: build a unified data system capable of aligning chaotic heterogeneous sensor streams, and then build a prediction system evaluating both classical and sequential machine learning architectures for vertical visibility and Meteorological Optical Range (MOR).
             </p>
           </div>
-        </section>
+        </CaseSection>
 
-        {/* 03 DATA LANDSCAPE */}
-        <section className="case-section">
-          <SectionHeader number="03" title="Data Landscape" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            <div className="bg-[#080808] border border-white/5 p-8">
-              <h3 className="font-mono text-sm tracking-widest uppercase text-white mb-6">Four Airport Datasets</h3>
-              <ul className="space-y-4 font-mono text-xs text-text-muted">
-                <li className="flex justify-between items-center border-b border-white/5 pb-2"><span>HYDERABAD</span><span className="text-accent">VOHS</span></li>
-                <li className="flex justify-between items-center border-b border-white/5 pb-2"><span>JAIPUR</span><span className="text-accent">VIJP</span></li>
-                <li className="flex justify-between items-center border-b border-white/5 pb-2"><span>LUCKNOW</span><span className="text-accent">VILK</span></li>
-                <li className="flex justify-between items-center pb-2"><span>GUWAHATI</span><span className="text-accent">VEGT</span></li>
-              </ul>
+        {/* 03 OBSERVATION NETWORK */}
+        <CaseSection>
+          <SectionHeader number="03" title="Observation Network" />
+          <div className="w-full h-auto aspect-[16/7] md:aspect-[2/1] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
+            <VisualSlot src="/assets/projects/imd-pune/imd-observation-network.png" alt="IMD Pune multi-sensor observation network showing PTU, visibility, cloud, wind and present-weather inputs." className="h-full w-full" objectFit="contain" />
+          </div>
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              Our primary data consisted of five distinct meteorological sensor networks:
+            </p>
+            <ul className="font-mono text-[11px] md:text-xs space-y-3 mt-6 mb-8 text-white/70 bg-white/5 border border-white/10 p-6 md:p-8">
+              <li className="flex flex-col md:flex-row gap-2 md:gap-8"><strong className="text-accent w-24">PTU:</strong> <span>Pressure, Temperature, Humidity, Dew Point</span></li>
+              <li className="flex flex-col md:flex-row gap-2 md:gap-8"><strong className="text-accent w-24">VIS:</strong> <span>Visibility / Meteorological Optical Range</span></li>
+              <li className="flex flex-col md:flex-row gap-2 md:gap-8"><strong className="text-accent w-24">WIND:</strong> <span>Mean Wind Speed, Wind Direction</span></li>
+              <li className="flex flex-col md:flex-row gap-2 md:gap-8"><strong className="text-accent w-24">PW:</strong> <span>Present Weather conditions</span></li>
+              <li className="flex flex-col md:flex-row gap-2 md:gap-8 border-t border-white/10 pt-3 mt-3"><strong className="text-accent w-24">CLOUD:</strong> <span>Cloud-base heights, multiple cloud layers, cloud coverage, vertical visibility</span></li>
+            </ul>
+            <p>
+              The Ceilometer plays a unique role. Operating via optical remote sensing (LiDAR), it transmits laser pulses to estimate cloud structure and vertical atmospheric layering.
+            </p>
+          </div>
+        </CaseSection>
+
+        {/* 04 DATA WAS THE HARD PART */}
+        <CaseSection>
+          <SectionHeader number="04" title="Data Was The Hard Part" />
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              Integrating the network created systematic temporal gaps. PTU sensors generally supplied 1-minute observations, while visibility, wind, cloud, and rain commonly operated at 15-second cadences. 
+            </p>
+            <p>
+              Resolving these differing temporal resolutions was only the first barrier. We consistently encountered missing records, duplicated records, inconsistent timestamps, sensor outages, and substantial formatting differences between airports like Hyderabad, Jaipur, and Lucknow. Preprocessing was not a minor step; it was a major engineering component of the project.
+            </p>
+          </div>
+        </CaseSection>
+
+        {/* 05 CLOUD DECODING / STANDARDIZATION */}
+        <CaseSection>
+          <SectionHeader number="05" title="Cloud Decoding & Standardization" />
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              Cloud data from Hyderabad and Lucknow was relatively structured. However, the data from Jaipur included compact, encoded cloud telegrams.
+            </p>
+            <p>
+              We developed rule-based parsing to decode these telegrams, extracting cloud layers, cloud coverage (Okta), cloud-base heights, and vertical visibility. This was then standardized into a unified schema consisting of Cloud Base Height for up to three layers, minimum cloud base, vertical visibility, and corresponding coverage values, standardizing the format across all study locations.
+            </p>
+          </div>
+        </CaseSection>
+
+        {/* 06 PREPROCESSING PIPELINE */}
+        <CaseSection>
+          <SectionHeader number="06" title="Preprocessing Pipeline" />
+          <div className="w-full h-auto aspect-[16/7] md:aspect-[2/1] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
+            <VisualSlot src="/assets/projects/imd-pune/imd-forecasting-pipeline.png" alt="IMD Pune data preprocessing pipeline from raw observations to ML-ready temporal dataset." className="h-full w-full" objectFit="contain" />
+          </div>
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              The pipeline transforms raw meteorological observations through validation, timestamp synchronization, duplicate handling, missing-value analysis, cloud decoding, temporal alignment, and integration, concluding with feature preparation.
+            </p>
+            <p>
+              Strict preliminary PTU checks were enforced: Temperature and Dew Point to ±0.5°C, Relative Humidity to ±5%, and Pressure to ±2 hPa. Missing intervals exceeding 5 minutes were flagged for manual review rather than reconstructed blindly. Crucially, visibility and cloud observations were treated conservatively to avoid aggressive interpolation. The primary objective was to maximize usable data while rigorously preserving meteorological realism.
+            </p>
+          </div>
+        </CaseSection>
+
+        {/* 07 EXPLORATORY DATA ANALYSIS */}
+        <CaseSection>
+          <SectionHeader number="07" title="Exploratory Data Analysis" />
+          <div className="w-full h-auto aspect-[4/3] md:aspect-[16/9] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
+            <VisualSlot src="/assets/projects/imd-pune/imd-eda-overview.png" alt="Exploratory data analysis showing statistical distributions of visibility, cloud base height, and temperature." className="h-full w-full" objectFit="contain" />
+          </div>
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              Exploratory Data Analysis evaluated visibility, temperature, humidity, wind-speed, and cloud-base distributions. The distributions revealed that visibility contains discrete reporting behavior, with strong concentration near the upper visibility limits representing clear conditions. Low-visibility events, while operationally critical, occurred relatively infrequently, establishing an imbalanced distribution for model training.
+            </p>
+          </div>
+        </CaseSection>
+
+        {/* 08 CORRELATION ANALYSIS */}
+        <CaseSection>
+          <SectionHeader number="08" title="Correlation Analysis" />
+          <div className="flex flex-col lg:flex-row gap-12 lg:items-center">
+            <div className="lg:w-1/2 w-full aspect-square rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2">
+              <VisualSlot src="/assets/projects/imd-pune/imd-correlation-analysis.png" alt="Correlation matrix heatmap of meteorological variables." className="h-full w-full" objectFit="contain" />
             </div>
-            <div className="bg-[#080808] border border-white/5 p-8 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <h3 className="font-mono text-sm tracking-widest uppercase text-white mb-6">Data Streams</h3>
-              <div className="flex flex-wrap gap-2 font-mono text-[10px]">
-                <span className="px-3 py-1 bg-white/5 border border-white/10 text-white">PTU (Press/Temp/Hum)</span>
-                <span className="px-3 py-1 bg-white/5 border border-white/10 text-white">VIS (Visibility/RVR)</span>
-                <span className="px-3 py-1 bg-white/5 border border-white/10 text-white">WIND (Speed/Dir)</span>
-                <span className="px-3 py-1 bg-white/5 border border-white/10 text-white">PRESENT WEATHER</span>
-                <span className="px-3 py-1 bg-white/5 border border-white/10 text-accent border-accent/30">CLOUD / CEILOMETER</span>
+            <div className="lg:w-1/2 prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light" data-familiar-protect data-familiar-reaction="read">
+              <p>
+                Correlation analysis identified useful relationships to inform feature interpretation. Key findings included:
+              </p>
+              <ul className="font-mono text-[11px] space-y-2 mt-4 text-white/70 bg-white/5 border border-white/10 p-4 md:p-6">
+                <li className="flex justify-between border-b border-white/5 pb-2"><span>Visibility ↔ Vertical Vis:</span> <span className="text-accent">+0.62</span></li>
+                <li className="flex justify-between border-b border-white/5 pb-2"><span>Visibility ↔ Temperature:</span> <span className="text-accent">+0.58</span></li>
+                <li className="flex justify-between border-b border-white/5 pb-2"><span>Visibility ↔ Pressure:</span> <span className="text-white/40">-0.49</span></li>
+                <li className="flex justify-between border-b border-white/5 pb-2"><span>Temperature ↔ Humidity:</span> <span className="text-white/40">-0.59</span></li>
+                <li className="flex justify-between border-b border-white/5 pb-2"><span>Humidity ↔ Dew Point:</span> <span className="text-accent">+0.74</span></li>
+                <li className="flex justify-between border-b border-white/5 pb-2"><span>Dew Point ↔ Pressure:</span> <span className="text-white/40">-0.60</span></li>
+                <li className="flex justify-between"><span>Pressure ↔ Wind Speed:</span> <span className="text-white/40">-0.51</span></li>
+              </ul>
+              <p className="mt-6 text-xs text-white/50 border-l border-accent pl-4">
+                While these correlations guide our architecture, they strictly identify statistical relationships, not underlying causal meteorological mechanisms.
+              </p>
+            </div>
+          </div>
+        </CaseSection>
+
+        {/* 09 TEMPORAL ANALYSIS */}
+        <CaseSection>
+          <SectionHeader number="09" title="Temporal Analysis" />
+          <div className="w-full h-auto aspect-[16/7] md:aspect-[2/1] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
+            <VisualSlot src="/assets/projects/imd-pune/imd-temporal-analysis.png" alt="Time-series plot showing temporal evolution of visibility." className="h-full w-full" objectFit="contain" />
+          </div>
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              Temporal analysis exposed repeated high-visibility plateaus interrupted by intermittent, sharp reduced-visibility intervals. This temporal variability demonstrates recurring low-visibility episodes rather than smooth continuous seasonal transitions, highlighting the highly dynamic nature of the prediction target.
+            </p>
+          </div>
+        </CaseSection>
+
+        {/* 10 CLASSICAL MACHINE LEARNING */}
+        <CaseSection>
+          <SectionHeader number="10" title="Classical Machine Learning" />
+          <div className="w-full h-auto aspect-[16/9] md:aspect-[2/1] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
+            <VisualSlot src="/assets/projects/imd-pune/imd-classical-ml-results.png" alt="Performance metrics comparison of classical ML models including XGBoost, LightGBM, and Random Forest." className="h-full w-full" objectFit="contain" />
+          </div>
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              We evaluated numerous model families, including Linear Regression, Ridge, Lasso, ElasticNet, Random Forest, Gradient Boosting, Extra Trees, Histogram Gradient Boosting, XGBoost, LightGBM, CatBoost, and AdaBoost.
+            </p>
+            <p>
+              For MOR prediction, <strong>XGBoost</strong> achieved the best overall balance among evaluated classical models, producing an RMSE of approximately 1655.76 m and an R² of 0.645. Extra Trees, Histogram Gradient Boosting, LightGBM, and CatBoost were also highly competitive. Linear models performed substantially worse, occasionally producing negative R² values, underscoring that visibility behavior is nonlinear and highly dependent on complex interactions among moisture, clouds, wind, and precipitation.
+            </p>
+          </div>
+        </CaseSection>
+
+        {/* 11 & 12 EFFICIENCY & FEATURES */}
+        <CaseSection>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div>
+              <SectionHeader number="11" title="Efficiency Trade-offs" />
+              <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light" data-familiar-protect data-familiar-reaction="read">
+                <p>
+                  LightGBM delivered the shortest training time among the best-performing ensemble models while remaining highly competitive. XGBoost offered a strong balance between prediction accuracy and computational efficiency, making these tree-based approaches attractive for potential operational forecasting workflows.
+                </p>
+              </div>
+            </div>
+            <div>
+              <SectionHeader number="12" title="Feature Importance" />
+              <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light" data-familiar-protect data-familiar-reaction="read">
+                <p>
+                  Feature importance analysis confirmed that a small subset of variables drove prediction. Influential groups included temperature, humidity/dew point, low-cloud indicators, rain/present-weather indicators, pressure, wind, and extracted temporal features.
+                </p>
               </div>
             </div>
           </div>
-          
-          <div className="w-full h-80 overflow-hidden rounded-sm relative">
-            <div className="parallax-slot w-full h-[130%] -top-[15%] relative">
-              <VisualSlot src="/assets/projects/imd/imd-data-landscape.png" alt="[ SYSTEM DIAGRAM: DATA LANDSCAPE ]" className="h-full" />
+        </CaseSection>
+
+        {/* 13 & 14 DEEP LEARNING & FINDINGS */}
+        <CaseSection>
+          <SectionHeader number="13" title="Sequential Deep Learning" />
+          <div className="w-full h-auto aspect-[16/7] md:aspect-[2/1] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
+            <VisualSlot src="/assets/projects/imd-pune/imd-deep-learning-results.png" alt="Performance summary of sequential deep learning architectures including GRU, Attention-LSTM, and CNN-LSTM." className="h-full w-full" objectFit="contain" />
+          </div>
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              We benchmarked several recurrent architectures: LSTM, GRU, CNN-LSTM, and Attention-LSTM. Training utilized a sliding-window sequential setup, supplying the previous 15 minutes of meteorological observations to predict future visibility parameters.
+            </p>
+            <p>
+              For MOR, <strong>GRU</strong> achieved the lowest prediction error among implemented deep-learning models, followed closely by Attention-LSTM. CNN-LSTM remained competitive but exhibited generally higher error, while the conventional LSTM was comparatively weaker.
+            </p>
+            <p>
+              For Cloud Base Height, GRU was particularly consistent, achieving coefficients of determination approaching unity, with Attention-LSTM also showing exceptionally strong performance.
+            </p>
+          </div>
+        </CaseSection>
+
+        {/* 15 & 16 COMPARISON */}
+        <CaseSection>
+          <SectionHeader number="15" title="Classical vs Deep Learning" />
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              Weather observations are temporally dependent. Recurrent deep learning models natively process sequences of previous observations rather than treating every timestamp as an independent state, which is why GRU performed strongest among tested architectures for modelling sequential meteorological dynamics.
+            </p>
+            <p>
+              However, classical boosting methods like XGBoost maintained formidable strengths: superior tabular prediction efficiency, significantly lower training complexity, and interpretable feature importance. They represent slightly different solutions to the problem, balancing predictive depth against operational cost.
+            </p>
+          </div>
+        </CaseSection>
+
+        {/* 17 WHAT WAS DELIVERED */}
+        <CaseSection>
+          <SectionHeader number="16" title="What The Project Delivered" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs text-text-muted mb-8" data-familiar-protect data-familiar-reaction="read">
+            <div className="border border-white/5 p-5 bg-[#050505] hover:border-accent/40 transition-colors">Multi-source meteorological preprocessing</div>
+            <div className="border border-white/5 p-5 bg-[#050505] hover:border-accent/40 transition-colors">Quality-control framework & temporal alignment</div>
+            <div className="border border-white/5 p-5 bg-[#050505] hover:border-accent/40 transition-colors">Cloud telegram decoding & unified schema</div>
+            <div className="border border-white/5 p-5 bg-[#050505] hover:border-accent/40 transition-colors">Exploratory weather analysis</div>
+            <div className="border border-white/5 p-5 bg-[#050505] hover:border-accent/40 transition-colors">Classical ML benchmarking (XGBoost)</div>
+            <div className="border border-white/5 p-5 bg-[#050505] hover:border-accent/40 transition-colors">Recurrent DL benchmarking (GRU, Attention)</div>
+            <div className="border border-accent/20 p-5 bg-accent/5 sm:col-span-2 text-accent text-center font-bold tracking-widest">Aviation visibility prediction research workflow</div>
+          </div>
+        </CaseSection>
+
+        {/* 18 LIMITATIONS & 19 LEARNED */}
+        <CaseSection>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 pt-16 border-t border-white/5">
+            <div>
+              <SectionHeader number="17" title="Limitations" />
+              <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light" data-familiar-protect data-familiar-reaction="read">
+                <p>
+                  As an engineering research workflow, the project faced real-world limitations. Limited airport coverage, prolonged sensor outages, and heterogeneous source formats constrained the dataset. Visibility interpolation requires extreme caution, and raw observational behavior differed across airports.
+                </p>
+                <p>
+                  Future improvements identified in the report include integrating radar, satellite, aerosol measurements, and Numerical Weather Prediction (NWP) data, alongside exploring Transformer architectures and hybrid ensembles.
+                </p>
+              </div>
+            </div>
+            <div>
+              <SectionHeader number="18" title="What I Learned" />
+              <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light" data-familiar-protect data-familiar-reaction="read">
+                <p>
+                  Real-world machine learning starts with data engineering. Missing data cannot simply be imputed aggressively when the domain forbids it, making temporal alignment critical.
+                </p>
+                <p>
+                  I learned that model accuracy alone is insufficient; interpretability, training cost, and strict adherence to domain constraints matter just as much. Domain knowledge and ML must work together to produce usable insights.
+                </p>
+              </div>
             </div>
           </div>
-        </section>
+        </CaseSection>
 
-        {/* 04 THE REAL DATA PROBLEM */}
-        <section className="case-section relative">
-          <div className="absolute -left-12 top-0 bottom-0 w-[1px] bg-white/5 hidden md:block" />
-          <SectionHeader number="04" title="The Real Data Problem" />
-          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl">
-            <p>
-              In theory, time-series forecasting assumes a clean, continuous matrix of aligned variables. In practice, the IMD data presented a monumental engineering challenge.
-            </p>
-            <ul className="list-none pl-0 space-y-4 font-mono text-xs mt-8">
-              <li className="flex gap-4 items-start"><span className="text-accent mt-0.5">■</span> <span><strong>Heterogeneous Formats:</strong> Different sensors export fundamentally different schemas.</span></li>
-              <li className="flex gap-4 items-start"><span className="text-accent mt-0.5">■</span> <span><strong>Cadence Mismatch:</strong> Reporting intervals varied wildly, requiring intelligent temporal alignment.</span></li>
-              <li className="flex gap-4 items-start"><span className="text-accent mt-0.5">■</span> <span><strong>Sensor Outages:</strong> Missing observations cannot simply be forward-filled without risking hallucinated meteorological states.</span></li>
-              <li className="flex gap-4 items-start"><span className="text-accent mt-0.5">■</span> <span><strong>Encoded Telegrams:</strong> Critical cloud data was trapped in legacy meteorological encodings rather than clean integers.</span></li>
-            </ul>
-          </div>
-        </section>
-
-        {/* 05 PREPROCESSING ARCHITECTURE */}
-        <section className="case-section">
-          <SectionHeader number="05" title="Preprocessing Architecture" />
+        {/* 20 METADATA */}
+        <CaseSection className="border-t border-white/10 pt-24 flex flex-col items-center text-center pb-8">
+          <h3 className="font-mono text-xs tracking-widest text-white/70 uppercase mb-4">India Meteorological Department (IMD), Pune</h3>
+          <p className="font-mono text-[10px] text-accent mb-8">PRACTICE SCHOOL I &middot; MAY — JULY 2026</p>
+          <h2 className="text-xl md:text-2xl font-display uppercase tracking-tight text-white/90 mb-16 max-w-2xl">
+            Using AI/ML to Predict Vertical Visibility in Airports
+          </h2>
           
-          {/* Custom Flow Diagram */}
-          <div className="bg-[#050505] border border-white/10 p-8 md:p-12 mb-12 font-mono text-xs relative">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.02)_0%,transparent_100%)]" />
-            <div className="flex flex-col items-center gap-6 relative z-10 max-w-lg mx-auto">
-              <div className="w-full text-center py-3 border border-white/20 bg-white/5 text-white tracking-widest">RAW AIRPORT SENSOR STREAMS</div>
-              <div className="w-px h-6 bg-accent trace-line" />
-              <div className="w-full text-center py-3 border border-white/10 text-text-muted tracking-widest">FORMAT / SCHEMA NORMALIZATION</div>
-              <div className="w-px h-6 bg-accent trace-line" />
-              <div className="w-full text-center py-3 border border-white/10 text-text-muted tracking-widest">VARIABLE-SPECIFIC QUALITY CONTROL</div>
-              <div className="w-px h-6 bg-accent trace-line" />
-              <div className="w-full text-center py-3 border border-accent/40 text-accent tracking-widest bg-accent/5">CLOUD TELEGRAM DECODING</div>
-              <div className="w-px h-6 bg-accent trace-line" />
-              <div className="w-full text-center py-3 border border-white/10 text-text-muted tracking-widest">TEMPORAL ALIGNMENT</div>
-              <div className="w-px h-6 bg-accent trace-line" />
-              <div className="w-full text-center py-3 border border-white/10 text-text-muted tracking-widest">DATASET INTEGRATION</div>
-              <div className="w-px h-6 bg-accent trace-line" />
-              <div className="w-full text-center py-3 border border-white/10 text-text-muted tracking-widest">FEATURE ENGINEERING</div>
-              <div className="w-px h-6 bg-accent trace-line" />
-              <div className="w-full text-center py-3 border border-white/20 bg-white/10 text-white font-bold tracking-widest shadow-[0_0_15px_rgba(255,255,255,0.1)]">ML-READY TIME SERIES</div>
-            </div>
-          </div>
-
-          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl">
-            <p>
-              PTU data originally sampled at ~1-minute intervals was aligned and interpolated toward a strict 15-second sensor cadence under aggressive quality constraints. Crucially, sensitive targets like cloud-base and visibility observations were treated conservatively rather than blindly interpolated, preserving the integrity of sudden weather shifts.
-            </p>
-          </div>
-          
-          <div className="w-full h-80 mt-12 overflow-hidden rounded-sm relative">
-            <VisualSlot src="/assets/projects/imd/imd-preprocessing-architecture.png" alt="[ ARCHITECTURE: PREPROCESSING ]" className="h-full" />
-          </div>
-        </section>
-
-        {/* 06 CLOUD DECODING */}
-        <section className="case-section">
-          <SectionHeader number="06" title="Cloud Decoding" />
-          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl mb-12">
-            <p>
-              Different airports supplied highly idiosyncratic cloud representations. A dedicated parser was required to extract usable numerical intelligence from encoded meteorological messages.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 font-mono text-[10px] text-center mb-12">
-            <div className="border border-white/10 p-4 bg-[#080808] flex items-center justify-center">ENCODED CLOUD MESSAGE</div>
-            <div className="border border-white/10 p-4 bg-[#080808] flex items-center justify-center">MESSAGE PARSER</div>
-            <div className="border border-white/10 p-4 bg-[#080808] flex items-center justify-center">CLOUD LAYER IDENTIFICATION</div>
-            <div className="border border-white/10 p-4 bg-[#080808] flex items-center justify-center">COVERAGE / OKTA EXTRACTION</div>
-            <div className="border border-white/10 p-4 bg-[#080808] flex items-center justify-center">HEIGHT EXTRACTION</div>
-            <div className="border border-accent/30 p-4 bg-accent/5 text-accent flex items-center justify-center">STANDARDIZED SCHEMA</div>
-          </div>
-          
-          <div className="w-full h-64 overflow-hidden rounded-sm relative">
-            <VisualSlot src="/assets/projects/imd/imd-cloud-decoding.png" alt="[ DECODER FLOW ]" className="h-full" />
-          </div>
-        </section>
-
-        {/* 07 QUALITY CONTROL */}
-        <section className="case-section relative">
-          <SectionHeader number="07" title="Quality Control" />
-          <div className="absolute -right-6 top-24 w-32 h-32 border border-accent/20 rounded-full flex items-center justify-center opacity-30 pointer-events-none hidden lg:flex">
-            <div className="font-mono text-[8px] text-center uppercase">Maximize Usability<br/>Preserve Realism</div>
-          </div>
-          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl">
-            <p>
-              Variable-specific handling was implemented based strictly on meteorological physics. We established source-derived boundaries to filter anomalous spikes without destroying true outlier weather events. The overriding engineering principle was clear: maximize data usability without destroying meteorological realism.
-            </p>
-          </div>
-        </section>
-
-        {/* 08 FEATURE / DATA INTEGRATION */}
-        <section className="case-section">
-          <SectionHeader number="08" title="Feature Integration" />
-          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl mb-12">
-            <p>
-              The five sensor families were geometrically and temporally converged into a synchronized meteorological state vector. This included advanced temporal feature extraction and cyclical sine/cosine transformations for directional variables (like wind vectors), directly mapping meteorological reality to a format suitable for deep sequential learning.
-            </p>
-          </div>
-          <div className="w-full h-96 overflow-hidden rounded-sm relative">
-            <VisualSlot src="/assets/projects/imd/imd-sensor-integration.png" alt="[ SENSOR INTEGRATION VECTORS ]" className="h-full" />
-          </div>
-        </section>
-
-        {/* 09 MODEL LANDSCAPE */}
-        <section className="case-section">
-          <SectionHeader number="09" title="Model Landscape" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            <div className="border border-white/10 p-8 bg-[#050505]">
-              <h3 className="font-mono text-xs tracking-widest uppercase text-accent mb-6 pb-2 border-b border-accent/20">CLASSICAL ML</h3>
-              <ul className="space-y-3 font-mono text-sm text-white/80">
-                <li>Linear Regression</li>
-                <li>Random Forest</li>
-                <li>XGBoost</li>
-                <li>LightGBM</li>
-                <li>CatBoost</li>
-              </ul>
-            </div>
-            <div className="border border-white/10 p-8 bg-[#050505]">
-              <h3 className="font-mono text-xs tracking-widest uppercase text-accent mb-6 pb-2 border-b border-accent/20">DEEP LEARNING</h3>
-              <ul className="space-y-3 font-mono text-sm text-white/80">
-                <li>LSTM</li>
-                <li>GRU</li>
-                <li>CNN-LSTM</li>
-                <li>Attention-LSTM</li>
-                <li>Multi-Output LSTM</li>
-              </ul>
-            </div>
-          </div>
-          <div className="flex gap-6 font-mono text-xs tracking-widest text-text-muted justify-center border-t border-white/5 pt-8">
-            <span className="flex items-center gap-2"><div className="w-2 h-2 bg-white/20"/> MAE</span>
-            <span className="flex items-center gap-2"><div className="w-2 h-2 bg-white/20"/> RMSE</span>
-            <span className="flex items-center gap-2"><div className="w-2 h-2 bg-white/20"/> R²</span>
-          </div>
-        </section>
-
-        {/* 10 RESULTS */}
-        <section className="case-section">
-          <SectionHeader number="10" title="Results" />
-          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl mb-12">
-            <p>
-              Rigorous evaluation revealed that ensemble and gradient-boosting approaches significantly outperformed linear baselines. <strong>XGBoost</strong> provided the best overall balance for MOR (Meteorological Optical Range) among classical models.
-            </p>
-            <p>
-              In the deep learning domain, <strong>GRU</strong> showed the most consistent performance across the primary prediction targets. <strong>Attention-LSTM</strong> remained highly competitive, specifically demonstrating strong capabilities in Cloud Base performance. While <strong>CNN-LSTM</strong> was competitive, it lagged slightly behind GRU and Attention-LSTM for rapid MOR shifts. No single architecture dominated every atmospheric target, highlighting the complexity of heterogeneous weather phenomena.
-            </p>
-          </div>
-          <div className="w-full h-80 overflow-hidden rounded-sm relative">
-            <VisualSlot src="/assets/projects/imd/imd-results-comparison.png" alt="[ PERFORMANCE METRICS COMPARISON ]" className="h-full" />
-          </div>
-        </section>
-
-        {/* 11 WHY MOR IS HARDER */}
-        <section className="case-section">
-          <SectionHeader number="11" title="Why MOR is Harder" />
-          <div className="bg-accent/5 border-l-2 border-accent p-6 md:p-10">
-            <p className="font-light text-lg leading-relaxed text-white/90">
-              MOR depends on rapidly changing combinations of aerosols, fog, precipitation, cloud development, humidity, and wind. In contrast, Cloud Base Height exhibited greater temporal continuity, making it inherently more predictable for sequential memory models.
-            </p>
-          </div>
-        </section>
-
-        {/* 12 CONTRIBUTIONS */}
-        <section className="case-section">
-          <SectionHeader number="12" title="Core Contributions" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs text-text-muted">
-            <div className="border border-white/5 p-4 bg-[#080808]">Generalized multi-airport preprocessing</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">Heterogeneous sensor standardization</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">Custom cloud-telegram decoding</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">Quality-controlled temporal integration</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">Time-series feature engineering</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">Modular workflow designed for scaling</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">Classical ML baseline comparison</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">Recurrent/Deep model evaluation</div>
-          </div>
-        </section>
-
-        {/* 13 LIMITATIONS / NEXT */}
-        <section className="case-section">
-          <SectionHeader number="13" title="Limitations & Future Scope" />
-          <p className="text-text-muted font-light leading-relaxed max-w-3xl mb-8">
-            While Milestone 0 delivered a highly functional pipeline, the report highlights clear operational extensions necessary for true production capability:
-          </p>
-          <div className="flex flex-wrap gap-2 font-mono text-xs">
-            <span className="px-3 py-1 border border-white/10 text-white/60">ADDITIONAL AIRPORTS</span>
-            <span className="px-3 py-1 border border-white/10 text-white/60">LARGER HISTORICAL DATASETS</span>
-            <span className="px-3 py-1 border border-white/10 text-white/60">RADAR INTEGRATION</span>
-            <span className="px-3 py-1 border border-white/10 text-white/60">SATELLITE DATA</span>
-            <span className="px-3 py-1 border border-white/10 text-white/60">NWP (Numerical Weather Prediction)</span>
-            <span className="px-3 py-1 border border-white/10 text-white/60">TRANSFORMER ARCHITECTURES</span>
-            <span className="px-3 py-1 border border-white/10 text-white/60">HYBRID ENSEMBLES</span>
-            <span className="px-3 py-1 border border-white/10 text-white/60">ONLINE LEARNING</span>
-          </div>
-        </section>
-
-        {/* 14 ROLE / EXPERIENCE */}
-        <section className="case-section">
-          <SectionHeader number="14" title="Role & Experience" />
-          <div className="border-t border-white/10 pt-8 mt-4">
-            <h3 className="font-mono text-sm tracking-widest text-white uppercase mb-2">India Meteorological Department (IMD), Pune</h3>
-            <p className="font-mono text-xs text-accent mb-6">AI/ML INTERN &middot; MAY 2026 — JULY 2026</p>
-            <p className="text-text-muted font-light leading-relaxed max-w-3xl">
-              Core work in aviation-weather machine learning, time-series forecasting, and operational analytics. Developed extensive preprocessing pipelines and evaluated predictive architectures against real-world Indian meteorological data constraints.
-            </p>
-          </div>
-        </section>
-
-        {/* 15 CLOSING */}
-        <section className="case-section border-t border-white/10 pt-24 pb-12 flex flex-col items-center text-center">
-          <h2 className="text-3xl md:text-5xl font-display uppercase tracking-tight text-white mb-6">System Delivered</h2>
-          <p className="text-text-muted font-mono text-sm mb-12 max-w-lg">
-            This project remains an internal IMD asset. The architecture and methodology reflect the foundation of the final research report.
-          </p>
-          
-          <Link href="/#work" className="group flex items-center gap-4 text-lg font-mono uppercase tracking-widest hover:text-accent transition-colors">
+          <Link href="/#work" className="group flex items-center gap-4 text-xs font-mono uppercase tracking-widest hover:text-accent transition-colors" data-familiar-protect data-familiar-reaction="wave">
+            <MoveLeft className="w-4 h-4 group-hover:-translate-x-2 transition-transform" />
             <span>Return to Portfolio</span>
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
           </Link>
-        </section>
+        </CaseSection>
 
       </div>
     </div>
