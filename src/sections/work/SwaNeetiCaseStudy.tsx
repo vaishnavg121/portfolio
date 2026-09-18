@@ -1,33 +1,35 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import React, { useRef } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { MoveLeft, ArrowRight } from "lucide-react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import React, { useRef } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { MoveLeft, ArrowRight, ExternalLink } from 'lucide-react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
 }
 
-const VisualSlot = ({ src, alt, className = "" }: { src: string, alt: string, className?: string }) => {
+const VisualSlot = ({ src, alt, className = "", objectFit = "contain" }: { src: string, alt: string, className?: string, objectFit?: "cover" | "contain" }) => {
   return (
-    <div className={`relative w-full bg-[#050505] border border-white/10 overflow-hidden flex items-center justify-center group ${className}`}>
-      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(45deg, #111 25%, transparent 25%, transparent 75%, #111 75%, #111)", backgroundSize: "10px 10px" }} />
-      <div className="absolute inset-0 border border-accent/20 scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-700" />
-      <span className="font-mono text-[10px] text-text-muted tracking-widest z-10 uppercase mix-blend-difference">{alt}</span>
+    <div className={`relative w-full bg-[#030303] border border-white/5 overflow-hidden flex items-center justify-center group ${className}`} data-familiar-protect data-familiar-reaction="inspect">
+      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff)", backgroundSize: "4px 4px" }} />
+      <div className="absolute inset-0 border border-accent/20 scale-[0.98] opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-700 pointer-events-none" />
+      <span className="absolute bottom-4 left-4 font-mono text-[10px] text-text-muted tracking-widest z-10 uppercase mix-blend-difference pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500">{alt}</span>
       <Image 
         src={src} 
         alt={alt} 
         fill 
-        className="object-cover opacity-0 transition-opacity duration-500 on-load-show" 
+        sizes="100vw"
+        className={`object-${objectFit} opacity-0 transition-opacity duration-700`} 
         onError={(e) => {
-          (e.target as HTMLElement).style.display = "none";
+          (e.target as HTMLElement).style.display = 'none';
         }}
         onLoad={(e) => {
-          (e.target as HTMLElement).style.opacity = "1";
+          (e.target as HTMLElement).style.opacity = '1';
         }}
       />
     </div>
@@ -35,13 +37,19 @@ const VisualSlot = ({ src, alt, className = "" }: { src: string, alt: string, cl
 };
 
 const SectionHeader = ({ number, title }: { number: string, title: string }) => (
-  <div className="mb-12 md:mb-16 case-section-header">
-    <div className="flex items-center gap-4 text-accent font-mono text-sm tracking-widest mb-4">
+  <div className="mb-10 md:mb-14 case-section-header">
+    <div className="flex items-center gap-4 text-accent font-mono text-xs tracking-widest mb-4">
       <span>{number}</span>
       <div className="w-12 h-[1px] bg-accent/50" />
     </div>
-    <h2 className="text-2xl md:text-3xl font-display uppercase tracking-tight text-white">{title}</h2>
+    <h2 className="text-xl md:text-2xl font-display uppercase tracking-wider text-white/90">{title}</h2>
   </div>
+);
+
+const CaseSection = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+  <section className={`case-section relative w-full ${className}`}>
+    {children}
+  </section>
 );
 
 export const SwaNeetiCaseStudy = () => {
@@ -49,7 +57,7 @@ export const SwaNeetiCaseStudy = () => {
 
   useGSAP(() => {
     const ctx = gsap.context(() => {
-      gsap.from(".hero-elem", {
+      gsap.from('.hero-elem', {
         y: 40,
         opacity: 0,
         duration: 1.2,
@@ -58,9 +66,9 @@ export const SwaNeetiCaseStudy = () => {
         delay: 0.2
       });
 
-      (gsap.utils.toArray(".case-section") as HTMLElement[]).forEach((section) => {
+      (gsap.utils.toArray('.case-section') as HTMLElement[]).forEach((section) => {
         gsap.from(section, {
-          y: 60,
+          y: 40,
           opacity: 0,
           duration: 1,
           ease: "power3.out",
@@ -72,157 +80,238 @@ export const SwaNeetiCaseStudy = () => {
       });
     }, containerRef);
     return () => ctx.revert();
-  });
+  }, { scope: containerRef });
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-background pt-32 pb-24 selection:bg-accent-soft selection:text-accent">
-      <div className="container mx-auto px-6 md:px-12 max-w-4xl">
-        
-        {/* BACK LINK */}
-        <Link href="/#work" className="hero-elem inline-flex items-center gap-2 text-text-muted hover:text-text-primary font-mono text-sm tracking-widest uppercase mb-16 group transition-colors">
+    <div className="bg-[#020202] min-h-screen text-[#e5e5e5] selection:bg-accent-soft selection:text-accent font-sans" ref={containerRef}>
+      
+      {/* 01 HERO */}
+      <section className="pt-32 pb-24 md:pt-48 md:pb-32 px-6 md:px-12 max-w-7xl mx-auto border-b border-white/5 relative">
+        <Link href="/#work" className="hero-elem inline-flex items-center gap-2 text-text-muted hover:text-white font-mono text-xs tracking-widest uppercase mb-12 md:mb-20 group transition-colors" data-familiar-reaction="wave">
           <MoveLeft className="w-4 h-4 group-hover:-translate-x-2 transition-transform" />
           Back to Work
         </Link>
 
-        {/* 01 HERO */}
-        <div className="hero-elem mb-24">
-          <div className="font-mono text-accent text-sm mb-4 tracking-widest">SWA.NEETI // 2026 // IMPLEMENTED</div>
-          <h1 className="text-5xl md:text-7xl font-display font-medium mb-8 uppercase tracking-tighter">Deterministic Legal Reasoning</h1>
-          <p className="text-xl md:text-2xl text-text-muted font-light leading-relaxed mb-12 max-w-3xl">
-            An evidence-grounded agentic legal research system for Indian law. Constraining LLM-driven research so facts, law, evidence, and citations remain structurally traceable.
-          </p>
-          <div className="flex flex-wrap gap-4 font-mono text-sm">
-            <a href="https://github.com/vaishnavg121/swa-neeti" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 border border-white/20 px-4 py-2 hover:bg-white/5 transition-colors">
-              [GITHUB] View Source ?
-            </a>
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-24">
+          <div className="lg:w-1/3 flex flex-col justify-center">
+            <div className="hero-elem font-mono text-accent text-xs tracking-widest mb-6 uppercase flex items-center gap-4">
+              <div className="w-8 h-[1px] bg-accent/50" />
+              <span>SWA.NEETI</span>
+            </div>
+            
+            <h1 className="hero-elem text-3xl md:text-5xl font-display uppercase tracking-tighter leading-tight mb-8 text-white/90">
+              Evidence-Grounded Agentic Legal Research Engine
+            </h1>
+            
+            <div className="hero-elem font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase mb-8 space-y-2">
+              <p>Legal Engineering</p>
+              <p>FastAPI / Next.js / PGVector</p>
+              <p className="text-white/30">NVIDIA Nemotron / Local BGE-M3</p>
+            </div>
+            
+            <div className="hero-elem flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-wider">
+              <span className="px-3 py-1 bg-white/5 border border-white/10">Case Reasoning</span>
+              <span className="px-3 py-1 bg-white/5 border border-white/10">RRF Retrieval</span>
+              <span className="px-3 py-1 bg-white/5 border border-white/10">Deterministic Graphs</span>
+            </div>
+            
+            <div className="hero-elem mt-16 font-mono text-xs text-text-muted tracking-widest uppercase flex items-center gap-3">
+              <span className="w-4 h-[1px] bg-text-muted" /> SCROLL TO EXPLORE
+            </div>
+          </div>
+          
+          <div className="lg:w-2/3">
+            <div className="hero-elem w-full aspect-[4/3] md:aspect-[16/10] relative rounded-sm overflow-hidden border border-white/10 bg-[#050505]">
+               <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: "linear-gradient(90deg, #fff 1px, transparent 1px), linear-gradient(0deg, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10 mix-blend-screen opacity-90">
+                 <div className="w-full max-w-lg font-mono text-[10px] md:text-xs text-accent/70 tracking-widest text-left space-y-2 mb-8 p-4 border border-accent/20 bg-accent/5">
+                   <p>&#123;</p>
+                   <p className="pl-4">"node_type": "CaseFact",</p>
+                   <p className="pl-4">"support": "EvidenceChunk_04",</p>
+                   <p className="pl-4">"status": "CANDIDATE"</p>
+                   <p>&#125;</p>
+                 </div>
+                 <h2 className="font-display text-4xl text-white/40 tracking-tight uppercase">Traceable Reasoning</h2>
+               </div>
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* 02 PROBLEM STATEMENT */}
-        <section className="case-section mb-24">
-          <SectionHeader number="02" title="The Engineering Problem" />
-          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl">
-            <p>
-              How do you make an LLM answer legal questions? This is the wrong question. 
+      <div className="max-w-4xl mx-auto px-6 md:px-12 py-24 md:py-32 space-y-32 md:space-y-40">
+        
+        {/* 01 PROBLEM */}
+        <CaseSection>
+          <SectionHeader number="01" title="The Problem" />
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p className="text-xl text-white/90 leading-relaxed mb-8">
+              "Ask an LLM a legal question" is the wrong engineering problem. The real challenge is determining how legal research can be structured so that facts, evidence, legal authority, citations, research gaps, and competing arguments remain strictly traceable throughout an agentic workflow.
             </p>
             <p>
-              The real engineering challenge is: <strong>"How do I constrain an LLM-driven research process so facts, law, evidence, and citations remain structurally traceable?"</strong>
-            </p>
-            <p>
-              If a system cannot guarantee that a legal statute supports a proposition, or that a piece of evidence supports a fact (and not a law), the system is fundamentally flawed for legal reasoning. Swa.Neeti solves this by introducing deterministic, typed relationship graphs and bounded retrieval over an authorized Indian law corpus.
+              If a system cannot guarantee that a piece of evidence supports a factual event rather than acting as a legal precedent, or if it cannot differentiate between a retrieved statute and an invented claim, the system is fundamentally unfit for legal analysis.
             </p>
           </div>
-        </section>
+        </CaseSection>
 
-        {/* 03 RESEARCH WORKFLOW */}
-        <section className="case-section mb-24">
-          <SectionHeader number="03" title="Staged Research Workflow" />
-          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl mb-12">
+        {/* 02 DESIGN THESIS */}
+        <CaseSection>
+          <SectionHeader number="02" title="Design Thesis" />
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
-              Swa.Neeti implements a bounded, typed application flow. It does not use hidden "chain of thought". Each stage is explicit and observable:
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs text-text-muted mb-12">
-            <div className="border border-white/5 p-4 bg-[#080808]">1. Case Intake & Structured Facts</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">2. Missing Facts & Issue Spotting</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">3. Restricted Legal Search</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">4. Authority Selection</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">5. Support Validation</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">6. Bounded Gap Iteration</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">7. Adversarial Reasoning</div>
-            <div className="border border-white/5 p-4 bg-[#080808]">8. Reasoning Graph Synthesis</div>
-          </div>
-          <div className="w-full h-[400px]">
-            <VisualSlot src="/assets/projects/swa-neeti/swa-agent-loop.png" alt="[ RESEARCH STAGES & LOOP ]" className="h-full" />
-          </div>
-        </section>
-
-        {/* 04 CASE REASONING GRAPH */}
-        <section className="case-section mb-24">
-          <SectionHeader number="04" title="Case Reasoning Graph" />
-          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl mb-8">
-            <p>
-              The Case Reasoning Graph is a deterministic relational layer over canonical case state, not a free-form generic knowledge graph. Node types are strictly defined: case facts, missing facts, evidence chunks, statutes, precedents, issues, arguments, contradictions.
+              Swa.Neeti proposes that the Language Model should not act as a legal database. The model is a reasoning engine operating over a deterministic relational graph reconstructed from canonical state.
             </p>
             <p>
-              Edges use explicit relations (<code>SUPPORTED_BY</code>, <code>CONTRADICTED_BY</code>, <code>CITES</code>). Invariant rules govern this graph:
+              The application boundary enforces strict separation between the Next.js workspace and the FastAPI service. The browser receives structured Server-Sent Events containing deterministic responses—it never receives raw prompts, hidden reasoning, or arbitrary database queries. The model receives curated authority excerpts governed by a deterministic retrieval service, ensuring it cannot invent legal authority out of its latent memory.
             </p>
           </div>
-          <ul className="space-y-4 font-mono text-sm text-white/80 border-l-2 border-accent pl-6 mb-12">
-            <li>Evidence can support a fact, but evidence cannot act as legal authority.</li>
-            <li>A statute can support law, but cannot prove a factual event.</li>
-            <li>Candidate document facts remain candidates until verified.</li>
-            <li>Hypothetical case-turn scenarios always remain hypothetical.</li>
-          </ul>
-          <div className="w-full h-[400px]">
-            <VisualSlot src="/assets/projects/swa-neeti/swa-reasoning-graph.png" alt="[ DETERMINISTIC GRAPH TOPOLOGY ]" className="h-full" />
-          </div>
-        </section>
+        </CaseSection>
 
-        {/* 05 LEGAL RETRIEVAL */}
-        <section className="case-section mb-24">
-          <SectionHeader number="05" title="Hybrid Legal Retrieval (M2)" />
-          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl mb-8">
+        {/* 03 LEGAL RESEARCH LOOP */}
+        <CaseSection>
+          <SectionHeader number="03" title="Legal Research Loop" />
+          <div className="w-full h-auto aspect-[16/10] md:aspect-[16/9] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
+            <VisualSlot src="/assets/projects/swa-neeti/swa-legal-research-loop.png" alt="Bounded research loop — agentic research with explicit sufficiency and gap handling." className="h-full w-full" objectFit="contain" />
+          </div>
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
-              The retrieval pipeline is completely typed (<code>LegalSearchQuery</code>). It begins with exact statutory-reference parsing (e.g., recognizing <code>BNS Section 318</code> without requiring an LLM) and metadata/temporal filtering.
+              Swa.Neeti executes a staged, observable application workflow rather than relying on unconstrained chain-of-thought looping. The stages represent explicit application states:
+            </p>
+            <ul className="font-mono text-[11px] md:text-xs space-y-3 mt-6 mb-8 text-white/70 bg-white/5 border border-white/10 p-6 md:p-8">
+              <li><strong>Intake:</strong> Extracts only facts explicitly supported by the user text.</li>
+              <li><strong>Missing Facts / Issue Spotting:</strong> Identifies preliminary categories and factual omissions.</li>
+              <li><strong>Research Planning:</strong> Translates issues into typed research queries.</li>
+              <li><strong>Restricted Legal Search:</strong> Retrieves law from the configured corpus.</li>
+              <li><strong>Authority Selection:</strong> Filters irrelevant retrieved results.</li>
+              <li><strong>Issue Analysis:</strong> Synthesizes findings specifically for the spotted issue.</li>
+              <li><strong>Support Validation:</strong> Ensures all claims trace back to selected authority.</li>
+              <li><strong>Sufficiency & Bounded Gap Iteration:</strong> Retries retrieval if support is weak, or halts.</li>
+              <li><strong>Preliminary Synthesis:</strong> Combines issue analyses into a single report.</li>
+            </ul>
+          </div>
+        </CaseSection>
+
+        {/* 04 HYBRID RETRIEVAL */}
+        <CaseSection>
+          <SectionHeader number="04" title="Hybrid Retrieval Architecture" />
+          <div className="w-full h-auto aspect-[16/10] md:aspect-[16/9] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
+            <VisualSlot src="/assets/projects/swa-neeti/swa-retrieval-evidence-architecture.png" alt="Hybrid retrieval architecture showing RRF and deterministic embedding spaces." className="h-full w-full" objectFit="contain" />
+          </div>
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              Retrieval is governed by a typed <code>LegalSearchQuery</code>. The pipeline initiates with deterministic parsing of exact statutory references and metadata filters, bypassing semantic search when an exact citation is requested.
             </p>
             <p>
-              It combines deterministic term-overlap (lexical) and cosine similarity (dense) searches using <strong>Reciprocal Rank Fusion (k=60)</strong>, followed by a deterministic reranker. A dense-only hit without lexical corroboration or an explicit reference is deliberately withheld to avoid highly confident results for irrelevant questions.
+              For semantic queries, the architecture employs <strong>Reciprocal Rank Fusion (k=60)</strong> to combine lexical and dense retrieval scores, accounting for their inherently incompatible numerical scales. Crucially, the system utilizes isolated embedding spaces: a local BGE-M3 profile (1024-dim, processed locally on GPU) and an NVIDIA Nemotron profile operate in completely distinct partitions, preventing cross-model retrieval collisions.
+            </p>
+            <p>
+              Authority ranking is strictly applied <em>after</em> relevance scoring. An irrelevant Supreme Court judgment must not outrank highly relevant local jurisdiction law merely by possessing a higher authority class.
             </p>
           </div>
-          <div className="w-full h-[400px]">
-            <VisualSlot src="/assets/projects/swa-neeti/swa-hybrid-retrieval.png" alt="[ HYBRID RETRIEVAL PIPELINE ]" className="h-full" />
-          </div>
-        </section>
+        </CaseSection>
 
-        {/* 06 ADVERSARIAL REASONING */}
-        <section className="case-section mb-24">
-          <SectionHeader number="06" title="Adversarial Legal Reasoning" />
-          <div className="bg-accent/5 border-l-2 border-accent p-6 md:p-10 mb-8">
-            <p className="font-light text-lg leading-relaxed text-white/90">
-              The M4 stage is a bounded, conditional stage that runs only after M3 retains authority. It constructs a primary and opposing interpretation from the same issue packet. It consumes retrieved authority and does not invent a second law corpus from model memory.
+        {/* 05 EVIDENCE & PROVENANCE */}
+        <CaseSection>
+          <SectionHeader number="05" title="Evidence & Provenance" />
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              Every claim in the final analysis must demonstrate explicit provenance. The model is supplied with exact evidentiary chunks from uploaded documents. If text is unavailable, the pipeline requests OCR. Untraceable evidence quotes are aggressively discarded during validation. The system is designed to fail closed rather than construct an unsupported narrative.
             </p>
           </div>
-          <div className="w-full h-[400px]">
-            <VisualSlot src="/assets/projects/swa-neeti/swa-provenance-flow.png" alt="[ PROVENANCE & ADVERSARIAL FLOW ]" className="h-full" />
-          </div>
-        </section>
+        </CaseSection>
 
-        {/* 07 SAFETY AND LIMITATIONS */}
-        <section className="case-section mb-24">
-          <SectionHeader number="07" title="Safety & Verification" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div className="border border-white/10 p-8 bg-[#050505]">
-              <h3 className="font-mono text-xs tracking-widest uppercase text-accent mb-6 pb-2 border-b border-accent/20">VALIDATION INVARIANTS</h3>
-              <ul className="space-y-3 font-mono text-sm text-white/80">
-                <li><code>CaseReasoningGraphValidator</code> fails closed.</li>
-                <li>Unknown or cross-case identities are rejected.</li>
-                <li>Untraceable evidence quotes are discarded.</li>
-                <li>Candidate promotion must be explicit.</li>
-              </ul>
-            </div>
-            <div className="border border-white/10 p-8 bg-[#050505]">
-              <h3 className="font-mono text-xs tracking-widest uppercase text-accent mb-6 pb-2 border-b border-accent/20">CURRENT LIMITATIONS</h3>
-              <ul className="space-y-3 font-mono text-sm text-white/80">
-                <li>Requires explicit corpus ingestion bounds.</li>
-                <li>Produces preliminary research analysis, not legal advice.</li>
-                <li>Does not predict case outcomes.</li>
-                <li>Evidence descriptions are never treated as inspected evidence.</li>
-              </ul>
-            </div>
+        {/* 06 CASE REASONING GRAPH */}
+        <CaseSection>
+          <SectionHeader number="06" title="Case Reasoning Graph" />
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              The M8 reasoning layer rebuilds a deterministic relational topology representing the case. It contains strictly typed nodes including facts, missing facts, evidence chunks, documents, issues, research questions, statutes, judgments, legal propositions, arguments, and contradictions.
+            </p>
+            <p>
+              The graph enforces profound engineering invariants:
+            </p>
+            <ul className="font-mono text-[11px] md:text-xs space-y-3 mt-6 mb-8 text-white/70 bg-white/5 border border-white/10 p-6 md:p-8">
+              <li className="flex gap-4"><span className="text-accent">EVIDENCE</span> <span>can support a FACT.</span></li>
+              <li className="flex gap-4"><span className="text-accent">EVIDENCE</span> <span>cannot become LEGAL AUTHORITY.</span></li>
+              <li className="flex gap-4"><span className="text-accent">STATUTES</span> <span>can support LEGAL PROPOSITIONS.</span></li>
+              <li className="flex gap-4"><span className="text-accent">STATUTES</span> <span>cannot prove a FACTUAL EVENT occurred.</span></li>
+              <li className="flex gap-4"><span className="text-accent">CANDIDATE FACT</span> <span>remains a candidate until explicitly resolved.</span></li>
+            </ul>
           </div>
-        </section>
+        </CaseSection>
 
-        {/* 08 CLOSING */}
-        <section className="case-section border-t border-white/10 pt-24 pb-12 flex flex-col items-center text-center">
-          <Link href="/work/windy" className="group flex items-center gap-4 text-lg font-mono uppercase tracking-widest hover:text-accent transition-colors">
-            <span>Next Project: Windy</span>
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
-          </Link>
-        </section>
+        {/* 07 GAP-AWARE RESEARCH */}
+        <CaseSection>
+          <SectionHeader number="07" title="Gap-Aware Research" />
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              Research gaps are typed components of the reasoning graph, enabling the agent to evaluate the sufficiency of its own work.
+            </p>
+            <p>
+              A <strong>Retrieval Gap</strong> instructs the agent to reformulate its query. A <strong>Support Gap</strong> mandates a search for stronger authority. A <strong>Fact Gap</strong> halts legal retrieval—acknowledging that missing context cannot be solved by reading more law. Finally, a <strong>Corpus Coverage Gap</strong> stops the branch entirely, explicitly preserving the warning that the required jurisdiction is not present in the ingested database.
+            </p>
+          </div>
+        </CaseSection>
+
+        {/* 08 ADVERSARIAL REASONING */}
+        <CaseSection>
+          <SectionHeader number="08" title="Adversarial Reasoning" />
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              Instead of producing a singular, confident answer, Swa.Neeti constructs primary and opposing interpretations. 
+            </p>
+            <p>
+              Crucially, this adversarial stage consumes <em>retained authority</em> from prior stages. It evaluates material facts and conditional case-turn scenarios against the same verified evidence, preventing the LLM from inventing a second, hallucinatory body of law to support the opposing argument.
+            </p>
+          </div>
+        </CaseSection>
+
+        {/* 09 VALIDATION & SAFETY */}
+        <CaseSection>
+          <SectionHeader number="09" title="Validation & Safety" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs text-text-muted mb-8" data-familiar-protect data-familiar-reaction="read">
+            <div className="border border-white/5 p-5 bg-[#050505] hover:border-accent/40 transition-colors">Rejects unsupported authority references</div>
+            <div className="border border-white/5 p-5 bg-[#050505] hover:border-accent/40 transition-colors">Fails closed on graph validation errors</div>
+            <div className="border border-white/5 p-5 bg-[#050505] hover:border-accent/40 transition-colors">Strict typing prevents cross-case leakage</div>
+            <div className="border border-white/5 p-5 bg-[#050505] hover:border-accent/40 transition-colors">Prevents law from answering factual voids</div>
+            <div className="border border-accent/20 p-5 bg-accent/5 sm:col-span-2 text-accent text-center font-bold tracking-widest">NOT LEGAL ADVICE — PRELIMINARY ANALYSIS ONLY</div>
+          </div>
+        </CaseSection>
+
+        {/* 10 LIMITATIONS */}
+        <CaseSection>
+          <SectionHeader number="10" title="Current State & Limitations" />
+          <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
+            <p>
+              Swa.Neeti is a legal engineering demonstrator, not an operational law firm tool. The quality of research is strictly bounded by corpus coverage; if the law isn't indexed, it cannot be cited.
+            </p>
+            <p>
+              The system produces preliminary legal research analysis, never legal advice or case-outcome predictions. Research sufficiency remains qualitative, and dense retrieval performance depends heavily on the configured embedding profile (e.g., local BGE-M3 vs NVIDIA Nemotron availability). 
+            </p>
+          </div>
+        </CaseSection>
+
+        {/* 11 METADATA */}
+        <CaseSection className="border-t border-white/10 pt-24 flex flex-col items-center text-center pb-8">
+          <h3 className="font-mono text-xs tracking-widest text-white/70 uppercase mb-4">Swa.Neeti</h3>
+          <p className="font-mono text-[10px] text-accent mb-8">LEGAL ENGINEERING &middot; 2026</p>
+          <h2 className="text-xl md:text-2xl font-display uppercase tracking-tight text-white/90 mb-16 max-w-2xl">
+            Evidence-Grounded Case Reasoning
+          </h2>
+          
+          <div className="flex flex-col sm:flex-row gap-8 items-center">
+            <a href="https://github.com/vaishnavg121/swa-neeti" target="_blank" rel="noopener noreferrer" className="group flex items-center gap-4 text-xs font-mono uppercase tracking-widest hover:text-white transition-colors text-text-muted" data-familiar-protect data-familiar-reaction="wave">
+              <ExternalLink className="w-4 h-4" />
+              <span>View Source</span>
+            </a>
+            
+            <Link href="/work/windy" className="group flex items-center gap-4 text-xs font-mono uppercase tracking-widest hover:text-accent transition-colors" data-familiar-protect data-familiar-reaction="wave">
+              <span>Next Project: Windy</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
+            </Link>
+          </div>
+        </CaseSection>
 
       </div>
     </div>
   );
 };
-
