@@ -7,13 +7,13 @@ export const velociraptorAssets = {
     weaponClose: '/assets/robotics/velociraptor/parts/velociraptor-weapon-close.webp',
   },
   technical: {
-    heroWireframe: '/assets/robotics/velociraptor/technical/velociraptor-wireframe.webp',
+    heroWireframe: '/assets/robotics/velociraptor/technical/velociraptor-wireframe-new.jpg',
     topWireframe: '/assets/robotics/velociraptor/technical/velociraptor-wireframe-top.webp',
     outline: '/assets/robotics/velociraptor/technical/velociraptor-outline.webp',
     ghost: '/assets/robotics/velociraptor/technical/velociraptor-ghost.webp',
   },
   renders: {
-    hero34: '/assets/robotics/velociraptor/renders/velociraptor-hero-34.webp',
+    hero34: '/assets/robotics/velociraptor/renders/velociraptor-main.png',
     heroOpposite: '/assets/robotics/velociraptor/renders/velociraptor-hero-opposite.webp',
     top: '/assets/robotics/velociraptor/renders/velociraptor-top.webp',
     front: '/assets/robotics/velociraptor/renders/velociraptor-front.webp',
