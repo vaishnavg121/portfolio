@@ -18,7 +18,7 @@ Return a natural portfolio-assistant answer.`;
 
 export async function POST(req: Request) {
   try {
-    const { message, history } = await req.json();
+    const { message, history, routeContext } = await req.json();
     
     if (!message || typeof message !== "string") {
       return NextResponse.json({ error: "Invalid message" }, { status: 400 });
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Message too long" }, { status: 400 });
     }
     
-    const { plan, chunks, debug } = retrieveChunks(message, history || [], "context");
+    const { plan, chunks, debug } = retrieveChunks(message, history || [], routeContext);
     
     const contextText = chunks.map(c => `Title: ${c.title}\nContent: ${c.content}`).join("\n\n");
     
@@ -38,24 +38,48 @@ export async function POST(req: Request) {
     const apiKey = process.env.NVIDIA_API_KEY || process.env.OPENAI_API_KEY || "";
     const model = process.env.PORTFOLIO_CHAT_MODEL || "nvidia/nemotron-4-340b-instruct"; // Default fallback
     
-    // Deduplicate actions by target route
-    const uniqueTargets = new Set();
-    const actions = chunks
-      .filter(c => c.route || c.section)
-      .map(c => ({
-        type: "navigate",
-        label: c.route ? `Explore ${c.title.split(" -")[0]}` : `Jump to ${c.title}`,
-        target: c.route || `#${c.section}`
-      }))
-      .filter(action => {
-          if (uniqueTargets.has(action.target)) return false;
-          uniqueTargets.add(action.target);
-          return true;
-      })
-      .slice(0, plan.requiresComparison ? 2 : (plan.intent === 'navigation' ? 1 : 1));
+    // Generate deterministic actions based on AnswerPlan and PORTFOLIO_ROUTES
+    const actions: any[] = [];
+    const uniqueTargets = new Set<string>();
+    
+    const addAction = (label: string, target: string) => {
+        if (!target || uniqueTargets.has(target)) return;
+        uniqueTargets.add(target);
+        actions.push({ type: "navigate", label, target });
+    };
+
+    if (plan.intent === "navigation" && plan.targetRoute) {
+        // Direct navigation requests explicitly ask to go somewhere
+        // We figure out a good label based on the targetRoute
+        let label = "Explore";
+        if (plan.targetRoute.includes("swaneeti")) label = "Explore Swa.Neeti";
+        else if (plan.targetRoute.includes("imdpune")) label = "Explore IMD Pune";
+        else if (plan.targetRoute.includes("windy")) label = "Explore Windy";
+        else if (plan.targetRoute.includes("spenza")) label = "Explore Spenza";
+        else if (plan.targetRoute.includes("robotics")) label = "Explore Robotics";
+        else if (plan.targetRoute.includes("knowledge")) label = "View Knowledge";
+        else if (plan.targetRoute.includes("work")) label = "View Work";
+        else if (plan.targetRoute.includes("github")) label = "View GitHub";
+        else if (plan.targetRoute.includes("contact")) label = "Contact";
+        
+        addAction(label, plan.targetRoute);
+    } else if (plan.intent !== "fact") {
+        // For explanations, comparisons, list, etc. we can suggest related links (max 1 normally, 2 for comparisons)
+        const maxActions = plan.requiresComparison || plan.intent === "list" ? 2 : 1;
+        
+        for (const d of plan.domains) {
+            if (actions.length >= maxActions) break;
+            
+            if (d === "SWA_NEETI") addAction("Explore Swa.Neeti", "/work/swaneeti");
+            if (d === "IMD") addAction("Explore IMD Pune", "/work/imdpune");
+            if (d === "WINDY") addAction("Explore Windy", "/work/windy");
+            if (d === "SPENZA") addAction("Explore Spenza", "/work/spenza");
+            if (d === "ROBOTICS" || d === "THRIVEFORCE") addAction("Explore Robotics", "/#robotics");
+        }
+    }
 
     // Fallback deterministic answer generation
-    const generateFallback = () => composeFallbackAnswer(plan, chunks);
+    const generateFallback = () => composeFallbackAnswer(message, plan, chunks);
 
     if (!apiKey) {
       // Mock response if no API key is provided

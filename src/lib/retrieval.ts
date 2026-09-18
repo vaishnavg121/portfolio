@@ -1,5 +1,18 @@
 import { knowledgeBase, KnowledgeChunk, ChatDomain } from "../data/chat";
 
+export const PORTFOLIO_ROUTES = {
+  home: "/",
+  imd: "/work/imdpune",
+  swaNeeti: "/work/swaneeti",
+  windy: "/work/windy",
+  spenza: "/work/spenza",
+  robotics: "/#robotics",
+  knowledge: "/#knowledge",
+  work: "/#work",
+  contact: "/#contact",
+  github: "/#github"
+} as const;
+
 export type IntentType = "fact" | "explanation" | "comparison" | "list" | "summary" | "navigation" | "why" | "how" | "follow_up" | "unknown";
 
 export type AnswerPlan = {
@@ -23,13 +36,13 @@ function resolveEntitiesAndDomains(query: string, history: any[], routeContext?:
     entities.push(e);
   };
 
-  if (/\bimd\b/.test(q) || q.includes("meteorological") || q.includes("vertical visibility") || q.includes("airport") || q.includes("aviation")) add("IMD", "IMD");
+  if (/\bimd\b/.test(q) || q.includes("meteorological") || q.includes("vertical visibility") || q.includes("airport") || q.includes("aviation") || q.includes("weather")) add("IMD", "IMD");
   if (q.includes("swa.neeti") || q.includes("swaneeti") || q.includes("swa neeti") || q.includes("legal") || q.includes("indian law") || q.includes("rrf") || /\brag\b/.test(q)) add("SWA_NEETI", "Swa.Neeti");
-  if (q.includes("windy") || q.includes("weather agent") || q.includes("duckdb") || q.includes("nemotron") || q.includes("weather analytics") || /\brag\b/.test(q)) add("WINDY", "Windy");
+  if (q.includes("windy") || q.includes("weather agent") || q.includes("duckdb") || q.includes("nemotron") || q.includes("weather analytics") || /\brag\b/.test(q) || q.includes("weather")) add("WINDY", "Windy");
   if (q.includes("spenza") || q.includes("expense") || /\bsplit\b/.test(q) || q.includes("settlement") || q.includes("ledger") || q.includes("idempotency") || q.includes("money") || q.includes("finance project")) add("SPENZA", "Spenza");
-  if (q.includes("robotics") || q.includes("velociraptor") || q.includes("thriveforce") || q.includes("combat robot") || /\bfea\b/.test(q) || q.includes("hardware") || q.includes("3lb") || q.includes("undercutter") || q.includes("c++")) {
+  if (q.includes("robotics") || q.includes("velociraptor") || q.includes("thriveforce") || q.includes("combat robot") || /\bfea\b/.test(q) || q.includes("hardware") || q.includes("3lb") || q.includes("undercutter") || q.includes("c++") || q.includes("2000")) {
     add("ROBOTICS", "Robotics");
-    if (q.includes("velociraptor") || q.includes("thriveforce") || q.includes("combat") || q.includes("3lb") || q.includes("undercutter")) {
+    if (q.includes("velociraptor") || q.includes("thriveforce") || q.includes("combat") || q.includes("3lb") || q.includes("undercutter") || q.includes("2000")) {
       add("THRIVEFORCE", "ThriveForce");
     }
   }
@@ -38,8 +51,8 @@ function resolveEntitiesAndDomains(query: string, history: any[], routeContext?:
   if (q.includes("game") || q.includes("gaming") || q.includes("sekiro") || q.includes("tsushima") || q.includes("wukong") || q.includes("spider-man") || q.includes("play") || q.includes("fun")) add("GAMING", "Gaming");
   if (q.includes("anime") || q.includes("movie") || q.includes("death note") || q.includes("your name") || q.includes("pancreas") || q.includes("watch")) add("MOVIES_ANIME", "Movies/Anime");
   if (q.includes("finance") || q.includes("derivatives") || q.includes("risk") || q.includes("economics")) add("FINANCE", "Finance");
-  if (q.includes("skill") || q.includes("tech") || q.includes("stack") || q.includes("c++") || q.includes("python") || q.includes("know")) add("SKILLS", "Skills");
-  if (q.includes("api key") || q.includes("phone number") || q.includes("password") || q.includes("secret") || q.includes("credentials") || q.includes("email")) add("SYSTEM", "System");
+  if (q.includes("skill") || q.includes("tech") || q.includes("stack") || q.includes("c++") || q.includes("python") || q.includes("know") || q.includes("knowledge")) add("SKILLS", "Skills");
+  if (q.includes("api key") || q.includes("phone number") || q.includes("password") || q.includes("secret") || q.includes("credentials") || q.includes("email") || q.includes("environment")) add("SYSTEM", "System");
   
   if (q.includes("tell me about him") || q.includes("who is") || q.includes("about vaishnav") || q.includes("biography") || q.includes("profile") || (q.includes("tell me about") && domains.size === 0)) add("PROFILE", "Profile");
   
@@ -61,9 +74,9 @@ function resolveEntitiesAndDomains(query: string, history: any[], routeContext?:
      }
      
      // Route context fallback
-     if (domains.size === 0 && q.includes("project")) {
-         if (routeContext?.includes("swa-neeti")) add("SWA_NEETI", "Swa.Neeti");
-         if (routeContext?.includes("imd-pune")) add("IMD", "IMD");
+     if (domains.size === 0) {
+         if (routeContext?.includes("swa-neeti") || routeContext?.includes("swaneeti")) add("SWA_NEETI", "Swa.Neeti");
+         if (routeContext?.includes("imd-pune") || routeContext?.includes("imdpune")) add("IMD", "IMD");
          if (routeContext?.includes("windy")) add("WINDY", "Windy");
          if (routeContext?.includes("spenza")) add("SPENZA", "Spenza");
      }
@@ -85,14 +98,22 @@ function detectIntent(query: string, domains: ChatDomain[]): AnswerPlan {
   if (q.includes("vs") || q.includes("difference") || q.includes("compare") || q.includes("how are these different")) {
       intent = "comparison";
       requiresComparison = true;
-  } else if (q.includes("show me") || q.includes("take me") || q.includes("open") || q.includes("where can i see") || q.includes("explore") || q.includes("go to")) {
+  } else if (q.includes("show me") || q.includes("take me") || q.includes("open") || q.includes("where can i see") || q.includes("explore") || q.includes("go to") || q.includes("view")) {
       intent = "navigation";
       detailLevel = "short";
-      if (domains.includes("SWA_NEETI")) targetRoute = "/work/swa-neeti";
-      else if (domains.includes("IMD")) targetRoute = "/work/imd-pune";
-      else if (domains.includes("WINDY")) targetRoute = "/work/windy";
-      else if (domains.includes("SPENZA")) targetRoute = "/work/spenza";
-      else if (domains.includes("ROBOTICS") || domains.includes("THRIVEFORCE")) targetRoute = "#robotics";
+      
+      // Determine explicit route mapping
+      if (domains.includes("SWA_NEETI")) targetRoute = PORTFOLIO_ROUTES.swaNeeti;
+      else if (domains.includes("IMD")) targetRoute = PORTFOLIO_ROUTES.imd;
+      else if (domains.includes("WINDY")) targetRoute = PORTFOLIO_ROUTES.windy;
+      else if (domains.includes("SPENZA")) targetRoute = PORTFOLIO_ROUTES.spenza;
+      else if (domains.includes("ROBOTICS") || domains.includes("THRIVEFORCE")) targetRoute = PORTFOLIO_ROUTES.robotics;
+      else if (q.includes("knowledge") || q.includes("skills")) targetRoute = PORTFOLIO_ROUTES.knowledge;
+      else if (q.includes("work") || q.includes("project")) targetRoute = PORTFOLIO_ROUTES.work;
+      else if (q.includes("contact")) targetRoute = PORTFOLIO_ROUTES.contact;
+      else if (q.includes("github")) targetRoute = PORTFOLIO_ROUTES.github;
+      else if (q.includes("home")) targetRoute = PORTFOLIO_ROUTES.home;
+      
   } else if (/\bwhy\b/.test(q)) {
       intent = "why";
   } else if (/\bhow\b/.test(q)) {
@@ -102,7 +123,7 @@ function detectIntent(query: string, domains: ChatDomain[]): AnswerPlan {
   } else if (q.includes("tell me about") || q.includes("explain")) {
       intent = "summary";
       detailLevel = "normal";
-  } else if (q.match(/what is .* cgpa/) || q.match(/favorite/) || q.includes("where does") || q.includes("what does") || /\bwhat\b/.test(q)) {
+  } else if (q.match(/what is .* cgpa/) || q.match(/favorite/) || q.includes("where does") || q.includes("what does") || /\bwhat\b/.test(q) || /\bwhen\b/.test(q)) {
       intent = "fact";
       detailLevel = "short";
   }
@@ -124,9 +145,15 @@ export function buildAnswerPlan(query: string, history: any[], routeContext?: st
     return plan;
 }
 
-export function composeFallbackAnswer(plan: AnswerPlan, chunks: KnowledgeChunk[]): string {
+export function composeFallbackAnswer(query: string, plan: AnswerPlan, chunks: KnowledgeChunk[]): string {
     if (chunks.length === 0) {
         return "I couldn't find enough information about that in Vaishnav's portfolio.";
+    }
+    
+    // Strict safety for unknown entities in fallback mode
+    const q = query.toLowerCase();
+    if (plan.domains.includes("UNKNOWN") && (q.includes("google") || q.includes("microsoft") || q.includes("meta") || q.includes("apple") || q.includes("amazon") || q.includes("netflix") || q.includes("salary") || q.includes("championship"))) {
+         return "I couldn't find enough information about that in Vaishnav's portfolio.";
     }
     
     if (plan.domains.includes("SYSTEM")) {

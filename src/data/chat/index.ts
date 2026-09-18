@@ -94,7 +94,6 @@ export const knowledgeBase: KnowledgeChunk[] = [
     category: "experience",
     content: "During an AI/ML Internship at the India Meteorological Department (IMD) in Pune (May 2026 - Jul 2026), Vaishnav worked on aviation-weather ML, focusing on predicting visibility-related parameters from heterogeneous meteorological sensor data. He built preprocessing and data-alignment workflows across multiple airports, decoding cloud telegrams and aligning temporal data at 15-sec resolution.",
     keywords: ["imd", "pune", "meteorological", "internship", "weather", "aviation", "data", "alignment", "preprocessing", "telegrams"],
-    route: "/work/imd-pune",
     priority: 10
   },
   {
@@ -106,7 +105,6 @@ export const knowledgeBase: KnowledgeChunk[] = [
     category: "experience",
     content: "At IMD, Vaishnav benchmarked classical models including XGBoost, LightGBM, and CatBoost, and evaluated sequential deep-learning models such as LSTM, GRU, CNN-LSTM, and Attention-LSTM for MOR (Meteorological Optical Range), vertical visibility, and cloud-base prediction.",
     keywords: ["imd", "models", "xgboost", "lstm", "gru", "deep learning", "mor", "visibility", "cloud base", "vertical visibility", "machine learning"],
-    route: "/work/imd-pune",
     priority: 10
   },
   {
@@ -117,7 +115,6 @@ export const knowledgeBase: KnowledgeChunk[] = [
     category: "projects",
     content: "Swa.Neeti is an agentic legal-research system for Indian law. It turns case facts into structured facts, preliminary issues, and research plans. Its retrieval layer combines lexical and semantic search (BGE-M3), RRF fusion, and authority-aware reranking. A typed evidence graph connects facts, statutes, and precedents, with deterministic validation designed to reject unsupported references and hallucinated claims.",
     keywords: ["swa.neeti", "swaneeti", "legal", "law", "agentic", "rag", "hallucination", "precedents", "research", "graph", "indian law", "rrf"],
-    route: "/work/swa-neeti",
     priority: 10
   },
   {
@@ -128,7 +125,6 @@ export const knowledgeBase: KnowledgeChunk[] = [
     category: "projects",
     content: "Windy is an agentic weather analytics platform operating over ~15M observations across 5 airports. It routes natural language intents to DuckDB for deterministic aggregation or to a Semantic RAG index (NVIDIA Nemotron embeddings) for unstructured queries. It features an unsupervised ML pipeline (PCA + K-Means) to discover weather patterns across multivariate sensor features.",
     keywords: ["windy", "weather", "analytics", "duckdb", "rag", "nvidia", "clustering", "k-means", "pca", "agentic"],
-    route: "/work/windy",
     priority: 10
   },
   {
@@ -139,7 +135,6 @@ export const knowledgeBase: KnowledgeChunk[] = [
     category: "projects",
     content: "Spenza is a full-stack Fintech/expense management PWA built with Next.js 16, React 19, TypeScript, and PostgreSQL. It focuses on robust financial accounting by handling transactions using strict minor-unit integer math, deterministic rounding, and idempotency to ensure double-entry ledgers remain perfectly balanced even under concurrent load.",
     keywords: ["spenza", "expense", "fintech", "finance", "money", "nextjs", "postgresql", "ledger", "idempotency", "split", "settlement"],
-    route: "/work/spenza",
     priority: 10
   },
   {

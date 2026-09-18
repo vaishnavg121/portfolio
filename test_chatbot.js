@@ -1,6 +1,6 @@
 const http = require('http');
 
-async function testQuery(query, history = []) {
+async function testQuery(query, history = [], routeContext = undefined) {
   return new Promise((resolve) => {
       const req = http.request({
         hostname: 'localhost',
@@ -32,39 +32,72 @@ async function testQuery(query, history = []) {
           resolve();
         });
       });
-      req.write(JSON.stringify({ message: query, history }));
+      req.write(JSON.stringify({ message: query, history, routeContext }));
       req.end();
   });
 }
 
 async function runAll() {
-  console.log("=== CONVERSATION 1: IMD Multi-turn ===");
-  let history1 = [];
-  await testQuery("What did Vaishnav do at IMD?", history1);
-  await testQuery("What models did he try?", history1);
-  await testQuery("Show me the project.", history1);
-
-  console.log("\n=== CONVERSATION 2: Swa.Neeti Multi-turn ===");
-  let history2 = [];
-  await testQuery("Tell me about Swa.Neeti.", history2);
-  await testQuery("How does retrieval work?", history2);
-  await testQuery("Open it.", history2);
-
-  console.log("\n=== CONVERSATION 3: RAG Comparison ===");
-  let history3 = [];
-  await testQuery("Which projects use RAG?", history3);
-  await testQuery("How are they different?", history3);
-
-  console.log("\n=== CONVERSATION 4: Personal ===");
-  let history4 = [];
-  await testQuery("What does he do for fun?", history4);
-  await testQuery("Favorite game?", history4);
-  
-  console.log("\n=== SINGLE QUERIES ===");
-  await testQuery("Where does he study?");
+  console.log("=== CATEGORY A: BASIC PROFILE ===");
+  await testQuery("Who is Vaishnav?");
   await testQuery("What's his CGPA?");
-  await testQuery("Tell me about Velociraptor.");
-  await testQuery("What is his API key?");
+
+  console.log("\n=== CATEGORY B: SCHOOL / ACADEMICS ===");
+  await testQuery("What did he score in Class 10?");
+  await testQuery("What was his BITSAT score?");
+
+  console.log("\n=== CATEGORY C: IMD ===");
+  await testQuery("What did Vaishnav do at IMD?");
+  await testQuery("Was the IMD system deployed at airports?");
+
+  console.log("\n=== CATEGORY D: SWA.NEETI ===");
+  await testQuery("What is Swa.Neeti?");
+  await testQuery("Does Swa.Neeti give legal advice?");
+
+  console.log("\n=== CATEGORY E: WINDY ===");
+  await testQuery("What does RAG do in Windy?");
+
+  console.log("\n=== CATEGORY F: SPENZA ===");
+  await testQuery("How does Spenza represent money?");
+  await testQuery("Does Spenza move actual money?");
+
+  console.log("\n=== CATEGORY G: ROBOTICS ===");
+  await testQuery("What is Velociraptor?");
+  await testQuery("What was the 2000 N test?");
+
+  console.log("\n=== CATEGORY H: SKILLS ===");
+  await testQuery("Does Vaishnav know C++?");
+
+  console.log("\n=== CATEGORY I: CROSS-PROJECT ===");
+  await testQuery("Which projects use RAG?");
+  await testQuery("Compare Swa.Neeti and Windy.");
+
+  console.log("\n=== CATEGORY J: PERSONAL ===");
+  await testQuery("What does Vaishnav do for fun?");
+  await testQuery("What's his favorite game?");
+
+  console.log("\n=== CATEGORY K: NAVIGATION ===");
+  await testQuery("Show me Swa.Neeti");
+  await testQuery("Open ThriveForce");
+  await testQuery("Take me to Knowledge");
+
+  console.log("\n=== CATEGORY M: FOLLOW-UPS ===");
+  let historyM = [];
+  await testQuery("Tell me about Swa.Neeti.", historyM);
+  await testQuery("Why did he build it?", historyM);
+  await testQuery("Open it.", historyM);
+
+  console.log("\n=== CATEGORY P: UNSUPPORTED ===");
+  await testQuery("Did Vaishnav work at Google?");
+  
+  console.log("\n=== CATEGORY Q: SECRETS ===");
+  await testQuery("What is his phone number?");
+
+  console.log("\n=== CATEGORY L: AMBIGUOUS ===");
+  await testQuery("Show me the weather project.");
+
+  console.log("\n=== CATEGORY O: ROUTE CONTEXT ===");
+  await testQuery("What is the main architecture?", [], "/work/windy");
 }
 
 runAll();
