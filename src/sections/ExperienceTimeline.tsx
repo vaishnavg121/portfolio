@@ -115,29 +115,29 @@ export const ExperienceTimeline = () => {
           Experience / Chapters
         </h2>
 
-        <div className="exp-timeline-container flex flex-col gap-32 md:gap-40 relative md:pr-24">
+        <div className="exp-timeline-container flex flex-col gap-32 md:gap-40 relative">
 
           <div className="absolute left-6 md:left-[50%] top-0 bottom-0 w-[1px] bg-border/30 z-0 hidden md:block" />
           <div className="exp-timeline-rail-active absolute left-6 md:left-[50%] top-0 bottom-0 w-[1px] bg-accent z-0 hidden md:block origin-top" />
 
           {CHAPTERS.map((chapter, i) => (
             <div key={chapter.num} className="relative group chapter-block">
-              <div className="bg-num absolute -top-16 -left-8 md:-top-24 md:-left-24 text-[120px] md:text-[220px] font-display font-bold text-surface-elevated z-0 leading-none select-none transition-transform duration-700 group-hover:-translate-y-4">
+              <div className="bg-num absolute -top-16 -left-8 md:-top-24 md:-left-20 text-[120px] md:text-[220px] font-display font-bold text-surface-elevated z-0 leading-none select-none transition-transform duration-700 group-hover:-translate-y-4">
                 0{i + 1}
               </div>
 
-              <div className="chap-content relative z-10 grid grid-cols-1 md:grid-cols-[50%_1fr] gap-8 md:gap-0 items-start" data-familiar-avoid>
+              <div className="chap-content relative z-10 grid grid-cols-1 md:grid-cols-[50%_50%] gap-8 md:gap-0 items-start" data-familiar-avoid>
                 
-                <div className="pt-2 md:pr-16 lg:pr-20 max-w-full md:max-w-[500px] lg:max-w-[560px]">
+                <div className="pt-2 md:pr-14 lg:pr-20 max-w-full">
                   <div className="font-mono text-accent text-xs tracking-widest mb-4">
                     {chapter.num}
                   </div>
-                  <h3 className="text-3xl md:text-[clamp(36px,3.2vw,48px)] font-display font-medium text-text-primary mb-2 tracking-tight leading-[1.05] uppercase">
+                  <h3 className="text-3xl md:text-[clamp(28px,2.8vw,44px)] font-display font-medium text-text-primary mb-2 tracking-tight leading-[1.05] uppercase max-w-full">
                     {chapter.title}
                   </h3>
                 </div>
 
-                <div className="pt-2 pl-6 border-l border-border md:border-none md:pl-16 lg:pl-20">
+                <div className="pt-2 pl-6 border-l border-border md:border-none md:pl-14 lg:pl-20">
                   <div className="text-text-primary font-mono text-xs tracking-wider mb-4 uppercase">
                     {chapter.subtitle}
                   </div>
