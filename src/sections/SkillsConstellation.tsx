@@ -40,10 +40,10 @@ export const SkillsConstellation = () => {
   const getDefaultCamera = useCallback(() => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     return isMobile 
-      ? { x: -60, y: 180, z: 0.65 } 
-      : { x: -120, y: 240, z: 0.82 };
+      ? { x: -90, y: 180, z: 0.65 } 
+      : { x: -190, y: 240, z: 0.82 };
   }, []);
-  const camera = useRef(typeof window !== 'undefined' ? getDefaultCamera() : { x: -120, y: 240, z: 0.82 });
+  const camera = useRef(typeof window !== 'undefined' ? getDefaultCamera() : { x: -190, y: 240, z: 0.82 });
   const isPanning = useRef(false);
   const lastPan = useRef({ x: 0, y: 0 });
 
