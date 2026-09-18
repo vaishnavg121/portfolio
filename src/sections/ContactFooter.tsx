@@ -100,7 +100,7 @@ export const ContactFooter = () => {
                 <a
                   href={link.url}
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer" data-familiar-reaction="wave"
                   aria-label={`${link.name} Profile`}
                   className="text-text-primary hover:text-accent text-sm md:text-base font-mono tracking-wider transition-colors relative group block py-2 px-4 flex flex-col items-center gap-2"
                   data-cursor="VIEW"

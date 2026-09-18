@@ -171,7 +171,7 @@ export const Hero = () => {
                   <a href={socials.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub Profile" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">GitHub ↗</a>
                 </MagneticEffect>
                 <MagneticEffect intensity={0.2}>
-                  <a href={socials.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn Profile" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">LinkedIn ↗</a>
+                  <a href={socials.linkedin} target="_blank" rel="noopener noreferrer" data-familiar-reaction="wave" aria-label="LinkedIn Profile" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">LinkedIn ↗</a>
                 </MagneticEffect>
               </div>
             </motion.div>
