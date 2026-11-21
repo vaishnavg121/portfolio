@@ -110,8 +110,7 @@ export const HeroCards = () => {
 
     mm.add(
       {
-        isDesktop: "(min-width: 768px)",
-        isMobile: "(max-width: 767px)"
+        isDesktop: "(min-width: 64rem)"
       },
       (context) => {
         const { isDesktop } = context.conditions as { isDesktop: boolean };
@@ -268,7 +267,7 @@ export const HeroCards = () => {
   return (
     <div 
       ref={containerRef} 
-      className="relative mt-8 md:mt-[clamp(4rem,100vh-42rem,20rem)] ml-2 perspective-1000 w-[300px] h-[380px] md:w-[800px] md:h-[360px] z-20"
+      className="hidden lg:block relative mt-8 md:mt-[clamp(4rem,100vh-42rem,20rem)] ml-2 perspective-1000 w-[300px] h-[380px] md:w-[800px] md:h-[360px] z-20"
       aria-label="Quick Navigation"
     >
       {CARDS.map((card, i) => (

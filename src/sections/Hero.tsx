@@ -36,7 +36,8 @@ export const Hero = () => {
   useGSAP(() => {
     if (shouldReduceMotion) return;
 
-    const ctx = gsap.context(() => {
+    const media = gsap.matchMedia();
+    media.add("(min-width: 64rem)", () => {
       gsap.to('.hero-title-block', {
         y: -150,
         opacity: 0,
@@ -86,15 +87,15 @@ export const Hero = () => {
           scrub: true,
         }
       });
-    }, containerRef);
+    });
 
-    return () => ctx.revert();
+    return () => media.revert();
   }, { scope: containerRef, dependencies: [mounted, shouldReduceMotion] });
 
   return (
     <motion.section
       ref={(el) => { containerRef.current = el; visibilityRef(el); }}
-      className="relative min-h-[100svh] flex items-center justify-center overflow-hidden pt-12 md:pt-16"
+      className="relative flex items-center justify-center overflow-hidden pt-14 pb-14 lg:min-h-[100svh] lg:pt-16 lg:pb-0"
       id="hero"
       initial={{ x: 0, y: 0 }}
       animate={{ x: (!mounted || shouldReduceMotion) ? 0 : [0, 3, -2, 0], y: (!mounted || shouldReduceMotion) ? 0 : [0, -2, 1, 0] }}
@@ -104,11 +105,11 @@ export const Hero = () => {
 
       <HeroBackground bgX={bgX} bgY={bgY} mounted={mounted} shouldReduceMotion={shouldReduceMotion} />
 
-      <div className="container mx-auto px-6 md:px-12 z-10 w-full h-full flex flex-col justify-center pb-8 md:pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 relative">
+      <div className="container mx-auto px-5 sm:px-8 lg:px-12 z-10 w-full h-full flex flex-col justify-center lg:pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 lg:gap-6 relative">
 
           <motion.div
-            className="hero-title-block md:col-span-10 md:col-start-1 relative z-10"
+            className="hero-title-block min-w-0 lg:col-span-10 lg:col-start-1 relative z-10"
             style={{ x: shouldReduceMotion ? 0 : titleX, y: shouldReduceMotion ? 0 : titleY }}
             data-familiar-avoid
           >
@@ -116,10 +117,10 @@ export const Hero = () => {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: shouldReduceMotion ? 0.2 : 0.4, delay: shouldReduceMotion ? 0.1 : 0.85, ease: "easeOut" }}
-              className="mb-4 md:mb-6 font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase flex items-center gap-4"
+              className="mb-5 lg:mb-6 font-mono text-[11px] lg:text-xs text-text-muted tracking-widest uppercase flex items-center gap-3 lg:gap-4"
             >
               <span>SYS_INIT</span>
-              <div className="h-[1px] w-12 bg-border" />
+              <div className="h-[1px] w-5 lg:w-12 shrink-0 bg-border" />
               <span>{profile.positioning.split(" interested in ")[0]}</span>
             </motion.div>
 
@@ -127,7 +128,7 @@ export const Hero = () => {
               initial={{ clipPath: "polygon(0 0, 0 0, 0 100%, 0% 100%)", opacity: 0 }}
               animate={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)", opacity: 1 }}
               transition={{ duration: shouldReduceMotion ? 0.2 : 0.4, delay: shouldReduceMotion ? 0.1 : 0.88, ease: [0.11, 0, 0.5, 0] }}
-              className="text-[12vw] md:text-[8vw] lg:text-[7rem] font-display font-medium tracking-tighter leading-[0.85] uppercase"
+              className="text-[clamp(2.25rem,11.5vw,5.5rem)] lg:text-[7rem] font-display font-medium tracking-tighter leading-[0.92] lg:leading-[0.85] uppercase max-lg:[overflow-wrap:anywhere]"
             >
               {profile.shortName}
               <br />
@@ -138,7 +139,7 @@ export const Hero = () => {
           </motion.div>
 
           <motion.div
-            className="hero-subtitle-block md:col-span-5 md:col-start-7 lg:col-start-8 mt-4 md:-mt-[24rem] relative z-30"
+            className="hero-subtitle-block min-w-0 lg:col-span-5 lg:col-start-8 lg:-mt-[24rem] relative z-30"
             style={{ x: shouldReduceMotion ? 0 : subtitleX, y: shouldReduceMotion ? 0 : subtitleY }}
             data-familiar-avoid
           >
@@ -147,20 +148,20 @@ export const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: shouldReduceMotion ? 0.2 : 0.6, delay: shouldReduceMotion ? 0.15 : 0.91, ease: "easeOut" }}
             >
-              <h2 className="text-lg md:text-xl text-text-primary font-light leading-snug mb-3 border-l-2 border-accent pl-5">
+              <h2 className="text-lg sm:text-xl text-text-primary font-light leading-snug mb-3 border-l-2 border-accent pl-4 lg:pl-5">
                 Building at the intersection of <br />
                 <span className="italic font-serif">INTELLIGENCE, MARKETS & MACHINES.</span>
               </h2>
 
-              <p className="text-text-muted text-xs md:text-sm leading-relaxed pl-5 mb-6 max-w-sm whitespace-pre-line">
+              <p className="text-text-muted text-base lg:text-sm leading-relaxed pl-4 lg:pl-5 mb-3 lg:mb-6 max-w-xl lg:max-w-sm whitespace-pre-line">
                 {profile.about}
               </p>
 
-              <div className="hero-links flex flex-wrap items-center gap-4 text-[10px] md:text-xs font-mono tracking-widest uppercase pl-5 relative z-30">
+              <div className="hero-links flex flex-wrap items-center gap-x-4 gap-y-1 lg:gap-4 text-xs font-mono tracking-widest uppercase pl-4 lg:pl-5 relative z-30">
                 <MagneticEffect intensity={0.4}>
                   <button
-                    onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" })}
-                    className="flex items-center gap-2 text-text-primary hover:text-accent transition-colors group"
+                    onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: shouldReduceMotion ? "instant" : "smooth" })}
+                    className="flex min-h-11 lg:min-h-0 items-center gap-2 text-text-primary hover:text-accent transition-colors group"
                     data-cursor="VIEW"
                   >
                     Explore Work
@@ -168,15 +169,15 @@ export const Hero = () => {
                   </button>
                 </MagneticEffect>
                 <MagneticEffect intensity={0.2}>
-                  <a href={socials.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub Profile" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">GitHub ↗</a>
+                  <a href={socials.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub Profile" className="min-h-11 max-lg:inline-flex items-center lg:min-h-0 text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">GitHub ↗</a>
                 </MagneticEffect>
                 <MagneticEffect intensity={0.2}>
-                  <a href={socials.linkedin} target="_blank" rel="noopener noreferrer" data-familiar-reaction="wave" aria-label="LinkedIn Profile" className="text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">LinkedIn ↗</a>
+                  <a href={socials.linkedin} target="_blank" rel="noopener noreferrer" data-familiar-reaction="wave" aria-label="LinkedIn Profile" className="min-h-11 max-lg:inline-flex items-center lg:min-h-0 text-text-muted hover:text-text-primary transition-colors" data-cursor="VIEW">LinkedIn ↗</a>
                 </MagneticEffect>
               </div>
             </motion.div>
 
-            <div className="hero-annotation absolute -top-16 -right-4 md:-right-24 opacity-80 rotate-[8deg]">
+            <div className="hero-annotation mt-6 pl-4 lg:mt-0 lg:pl-0 lg:absolute lg:-top-16 lg:-right-24 opacity-80 lg:rotate-[8deg]">
               <motion.span
                 initial={{ opacity: 0, pathLength: 0 }}
                 animate={{ opacity: 1, pathLength: 1 }}

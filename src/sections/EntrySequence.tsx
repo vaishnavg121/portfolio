@@ -8,7 +8,7 @@ export const EntrySequence = () => {
   const [stage, setStage] = useState(0); // 0: loader, 1: slash, 2: done
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce), (width < 64rem)").matches) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setStage(2);
     }

@@ -52,6 +52,34 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+@media (width < 64rem) {
+  html {
+    scroll-padding-top: calc(3rem + env(safe-area-inset-top));
+  }
+
+  body:has(#mobile-menu[open]) {
+    overflow: hidden;
+  }
+
+  .mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 45;
+    padding-top: env(safe-area-inset-top);
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+  }
+
+  .mobile-menu {
+    inset: calc(env(safe-area-inset-top) + 0.75rem) 0 auto;
+    width: min(calc(100% - 2rem), 28rem);
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 1.5rem);
+    margin-inline: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
 /* Base custom scrollbar for dark theme */
 ::-webkit-scrollbar {
   width: 8px;

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk, JetBrains_Mono, Caveat } from "next/font/google";
 import "./globals.css";
 import React from "react";
+import { MobileNavigation } from "@/components/MobileNavigation";
 import { CommandPalette } from "@/components/CommandPalette";
 import { CustomCursor } from "@/components/CustomCursor";
 import { CompanionTester } from "@/components/companion/CompanionTester";
@@ -52,6 +53,7 @@ export default function RootLayout({
         <PointerProvider>
           <CustomCursor />
           <SystemRail />
+          <MobileNavigation />
           {children}
           <CommandPalette />
           <CompanionTester />
