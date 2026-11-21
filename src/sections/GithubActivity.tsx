@@ -33,6 +33,8 @@ export const GithubActivity = () => {
   useGSAP(() => {
     if (!mounted || !isVisible) return;
 
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
     const ctx = gsap.context(() => {
       gsap.fromTo('.gh-bg-text',
         { y: 150, opacity: 0 },

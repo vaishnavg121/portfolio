@@ -30,7 +30,7 @@ export const EngineeringNotes = () => {
     setMounted(true);
   }, []);
   useGSAP(() => {
-    if (!mounted || !isVisible) return;
+    if (!mounted || !isVisible || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const ctx = gsap.context(() => {
       gsap.fromTo('.notes-bg-text',
@@ -109,7 +109,7 @@ export const EngineeringNotes = () => {
               {RULES.map((rule, idx) => (
                 <div
                   key={idx}
-                  className="rule-item relative group cursor-default opacity-0"
+                  className="rule-item relative group cursor-default opacity-0 motion-reduce:opacity-100"
                   onMouseEnter={(e) => {
                     window.dispatchEvent(new CustomEvent("companionInteract", {
                       detail: { type: "anchor-hover", target: e.currentTarget }

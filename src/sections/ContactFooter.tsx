@@ -16,7 +16,7 @@ export const ContactFooter = () => {
     setMounted(true);
   }, []);
   useGSAP(() => {
-    if (!mounted || !isVisible) return;
+    if (!mounted || !isVisible || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
@@ -66,7 +66,7 @@ export const ContactFooter = () => {
 
         <div className="mb-8 lg:mb-16 relative">
           <p
-            className="contact-label text-text-muted font-mono text-sm tracking-widest uppercase relative z-10 mb-5 lg:mb-8 opacity-0"
+            className="contact-label text-text-muted font-mono text-sm tracking-widest uppercase relative z-10 mb-5 lg:mb-8 opacity-0 motion-reduce:opacity-100"
             data-familiar-avoid
           >
             Initiate communication sequence
@@ -74,14 +74,14 @@ export const ContactFooter = () => {
 
           <h2 className="text-[clamp(1.9rem,8vw,3.5rem)] lg:text-7xl font-display font-medium mb-6 tracking-tight relative">
             <span
-              className="contact-build inline-block relative z-10 opacity-0"
+              className="contact-build inline-block relative z-10 opacity-0 motion-reduce:opacity-100"
               data-familiar-avoid
             >
               LET&apos;S BUILD SOMETHING <br className="hidden md:block" />
             </span>
 
             <span
-              className="contact-interesting text-accent italic font-serif inline-block relative z-10 opacity-0"
+              className="contact-interesting text-accent italic font-serif inline-block relative z-10 opacity-0 motion-reduce:opacity-100"
               data-familiar-avoid
             >
               INTERESTING.
@@ -91,11 +91,11 @@ export const ContactFooter = () => {
           <div data-familiar-anchor className="absolute top-1/2 -right-32 w-4 h-4 pointer-events-none" />
         </div>
 
-        <div className="contact-line w-24 h-[1px] bg-border mb-7 lg:mb-16 origin-center scale-x-0" />
+        <div className="contact-line w-24 h-[1px] bg-border mb-7 lg:mb-16 origin-center scale-x-0 motion-reduce:scale-x-100" />
 
         <div className="flex flex-wrap justify-center gap-4 lg:gap-16 mb-12 lg:mb-32" data-familiar-avoid>
           {LINKS.map((link) => (
-            <div key={link.name} className="contact-link opacity-0">
+            <div key={link.name} className="contact-link opacity-0 motion-reduce:opacity-100">
               <MagneticEffect intensity={0.4}>
                 <a
                   href={link.url}

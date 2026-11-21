@@ -16,11 +16,13 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const list = messagesRef.current;
+    list?.scrollTo({ top: list.scrollHeight, behavior: "instant" });
   };
 
   useEffect(() => {
@@ -28,6 +30,26 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
   }, [messages]);
 
   useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const mobile = window.matchMedia("(width < 64rem)");
+    const viewport = window.visualViewport;
+    const sizeDialog = () => {
+      if (!viewport) return;
+      dialog.style.setProperty("--chat-top", `${viewport.offsetTop}px`);
+      dialog.style.setProperty("--chat-height", `${viewport.height}px`);
+    };
+    const openDialog = () => {
+      if (dialog.open) dialog.close();
+      if (mobile.matches) dialog.showModal();
+      else dialog.show();
+      sizeDialog();
+    };
+    openDialog();
+    mobile.addEventListener("change", openDialog);
+    viewport?.addEventListener("resize", sizeDialog);
+    viewport?.addEventListener("scroll", sizeDialog);
+
     // Notify companion to update its safe zones
     window.dispatchEvent(new Event("resize"));
     window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "chat-open" } }));
@@ -38,6 +60,10 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
     window.addEventListener("keydown", handleEsc);
     return () => {
        window.removeEventListener("keydown", handleEsc);
+       mobile.removeEventListener("change", openDialog);
+       viewport?.removeEventListener("resize", sizeDialog);
+       viewport?.removeEventListener("scroll", sizeDialog);
+       dialog.close();
        window.dispatchEvent(new Event("resize"));
        window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "chat-close" } }));
     };
@@ -132,31 +158,32 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
   ];
 
   return (
-    <div className="fixed bottom-0 md:bottom-8 left-0 md:left-8 z-50 w-full md:w-auto">
+    <dialog ref={dialogRef} aria-labelledby="chat-title" className="chat-window fixed z-50 m-0 max-h-none max-w-none overflow-visible border-0 bg-transparent p-0 text-text-primary"
+      onCancel={(event) => { event.preventDefault(); onClose(); }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="w-full md:w-[400px] bg-surface-elevated border-t md:border border-border shadow-2xl flex flex-col overflow-hidden h-[100dvh] md:h-[550px] md:max-h-[calc(100vh-4rem)]"
+        className="w-full lg:w-[400px] bg-surface-elevated border-t lg:border border-border shadow-2xl flex flex-col overflow-hidden h-full lg:h-[550px] lg:max-h-[calc(100vh-4rem)]"
         data-familiar-protect="true"
         onMouseEnter={() => {
            window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "chat-hover" } }));
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border bg-surface">
+        <div className="chat-heading flex shrink-0 items-center justify-between px-4 lg:p-4 border-b border-border bg-surface">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-accent" />
-            <h3 className="font-mono text-xs uppercase tracking-widest text-text-primary">ASK / VAISHNAV</h3>
+            <h3 id="chat-title" className="font-mono text-xs uppercase tracking-widest text-text-primary">ASK / VAISHNAV</h3>
           </div>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors">
+          <button type="button" aria-label="Close chat" onClick={onClose} className="grid size-11 lg:size-auto place-items-center text-text-muted hover:text-text-primary transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6 custom-scrollbar text-sm font-sans pb-4">
+        <div ref={messagesRef} className="min-h-0 flex-1 overscroll-contain overflow-y-auto p-4 flex flex-col gap-6 custom-scrollbar text-sm font-sans pb-4">
           {messages.length === 0 ? (
             <div className="flex flex-col gap-6 pt-2 text-text-muted">
               <p className="leading-relaxed text-sm">Ask about projects, engineering, AI/ML, finance, robotics or Vaishnav.</p>
@@ -165,7 +192,7 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
                   <button
                     key={i}
                     onClick={() => handleSend(s)}
-                    className="text-left p-3 border border-border hover:border-text-muted transition-colors text-xs text-text-primary leading-tight"
+                    className="min-h-11 lg:min-h-0 text-left p-3 border border-border hover:border-text-muted transition-colors text-xs text-text-primary leading-tight"
                   >
                     {s}
                   </button>
@@ -178,7 +205,7 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
                 <div className="flex items-center gap-2 text-[10px] font-mono tracking-widest text-text-muted uppercase">
                   {m.role === "user" ? "Visitor" : "Assistant"}
                 </div>
-                <div className={`leading-relaxed whitespace-pre-wrap px-3 py-2 ${m.role === "user" ? "bg-surface text-text-primary text-right rounded-bl-xl rounded-tl-xl rounded-tr-xl" : "text-text-primary"}`}>
+                <div className={`max-w-full [overflow-wrap:anywhere] leading-relaxed whitespace-pre-wrap px-3 py-2 ${m.role === "user" ? "bg-surface text-text-primary text-right rounded-bl-xl rounded-tl-xl rounded-tr-xl" : "text-text-primary"}`}>
                   {m.content || (m.role === "assistant" && isLoading ? "..." : "")}
                 </div>
                 {m.actions && m.actions.length > 0 && (
@@ -187,7 +214,7 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
                       <button
                         key={i}
                         onClick={() => handleAction(action)}
-                        className="flex items-center gap-1 text-[10px] font-mono tracking-widest uppercase border border-border px-3 py-1.5 hover:border-accent hover:text-accent transition-colors"
+                        className="min-h-11 lg:min-h-0 flex items-center gap-1 text-[10px] font-mono tracking-widest uppercase border border-border px-3 py-1.5 hover:border-accent hover:text-accent transition-colors"
                       >
                         {action.label}
                         <ChevronRight className="w-3 h-3" />
@@ -198,17 +225,17 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
               </div>
             ))
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-border bg-surface relative z-10">
+        <div className="chat-compose shrink-0 p-3 lg:p-4 border-t border-border bg-surface relative z-10">
           <div className="relative">
             <textarea
+              aria-label="Ask about my work"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
                   handleSend(input);
                 } else {
@@ -216,14 +243,15 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
                 }
               }}
               placeholder="Ask about my work..."
-              className="w-full bg-background border border-border text-sm p-3 pr-10 focus:outline-none focus:border-text-muted resize-none custom-scrollbar rounded-none"
+              className="w-full bg-background border border-border text-base lg:text-sm p-3 pr-14 lg:pr-10 focus:outline-none focus:border-text-muted resize-none custom-scrollbar rounded-none"
               rows={2}
               maxLength={500}
             />
             <button
               onClick={() => handleSend(input)}
+              aria-label="Send message"
               disabled={isLoading || !input.trim()}
-              className="absolute bottom-3 right-3 text-text-muted hover:text-accent disabled:opacity-50 transition-colors"
+              className="absolute bottom-2 right-1 grid size-11 lg:bottom-3 lg:right-3 lg:size-auto place-items-center text-text-muted hover:text-accent disabled:opacity-50 transition-colors"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -233,7 +261,7 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
         {/* Red Accent Bar */}
         <div className="h-[2px] w-full bg-accent shrink-0" />
       </motion.div>
-    </div>
+    </dialog>
   );
 };
 

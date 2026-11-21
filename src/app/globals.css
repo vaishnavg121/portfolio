@@ -57,7 +57,7 @@ body {
     scroll-padding-top: calc(3rem + env(safe-area-inset-top));
   }
 
-  body:has(#mobile-menu[open]) {
+  body:has(#mobile-menu[open], .chat-window[open]) {
     overflow: hidden;
   }
 
@@ -77,6 +77,35 @@ body {
     margin-inline: auto;
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+}
+
+.chat-window {
+  inset: auto auto 2rem 2rem;
+}
+
+@media (width < 64rem) {
+  .chat-window {
+    inset: var(--chat-top, 0px) 0 auto;
+    width: 100%;
+    height: var(--chat-height, 100dvh);
+  }
+
+  .chat-window::backdrop {
+    background: var(--background);
+  }
+
+  .chat-heading {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .chat-compose {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  :is(a, button, summary):focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
   }
 }
 

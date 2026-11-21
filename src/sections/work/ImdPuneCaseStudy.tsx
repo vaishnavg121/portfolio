@@ -56,6 +56,8 @@ export const ImdPuneCaseStudy = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
     const ctx = gsap.context(() => {
       gsap.from('.hero-elem', {
         y: 40,

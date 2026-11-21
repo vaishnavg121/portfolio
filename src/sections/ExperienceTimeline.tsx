@@ -41,7 +41,8 @@ export const ExperienceTimeline = () => {
   useGSAP(() => {
     if (!isVisible) return;
 
-    const ctx = gsap.context(() => {
+    const media = gsap.matchMedia();
+    media.add("(min-width: 64rem) and (prefers-reduced-motion: no-preference)", () => {
       const chapters = gsap.utils.toArray('.chapter-block') as HTMLElement[];
 
       chapters.forEach((chap) => {
@@ -103,9 +104,9 @@ export const ExperienceTimeline = () => {
           }
         }
       );
-    }, containerRef);
+    });
 
-    return () => ctx.revert();
+    return () => media.revert();
   }, { scope: containerRef, dependencies: [isVisible] });
 
   return (
