@@ -57,7 +57,7 @@ export const GithubActivity = () => {
   };
 
   return (
-    <section className="py-24 md:py-32 bg-[#050505] relative overflow-hidden group/section border-y border-white/[0.02]" id="github" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
+    <section className="py-16 lg:py-32 bg-[#050505] relative overflow-hidden group/section border-y border-white/[0.02]" id="github" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
       <div className="gh-bg-text absolute top-10 left-0 right-0 text-[10vw] font-display font-bold text-white whitespace-nowrap opacity-0 pointer-events-none select-none z-0">
         DEVELOPMENT ACTIVITY
       </div>
@@ -150,15 +150,15 @@ export const GithubActivity = () => {
              <div className="w-[1px] h-20 bg-gradient-to-b from-transparent via-[#cc3333] to-transparent" />
           </div>
 
-          <div className="relative z-10 px-5 py-10 md:pl-28 md:pr-16 md:py-16">
+          <div className="relative z-10 px-4 py-8 sm:px-6 lg:pl-28 lg:pr-16 lg:py-16">
 
-            <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-16">
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 lg:mb-16">
               <div>
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex flex-wrap items-center gap-2 lg:gap-3 mb-3">
                   <h2 className="text-sm font-mono text-text-muted tracking-widest uppercase">
                     Development Activity
                   </h2>
-                  <div className="h-[1px] w-12 bg-white/10"></div>
+                  <div className="hidden h-[1px] w-12 bg-white/10 lg:block"></div>
                   <span className="text-[10px] font-mono text-text-muted opacity-50 uppercase tracking-widest">Activity_Matrix // {calendarData?.currentYear || new Date().getFullYear()}</span>
                 </div>
                 <h3 className="text-3xl font-display font-medium text-text-primary">
@@ -184,7 +184,7 @@ export const GithubActivity = () => {
               </div>
             </div>
 
-            <div className="w-full overflow-x-auto pb-8 pt-4 custom-scrollbar relative md:[&::-webkit-scrollbar]:hidden" data-anchor="github-calendar-center">
+            <div className="w-full overflow-x-auto pb-8 pt-4 custom-scrollbar relative md:[&::-webkit-scrollbar]:hidden" tabIndex={0} role="region" aria-label="Contribution calendar, scroll horizontally for more dates" data-anchor="github-calendar-center">
               {isLoading ? (
                 <div className="h-[150px] flex items-center justify-center font-mono text-xs text-text-muted tracking-widest">
                   [ FETCHING_DATA ]
@@ -257,7 +257,7 @@ export const GithubActivity = () => {
               )}
             </div>
 
-            <div className="flex items-center justify-between border-t border-white/[0.04] pt-8 mt-2 relative z-20">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.04] pt-8 mt-2 relative z-20">
               <div className="text-[9px] font-mono text-text-muted/40 uppercase tracking-widest flex items-center gap-2">
                 365D TRACE <span className="opacity-30">{"///"}</span> <span className="text-text-muted/20">CODE {"//"} BUILD {"//"} ITERATE</span>
               </div>

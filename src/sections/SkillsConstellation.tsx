@@ -843,7 +843,7 @@ export const SkillsConstellation = () => {
   renderQueue.sort((a, b) => a.yDepth - b.yDepth);
 
   return (
-    <section id="knowledge" className="relative bg-[#030303] overflow-hidden select-none h-[100vh] w-full flex flex-col" ref={containerRef}>
+    <section aria-label="Skills landscape" className="relative bg-[#030303] overflow-hidden select-none h-[100vh] w-full flex flex-col" ref={containerRef}>
       {isVisible && (
         <>
           {/* SEARCH */}

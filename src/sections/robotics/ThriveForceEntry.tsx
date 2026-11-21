@@ -29,7 +29,8 @@ export const ThriveForceEntry = () => {
   useEffect(() => {
       if (!transitionRef.current) return;
       
-      const ctx = gsap.context(() => {
+      const media = gsap.matchMedia();
+      media.add("(min-width: 64rem) and (prefers-reduced-motion: no-preference)", () => {
           // The transition scrub timeline
           const tl = gsap.timeline({
               scrollTrigger: {
@@ -53,12 +54,12 @@ export const ThriveForceEntry = () => {
             
       }, transitionRef);
       
-      return () => ctx.revert();
+      return () => media.revert();
   }, []);
 
   const handlePointerMove = (e: React.PointerEvent) => {
     // Only update CSS variables on the container to avoid React state lag
-    if (!robotRef.current) return;
+    if (!robotRef.current || e.pointerType === "touch") return;
     const rect = robotRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -70,7 +71,8 @@ export const ThriveForceEntry = () => {
     }
   };
 
-  const handlePointerEnter = () => {
+  const handlePointerEnter = (e: React.PointerEvent) => {
+      if (e.pointerType === "touch") return;
       gsap.to([xrayRef.current, crosshairRef.current], { opacity: 1, duration: 0.3, overwrite: "auto" });
   };
 
@@ -82,14 +84,14 @@ export const ThriveForceEntry = () => {
     <section ref={containerRef} className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 flex flex-col">
        
        {/* SECTION 1 - INTRO */}
-       <div className="relative w-full h-[80vh] flex items-center px-6 lg:px-16 overflow-hidden">
-          <div className="absolute left-6 lg:left-16 top-1/4 bottom-0 w-[1px] bg-accent/20" />
+       <div className="relative w-full py-16 lg:py-0 lg:h-[80vh] flex items-center px-5 lg:px-16 overflow-hidden">
+          <div className="absolute left-5 lg:left-16 top-1/4 bottom-0 w-[1px] bg-accent/20" />
           <div className="relative z-10">
-             <div className="font-mono text-xs text-text-muted tracking-widest uppercase mb-6 flex gap-4">
+             <div className="font-mono text-xs text-text-muted tracking-widest uppercase mb-6 flex flex-wrap gap-x-4 gap-y-2">
                 <span>06 / ThriveForce</span>
                 <span className="text-accent">Combat Robotics</span>
              </div>
-             <h2 className="font-display text-[clamp(64px,8vw,130px)] leading-[0.85] tracking-tighter uppercase text-[#f5ede3] mb-8">
+             <h2 className="font-display text-[clamp(2.7rem,10vw,5.5rem)] lg:text-[clamp(64px,8vw,130px)] leading-[0.85] tracking-tighter uppercase text-[#f5ede3] mb-8">
                 Designed<br/>For Impact.
              </h2>
              <div className="font-mono text-[10px] tracking-widest uppercase text-[#e0e0e0]">
@@ -99,16 +101,16 @@ export const ThriveForceEntry = () => {
        </div>
 
        {/* SECTION 2 - MACHINE & WEAPON FLOW */}
-       <div className="relative w-full flex flex-col lg:flex-row px-6 lg:px-16">
+       <div className="relative w-full flex flex-col lg:flex-row px-5 lg:px-16">
           
           {/* Left Column - Scrolling Text */}
-          <div className="w-full lg:w-1/3 flex flex-col pt-24 pb-32">
+          <div className="w-full lg:w-1/3 flex flex-col gap-10 py-10 lg:gap-0 lg:pt-24 lg:pb-32">
              
              {/* Velociraptor Specs */}
-             <div className="min-h-screen flex flex-col justify-center">
+             <div className="lg:min-h-screen flex flex-col justify-center">
                  <h3 className="font-display text-[clamp(30px,3.5vw,52px)] uppercase tracking-tighter text-[#f5ede3] mb-2">Velociraptor</h3>
-                 <p className="font-mono text-xs tracking-widest text-accent uppercase mb-12">3 LB / 1.36 KG &bull; Horizontal Undercutter</p>
-                 <div className="flex flex-col gap-8">
+                 <p className="font-mono text-xs tracking-widest text-accent uppercase mb-6 lg:mb-12">3 LB / 1.36 KG &bull; Horizontal Undercutter</p>
+                 <div className="flex flex-col gap-4 lg:gap-8">
                      {["Low Center of Mass", "Belt-Driven Weapon", "Symmetrical Drivetrain", "Modular Internal Layout"].map((text, i) => (
                         <div key={i} className="flex items-center gap-4">
                            <div className="w-12 h-[1px] bg-accent/40" />
@@ -119,10 +121,10 @@ export const ThriveForceEntry = () => {
              </div>
 
              {/* Weapon Specs (Trigger for Transition) */}
-             <div ref={transitionRef} className="min-h-screen flex flex-col justify-center text-left relative">
+             <div ref={transitionRef} className="lg:min-h-screen flex flex-col justify-center text-left relative">
                  <div className="absolute -left-6 lg:-left-16 top-0 bottom-0 w-[1px] bg-accent/20 origin-top" />
                  
-                 <div className="mb-16">
+                 <div className="mb-6 lg:mb-16">
                      <h3 className="font-display text-[clamp(38px,4.5vw,68px)] leading-none tracking-tighter text-[#f5ede3] mb-4">
                          <span className="text-accent">~470</span> J
                      </h3>
@@ -130,7 +132,7 @@ export const ThriveForceEntry = () => {
                          Stored Weapon Energy<br/>Repository Design Value
                      </p>
                  </div>
-                 <div className="grid grid-cols-2 gap-x-12 gap-y-12">
+                 <div className="grid grid-cols-2 gap-5 lg:gap-12">
                      {[
                         { val: "0.297 KG", lbl: "Weapon Mass" },
                         { val: "140.6 MM", lbl: "Diameter" },
@@ -149,12 +151,12 @@ export const ThriveForceEntry = () => {
           </div>
 
           {/* Right Column - Sticky Visual */}
-          <div className="w-full lg:w-2/3 relative h-[50vh] lg:h-auto">
-              <div className="lg:sticky top-0 h-[50vh] lg:h-screen w-full flex flex-col justify-center p-8">
+          <div className="w-full lg:w-2/3 relative pb-10 lg:pb-0">
+              <div className="lg:sticky top-0 lg:h-screen w-full flex flex-col justify-center lg:p-8">
                   
                   <div 
                      ref={robotRef}
-                     className="relative w-full h-[80%] border border-white/5 rounded-sm overflow-hidden bg-[#020202] flex flex-col items-center justify-center pointer-events-auto"
+                     className="relative w-full h-[clamp(15rem,65vw,29rem)] lg:h-[80%] border border-white/5 rounded-sm overflow-hidden bg-[#020202] flex flex-col items-center justify-center pointer-events-auto"
                      onPointerMove={handlePointerMove}
                      onPointerEnter={handlePointerEnter}
                      onPointerLeave={handlePointerLeave}
@@ -162,10 +164,10 @@ export const ThriveForceEntry = () => {
                       {/* Grid / Tech Background */}
                       <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
                       
-                      <div className="absolute top-4 left-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">VELOCIRAPTOR / CAD</div>
-                      <div className="absolute top-4 right-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">03/TF</div>
-                      <div className="absolute bottom-4 left-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">3 LB UNDERCUTTER &middot; ENGINEERED SYSTEM</div>
-                      <div className="absolute bottom-4 right-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">VERIFIED</div>
+                      <div className="absolute top-4 left-3 lg:left-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">VELOCIRAPTOR / CAD</div>
+                      <div className="absolute top-4 right-3 lg:right-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">03/TF</div>
+                      <div className="absolute bottom-4 left-3 lg:left-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30 max-lg:max-w-[62%]">3 LB UNDERCUTTER &middot; ENGINEERED SYSTEM</div>
+                      <div className="absolute bottom-4 right-3 lg:right-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">VERIFIED</div>
 
                       {/* SVG Filter for Red Wireframe Effect */}
                       <svg className="hidden">

@@ -61,18 +61,18 @@ export const ContactFooter = () => {
   ];
 
   return (
-    <footer className="py-32 bg-surface relative overflow-hidden" id="contact" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
-      <div className="container mx-auto px-6 md:px-12 relative z-10 flex flex-col items-center text-center">
+    <footer className="py-16 pb-28 lg:py-32 bg-surface relative overflow-hidden" id="contact" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
+      <div className="container mx-auto px-5 sm:px-8 lg:px-12 relative z-10 flex flex-col items-center text-center">
 
-        <div className="mb-16 relative">
+        <div className="mb-8 lg:mb-16 relative">
           <p
-            className="contact-label text-text-muted font-mono text-sm tracking-widest uppercase relative z-10 mb-8 opacity-0"
+            className="contact-label text-text-muted font-mono text-sm tracking-widest uppercase relative z-10 mb-5 lg:mb-8 opacity-0"
             data-familiar-avoid
           >
             Initiate communication sequence
           </p>
 
-          <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-medium mb-6 tracking-tight relative">
+          <h2 className="text-[clamp(1.9rem,8vw,3.5rem)] lg:text-7xl font-display font-medium mb-6 tracking-tight relative">
             <span
               className="contact-build inline-block relative z-10 opacity-0"
               data-familiar-avoid
@@ -91,9 +91,9 @@ export const ContactFooter = () => {
           <div data-familiar-anchor className="absolute top-1/2 -right-32 w-4 h-4 pointer-events-none" />
         </div>
 
-        <div className="contact-line w-24 h-[1px] bg-border mb-16 origin-center scale-x-0" />
+        <div className="contact-line w-24 h-[1px] bg-border mb-7 lg:mb-16 origin-center scale-x-0" />
 
-        <div className="flex flex-wrap justify-center gap-8 md:gap-16 mb-32" data-familiar-avoid>
+        <div className="flex flex-wrap justify-center gap-4 lg:gap-16 mb-12 lg:mb-32" data-familiar-avoid>
           {LINKS.map((link) => (
             <div key={link.name} className="contact-link opacity-0">
               <MagneticEffect intensity={0.4}>
@@ -106,7 +106,7 @@ export const ContactFooter = () => {
                   data-cursor="VIEW"
                 >
                   <span className="font-bold text-lg">{link.name} ↗</span>
-                  <span className="text-xs text-text-muted">{link.display}</span>
+                  <span className="text-xs text-text-muted break-all lg:break-normal">{link.display}</span>
                   <span className="absolute -bottom-0 left-0 w-full h-[1px] bg-accent scale-x-0 origin-left group-hover:scale-x-100 transition-transform" />
                 </a>
               </MagneticEffect>

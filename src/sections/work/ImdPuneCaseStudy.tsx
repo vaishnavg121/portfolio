@@ -24,7 +24,7 @@ const VisualSlot = ({ src, alt, className = "", objectFit = "contain" }: { src: 
         alt={alt} 
         fill 
         sizes="100vw"
-        className={`object-${objectFit} opacity-0 transition-opacity duration-700`} 
+        className={`${objectFit === "cover" ? "object-cover" : "object-contain"} opacity-0 transition-opacity duration-700`}
         onError={(e) => {
           (e.target as HTMLElement).style.display = 'none';
         }}
@@ -37,7 +37,7 @@ const VisualSlot = ({ src, alt, className = "", objectFit = "contain" }: { src: 
 };
 
 const SectionHeader = ({ number, title }: { number: string, title: string }) => (
-  <div className="mb-10 md:mb-14 case-section-header">
+  <div className="mb-6 lg:mb-14 case-section-header">
     <div className="flex items-center gap-4 text-accent font-mono text-xs tracking-widest mb-4">
       <span>{number}</span>
       <div className="w-12 h-[1px] bg-accent/50" />
@@ -83,16 +83,16 @@ export const ImdPuneCaseStudy = () => {
   }, { scope: containerRef });
 
   return (
-    <div className="bg-[#020202] min-h-screen text-[#e5e5e5] selection:bg-accent-soft selection:text-accent font-sans" ref={containerRef}>
+    <main className="bg-[#020202] min-h-screen text-[#e5e5e5] selection:bg-accent-soft selection:text-accent font-sans" ref={containerRef}>
       
       {/* 01 HERO */}
-      <section className="pt-32 pb-24 md:pt-48 md:pb-32 px-6 md:px-12 max-w-7xl mx-auto border-b border-white/5 relative">
-        <Link href="/#work" className="hero-elem inline-flex items-center gap-2 text-text-muted hover:text-white font-mono text-xs tracking-widest uppercase mb-12 md:mb-20 group transition-colors">
+      <section className="pt-8 pb-12 lg:pt-48 lg:pb-32 px-5 sm:px-8 lg:px-12 max-w-7xl mx-auto border-b border-white/5 relative">
+        <Link href="/#work" className="hero-elem inline-flex min-h-11 lg:min-h-0 items-center gap-2 text-text-muted hover:text-white font-mono text-xs tracking-widest uppercase mb-7 lg:mb-20 group transition-colors">
           <MoveLeft className="w-4 h-4 group-hover:-translate-x-2 transition-transform" />
           Back to Work
         </Link>
 
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-24">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-24">
           <div className="lg:w-1/3 flex flex-col justify-center">
             <div className="hero-elem font-mono text-accent text-xs tracking-widest mb-6 uppercase flex items-center gap-4">
               <div className="w-8 h-[1px] bg-accent/50" />
@@ -116,7 +116,7 @@ export const ImdPuneCaseStudy = () => {
               <span className="px-3 py-1 bg-white/5 border border-white/10">Sensor Integration</span>
             </div>
             
-            <div className="hero-elem mt-16 font-mono text-xs text-text-muted tracking-widest uppercase flex items-center gap-3">
+            <div className="hero-elem mt-7 lg:mt-16 font-mono text-xs text-text-muted tracking-widest uppercase flex items-center gap-3">
               <span className="w-4 h-[1px] bg-text-muted" /> SCROLL TO EXPLORE
             </div>
           </div>
@@ -129,7 +129,7 @@ export const ImdPuneCaseStudy = () => {
         </div>
       </section>
 
-      <div className="max-w-4xl mx-auto px-6 md:px-12 py-24 md:py-32 space-y-32 md:space-y-40">
+      <div className="max-w-4xl mx-auto px-5 sm:px-8 lg:px-12 py-12 lg:py-32 space-y-16 lg:space-y-40">
         
         {/* 02 THE PROBLEM */}
         <CaseSection>
@@ -389,6 +389,6 @@ export const ImdPuneCaseStudy = () => {
         </CaseSection>
 
       </div>
-    </div>
+    </main>
   );
 };

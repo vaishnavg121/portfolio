@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
+import { MobileWorkCards } from "./MobileWorkCards";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -75,7 +76,8 @@ export const SelectedWork = () => {
   useGSAP(() => {
     if (!mounted) return;
 
-    const ctx = gsap.context(() => {
+    const media = gsap.matchMedia();
+    media.add("(min-width: 64rem)", () => {
       const projects = gsap.utils.toArray('.project-scene') as HTMLElement[];
 
       projects.forEach((project, index) => {
@@ -162,19 +164,20 @@ export const SelectedWork = () => {
           );
         }
       });
-    }, containerRef);
+    });
 
-    return () => ctx.revert();
+    return () => media.revert();
   }, { scope: containerRef, dependencies: [mounted] });
 
   return (
-    <section className="py-32 relative bg-background" id="work" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
-      <div className="container mx-auto px-6 md:px-12">
-        <h2 className="text-sm font-mono text-text-muted mb-24 tracking-widest uppercase border-b border-border pb-4">
+    <section className="py-16 lg:py-32 relative bg-background" id="work" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
+      <div className="container mx-auto px-5 sm:px-8 lg:px-12">
+        <h2 className="text-sm font-mono text-text-muted mb-7 lg:mb-24 tracking-widest uppercase border-b border-border pb-4">
           Selected Work
         </h2>
 
-        <div className="flex flex-col md:flex-row items-start relative gap-12 md:gap-16">
+        <MobileWorkCards />
+        <div className="hidden lg:flex flex-row items-start relative gap-16">
 
           <div className="w-full md:w-5/12 md:sticky md:top-32 relative z-40 min-h-[350px]" data-familiar-avoid>
             <AnimatePresence mode="wait">

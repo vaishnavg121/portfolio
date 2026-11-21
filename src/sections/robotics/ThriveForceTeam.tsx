@@ -6,10 +6,10 @@ import { velociraptorAssets } from '../../data/velociraptorAssets';
 
 export const ThriveForceTeam = () => {
   return (
-    <section className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 pb-32">
+    <section className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 pb-14 lg:pb-32">
         
         {/* COMBINED TEAM SPREAD */}
-        <div className="w-full px-6 lg:px-16 pt-32 pb-24 border-b border-white/5">
+        <div className="w-full px-5 lg:px-16 py-12 lg:pt-32 lg:pb-24 border-b border-white/5">
             <h2 className="font-display text-[clamp(30px,3.5vw,52px)] uppercase tracking-tighter leading-none mb-4">
                 Team ThriveForce
             </h2>
@@ -93,9 +93,9 @@ export const ThriveForceTeam = () => {
         </div>
 
         {/* ACHIEVEMENTS, SPONSORS & CLOSE */}
-        <div className="w-full px-6 lg:px-16 pt-16 flex flex-col gap-16">
+        <div className="w-full px-5 lg:px-16 pt-10 lg:pt-16 flex flex-col gap-9 lg:gap-16">
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-9 lg:gap-16">
                 {/* Milestones */}
                 <div>
                     <h3 className="font-mono text-xs tracking-widest text-text-muted uppercase mb-8">Milestones</h3>
@@ -127,7 +127,7 @@ export const ThriveForceTeam = () => {
             </div>
 
             {/* CLOSING */}
-            <div className="mt-8 pt-16 border-t border-white/5 text-center relative overflow-hidden pb-16">
+            <div className="mt-2 pt-10 lg:mt-8 lg:pt-16 border-t border-white/5 text-center relative overflow-hidden pb-9 lg:pb-16">
                 <div className="absolute inset-0 w-full h-full opacity-[0.02] pointer-events-none mix-blend-screen flex items-center justify-center">
                     <Image src={velociraptorAssets.technical.heroWireframe} alt="Silhouette" fill className="object-cover" />
                 </div>

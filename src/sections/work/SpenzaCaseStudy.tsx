@@ -24,7 +24,7 @@ const VisualSlot = ({ src, alt, className = "", objectFit = "contain" }: { src: 
         alt={alt} 
         fill 
         sizes="100vw"
-        className={`object-${objectFit} opacity-0 transition-opacity duration-700`} 
+        className={`${objectFit === "cover" ? "object-cover" : "object-contain"} opacity-0 transition-opacity duration-700`}
         onError={(e) => {
           (e.target as HTMLElement).style.display = 'none';
         }}
@@ -37,7 +37,7 @@ const VisualSlot = ({ src, alt, className = "", objectFit = "contain" }: { src: 
 };
 
 const SectionHeader = ({ number, title }: { number: string, title: string }) => (
-  <div className="mb-10 md:mb-14 case-section-header">
+  <div className="mb-6 lg:mb-14 case-section-header">
     <div className="flex items-center gap-4 text-accent font-mono text-xs tracking-widest mb-4">
       <span>{number}</span>
       <div className="w-12 h-[1px] bg-accent/50" />
@@ -83,16 +83,16 @@ export const SpenzaCaseStudy = () => {
   }, { scope: containerRef });
 
   return (
-    <div className="bg-[#020202] min-h-screen text-[#e5e5e5] selection:bg-accent-soft selection:text-accent font-sans" ref={containerRef}>
+    <main className="bg-[#020202] min-h-screen text-[#e5e5e5] selection:bg-accent-soft selection:text-accent font-sans" ref={containerRef}>
       
       {/* 01 HERO */}
-      <section className="pt-32 pb-24 md:pt-48 md:pb-32 px-6 md:px-12 max-w-7xl mx-auto border-b border-white/5 relative">
-        <Link href="/#work" className="hero-elem inline-flex items-center gap-2 text-text-muted hover:text-white font-mono text-xs tracking-widest uppercase mb-12 md:mb-20 group transition-colors" data-familiar-reaction="wave">
+      <section className="pt-8 pb-12 lg:pt-48 lg:pb-32 px-5 sm:px-8 lg:px-12 max-w-7xl mx-auto border-b border-white/5 relative">
+        <Link href="/#work" className="hero-elem inline-flex min-h-11 lg:min-h-0 items-center gap-2 text-text-muted hover:text-white font-mono text-xs tracking-widest uppercase mb-7 lg:mb-20 group transition-colors" data-familiar-reaction="wave">
           <MoveLeft className="w-4 h-4 group-hover:-translate-x-2 transition-transform" />
           Back to Work
         </Link>
 
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-24">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-24">
           <div className="lg:w-1/3 flex flex-col justify-center">
             <div className="hero-elem font-mono text-accent text-xs tracking-widest mb-6 uppercase flex items-center gap-4">
               <div className="w-8 h-[1px] bg-accent/50" />
@@ -115,30 +115,30 @@ export const SpenzaCaseStudy = () => {
               <span className="px-3 py-1 bg-white/5 border border-white/10">Monorepo</span>
             </div>
             
-            <div className="hero-elem mt-16 font-mono text-xs text-text-muted tracking-widest uppercase flex items-center gap-3">
+            <div className="hero-elem mt-7 lg:mt-16 font-mono text-xs text-text-muted tracking-widest uppercase flex items-center gap-3">
               <span className="w-4 h-[1px] bg-text-muted" /> SCROLL TO EXPLORE
             </div>
           </div>
           
           <div className="lg:w-2/3">
-            <div className="hero-elem w-full aspect-[4/3] md:aspect-[16/10] relative rounded-sm overflow-hidden border border-white/10 bg-[#050505]">
+            <div className="hero-elem w-full min-h-[16rem] lg:min-h-0 lg:aspect-[16/10] relative rounded-sm overflow-hidden border border-white/10 bg-[#050505]">
                <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: "linear-gradient(90deg, #fff 1px, transparent 1px), linear-gradient(0deg, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
-               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10 mix-blend-screen opacity-90">
-                 <div className="w-full max-w-lg font-mono text-[10px] md:text-xs text-accent/70 tracking-widest text-left space-y-2 mb-8 p-4 border border-accent/20 bg-accent/5">
+               <div className="inset-0 lg:absolute flex min-h-[16rem] lg:min-h-0 flex-col items-center justify-center text-center p-4 lg:p-8 relative z-10 mix-blend-screen opacity-90">
+                 <div className="w-full max-w-lg font-mono text-[10px] md:text-xs text-accent/70 tracking-widest text-left space-y-2 mb-5 lg:mb-8 p-3 lg:p-4 max-lg:[overflow-wrap:anywhere] border border-accent/20 bg-accent/5">
                    <p>&#123;</p>
                    <p className="pl-4">"currency": "INR",</p>
                    <p className="pl-4">"amountMinor": "10000",</p>
                    <p className="pl-4">"idempotency_key": "req_8xV1..."</p>
                    <p>&#125;</p>
                  </div>
-                 <h2 className="font-display text-4xl text-white/40 tracking-tight uppercase">Financial Invariants</h2>
+                 <h2 className="font-display text-2xl lg:text-4xl text-white/40 tracking-tight uppercase">Financial Invariants</h2>
                </div>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="max-w-4xl mx-auto px-6 md:px-12 py-24 md:py-32 space-y-32 md:space-y-40">
+      <div className="max-w-4xl mx-auto px-5 sm:px-8 lg:px-12 py-12 lg:py-32 space-y-16 lg:space-y-40">
         
         {/* 01 PROBLEM */}
         <CaseSection>
@@ -234,6 +234,6 @@ export const SpenzaCaseStudy = () => {
         </CaseSection>
 
       </div>
-    </div>
+    </main>
   );
 };

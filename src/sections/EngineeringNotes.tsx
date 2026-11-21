@@ -65,7 +65,7 @@ export const EngineeringNotes = () => {
   }, { scope: containerRef, dependencies: [mounted, isVisible] });
 
   return (
-    <section id="notes" className="py-32 bg-background relative flex justify-center overflow-hidden" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
+    <section id="notes" className="py-16 lg:py-32 bg-background relative flex justify-center overflow-hidden" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at center, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
 
       <div className="notes-bg-text absolute top-20 left-0 text-[12vw] font-display font-bold text-white whitespace-nowrap opacity-0 pointer-events-none select-none z-0">
@@ -80,14 +80,14 @@ export const EngineeringNotes = () => {
           whileInView={{ opacity: 1, rotate: 0, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-          className="w-[90%] max-w-2xl bg-[#0a0a0a] border border-[#333] shadow-2xl relative p-8 md:p-16 overflow-hidden"
+          className="w-[calc(100%-2.5rem)] lg:w-[90%] max-w-2xl bg-[#0a0a0a] border border-[#333] shadow-2xl relative px-5 py-8 lg:p-16 overflow-hidden"
           style={{
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255,255,255,0.05) inset"
           }}
         >
           <PaperNoise />
 
-          <div className="absolute left-0 top-0 bottom-0 w-8 border-r border-[#222] bg-[#050505] z-10" />
+          <div className="absolute left-0 top-0 bottom-0 w-3 lg:w-8 border-r border-[#222] bg-[#050505] z-10" />
 
           <div
             className="absolute -top-10 -right-10 w-48 h-48 opacity-20 pointer-events-none rotate-[15deg]"
@@ -99,13 +99,13 @@ export const EngineeringNotes = () => {
             }}
           />
 
-          <div className="ml-4 md:ml-8 relative z-20" data-familiar-avoid>
-            <h2 className="text-xl md:text-2xl font-serif italic text-text-primary mb-12 border-b border-[#333] pb-4 tracking-wide relative">
+          <div className="ml-2 lg:ml-8 relative z-20" data-familiar-avoid>
+            <h2 className="text-xl md:text-2xl font-serif italic text-text-primary mb-7 lg:mb-12 border-b border-[#333] pb-4 tracking-wide relative">
               Engineering Notes
               <div data-familiar-anchor className="absolute right-0 top-0 w-4 h-4 pointer-events-none" />
             </h2>
 
-            <div className="flex flex-col gap-12">
+            <div className="flex flex-col gap-7 lg:gap-12">
               {RULES.map((rule, idx) => (
                 <div
                   key={idx}
@@ -131,7 +131,7 @@ export const EngineeringNotes = () => {
               ))}
             </div>
 
-            <div className="mt-16 pt-8 border-t border-[#333] flex justify-between items-center opacity-40">
+            <div className="mt-9 pt-5 lg:mt-16 lg:pt-8 border-t border-[#333] flex justify-between items-center opacity-40">
               <div className="font-mono text-xs">CLASSIFIED / PERSONAL</div>
               <div className="font-mono text-xs text-accent">VG-121</div>
             </div>
