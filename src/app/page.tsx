@@ -1,7 +1,7 @@
 import { EntrySequence } from "@/sections/EntrySequence";
 import { Hero } from "@/sections/Hero";
 import { SelectedWork } from "@/sections/SelectedWork";
-import { SkillsLandscape } from "@/sections/SkillsLandscape";
+import { SkillsConstellation } from "@/sections/SkillsConstellation";
 import { ExperienceTimeline } from "@/sections/ExperienceTimeline";
 import { ThriveForceSection } from "@/sections/robotics/ThriveForceSection";
 import { GithubActivity } from "@/sections/GithubActivity";
@@ -14,7 +14,7 @@ export default function Home() {
       <EntrySequence />
       <Hero />
       <SelectedWork />
-      <SkillsLandscape />
+      <SkillsConstellation />
       <ExperienceTimeline />
       <ThriveForceSection />
       <GithubActivity />

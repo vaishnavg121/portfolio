@@ -5,13 +5,17 @@ import React, { useRef, useState, useMemo, useEffect, useCallback } from "react"
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useSectionVisibility } from "@/lib/visibility";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { ArrowUpRight, Maximize, Minus, Plus, X, Search, MousePointer2 } from "lucide-react";
 
 import { NODES, CONNECTIONS, DOMAINS } from "@/lib/skills_data";
 import { SKILL_DETAILS } from "@/lib/skill_details";
 import { projects } from "@/lib/profile";
+
+const compactLayout = "(width < 64rem)";
+const isCompact = () => typeof window !== "undefined" && window.matchMedia(compactLayout).matches;
+type TouchPoint = { x: number; y: number };
 
 const formatSvgNumber = (value: number) => Number(value.toFixed(3));
 
@@ -21,6 +25,9 @@ export const SkillsConstellation = () => {
   const svgRef = useRef<SVGSVGElement>(null);
   const worldRef = useRef<SVGGElement>(null);
   const nodeRefs = useRef<{ [key: string]: SVGGElement | null }>({});
+  const touches = useRef(new Map<number, TouchPoint>());
+  const touchStart = useRef<{ point: TouchPoint; node?: string; moved: boolean } | null>(null);
+  const reduceMotion = useReducedMotion();
   const terrainRefs = useRef<(SVGPathElement | null)[]>([]);
   const cursorMaskRef = useRef<SVGCircleElement>(null);
   const interactionState = useRef({ x: 0, y: 0, nx: 0, ny: 0, master: 0, _wasZero: true });
@@ -37,13 +44,8 @@ export const SkillsConstellation = () => {
   const [searchResults, setSearchResults] = useState<typeof NODES>([]);
   
   const [viewportSize, setViewportSize] = useState({ w: 0, h: 0 });
-  const getDefaultCamera = useCallback(() => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    return isMobile 
-      ? { x: -90, y: 180, z: 0.65 } 
-      : { x: -190, y: 240, z: 0.82 };
-  }, []);
-  const camera = useRef(typeof window !== 'undefined' ? getDefaultCamera() : { x: -190, y: 240, z: 0.82 });
+  const camera = useRef({ x: -190, y: 240, z: 0.82 });
+  const visibleCamera = useRef({ x: 0, y: 0, z: 1 });
   const isPanning = useRef(false);
   const lastPan = useRef({ x: 0, y: 0 });
 
@@ -261,7 +263,7 @@ export const SkillsConstellation = () => {
     const placed: { x: number, y: number, w: number, h: number }[] = [];
     
     let panelLeft = Infinity;
-    if (pinnedNode && viewportSize.w > 0) {
+    if (pinnedNode && viewportSize.w >= 1024) {
       const targetNode = nodesProj.find(n => n.id === pinnedNode);
       if (targetNode) {
         let targetZ = camera.current.z * 1.10;
@@ -373,10 +375,49 @@ export const SkillsConstellation = () => {
     return layout;
   }, [nodesProj, domainsProj, pinnedNode, viewportSize]);
 
+  const getDefaultCamera = useCallback(() => {
+    if (!isCompact()) return { x: -190, y: 240, z: 0.82 };
+
+    const coordinates = nodesProj.map(({ proj }) => proj);
+    const left = Math.min(...coordinates.map(({ x }) => x));
+    const right = Math.max(...coordinates.map(({ x }) => x));
+    const top = Math.min(...coordinates.map(({ y }) => y));
+    const bottom = Math.max(...coordinates.map(({ y }) => y));
+    const { width, height } = cachedRect.current;
+    const scale = Math.max(width / 2400, height / 1600);
+    const fit = scale ? Math.min(width / (right - left + 510), height / (bottom - top + 460)) / scale : 0.7;
+
+    return { x: -(left + right) * fit / 2, y: -(top + bottom) * fit / 2 - 90, z: fit };
+  }, [nodesProj]);
+
+  const toSvgPoint = (x: number, y: number) => {
+    const matrix = svgRef.current?.getScreenCTM();
+    return matrix ? new DOMPoint(x, y).matrixTransform(matrix.inverse()) : null;
+  };
+
   const applyCamera = useCallback((animate = false, duration = 0.5) => {
-    if (!worldRef.current) return;
+    const world = worldRef.current;
+    if (!world) return;
     const { x, y, z } = camera.current;
-    if (animate) {
+    if (isCompact()) {
+      const visible = visibleCamera.current;
+      const render = () => {
+        world.setAttribute("transform", "translate(" + visible.x + " " + visible.y + ") scale(" + visible.z + ")");
+        const { width, height } = cachedRect.current;
+        const pixelsPerUnit = Math.max(width / 2400, height / 1600) * visible.z;
+        world.toggleAttribute("data-overview", pixelsPerUnit < 0.34);
+      };
+      gsap.killTweensOf(visible);
+      if (animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        gsap.to(visible, { x, y, z, duration, ease: "power3.inOut", onUpdate: render });
+      } else {
+        Object.assign(visible, { x, y, z });
+        render();
+      }
+      return;
+    }
+    gsap.killTweensOf(worldRef.current, "x,y,scale");
+    if (animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       gsap.to(worldRef.current, { x, y, scale: z, duration, ease: "power3.inOut" });
     } else {
       gsap.set(worldRef.current, { x, y, scale: z });
@@ -399,7 +440,14 @@ export const SkillsConstellation = () => {
   }, []);
 
   const clampCamera = useCallback(() => {
-    const minZ = 0.85; 
+    if (isCompact()) {
+      const state = camera.current;
+      state.z = Math.max(Math.min(getDefaultCamera().z, 0.75), Math.min(6, state.z));
+      state.x = Math.max(-1600 * state.z, Math.min(1600 * state.z, state.x));
+      state.y = Math.max(-950 * state.z, Math.min(950 * state.z, state.y));
+      return;
+    }
+    const minZ = 0.85;
     const maxZ = 2.5;
     camera.current.z = Math.max(minZ, Math.min(maxZ, camera.current.z));
     
@@ -407,7 +455,7 @@ export const SkillsConstellation = () => {
     
     camera.current.x = Math.max(bounds.minX, Math.min(bounds.maxX, camera.current.x));
     camera.current.y = Math.max(bounds.minY, Math.min(bounds.maxY, camera.current.y));
-  }, [getCameraBounds]);
+  }, [getCameraBounds, getDefaultCamera]);
 
   useEffect(() => {
     setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
@@ -424,9 +472,21 @@ export const SkillsConstellation = () => {
     };
     
     updateRects();
-    window.addEventListener('resize', updateRects);
-    return () => window.removeEventListener('resize', updateRects);
-  }, []);
+    if (isCompact()) {
+      camera.current = getDefaultCamera();
+      applyCamera();
+    }
+    const observer = new ResizeObserver(() => {
+      const { width, height } = cachedRect.current;
+      updateRects();
+      if (isCompact() && (width !== cachedRect.current.width || height !== cachedRect.current.height)) {
+        camera.current = getDefaultCamera();
+        applyCamera();
+      }
+    });
+    if (svgWrapperRef.current) observer.observe(svgWrapperRef.current);
+    return () => observer.disconnect();
+  }, [applyCamera, getDefaultCamera]);
 
   useEffect(() => {
     if (isDragging) {
@@ -437,9 +497,22 @@ export const SkillsConstellation = () => {
 
   const handleWheel = useCallback((e: WheelEvent) => {
     const isCmdOrCtrl = e.metaKey || e.ctrlKey;
-    if (isCmdOrCtrl) {
+    if (isCmdOrCtrl && worldRef.current && svgRef.current) {
       e.preventDefault();
       
+      if (isCompact()) {
+        const point = toSvgPoint(e.clientX, e.clientY);
+        if (!point) return;
+        const { x, y, z } = camera.current;
+        camera.current.z *= Math.exp(-e.deltaY * 0.008);
+        clampCamera();
+        const scale = camera.current.z / z;
+        camera.current.x = point.x + (x - point.x) * scale;
+        camera.current.y = point.y + (y - point.y) * scale;
+        clampCamera();
+        applyCamera();
+        return;
+      }
       const pt = svgRef.current!.createSVGPoint();
       pt.x = e.clientX; pt.y = e.clientY;
       const svgP = pt.matrixTransform(worldRef.current!.getScreenCTM()!.inverse());
@@ -468,6 +541,25 @@ export const SkillsConstellation = () => {
   }, [handleWheel]);
 
   const onPointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType === "touch") {
+      const point = { x: e.clientX, y: e.clientY };
+      touches.current.set(e.pointerId, point);
+      if (touches.current.size === 1) {
+        const node = (e.target as Element).closest("[data-skill-node]")?.getAttribute("data-skill-node");
+        touchStart.current = { point, node: node ?? undefined, moved: false };
+      } else if (touchStart.current) {
+        touchStart.current.moved = true;
+      }
+      e.currentTarget.setPointerCapture(e.pointerId);
+      if (isCompact()) {
+        gsap.killTweensOf(visibleCamera.current);
+        camera.current = { ...visibleCamera.current };
+      } else {
+        gsap.killTweensOf(worldRef.current, "x,y,scale");
+      }
+      return;
+    }
+
     if ((e.target as Element).closest('.no-pan') || (e.target as Element).closest('.interactive-ui')) return;
     isPanning.current = true;
     lastPan.current = { x: e.clientX, y: e.clientY };
@@ -478,14 +570,47 @@ export const SkillsConstellation = () => {
   const onPointerMove = (e: React.PointerEvent) => {
     if (!isVisible) return;
 
-    if (svgWrapperRef.current && !isDragging) {
+    if (e.pointerType === "touch") {
+      const start = touchStart.current;
+      const previous = touches.current.get(e.pointerId);
+      if (!start || !previous) return;
+
+      const point = { x: e.clientX, y: e.clientY };
+      const other = [...touches.current].find(([id]) => id !== e.pointerId)?.[1];
+      if (!start.moved && Math.hypot(point.x - start.point.x, point.y - start.point.y) < 6) return;
+      if (!start.moved) {
+        start.moved = true;
+        setShowHint(false);
+      }
+      touches.current.set(e.pointerId, point);
+
+      const midpoint = (p: TouchPoint) => other ? { x: (p.x + other.x) / 2, y: (p.y + other.y) / 2 } : p;
+      const distance = (a: TouchPoint, b: TouchPoint) => Math.hypot(a.x - b.x, a.y - b.y);
+      const beforeMid = midpoint(previous);
+      const afterMid = midpoint(point);
+      const before = toSvgPoint(beforeMid.x, beforeMid.y);
+      const after = toSvgPoint(afterMid.x, afterMid.y);
+      if (!before || !after) return;
+
+      const { x, y, z } = camera.current;
+      if (other) camera.current.z *= distance(point, other) / Math.max(8, distance(previous, other));
+      clampCamera();
+      const ratio = camera.current.z / z;
+      camera.current.x = after.x - (before.x - x) * ratio;
+      camera.current.y = after.y - (before.y - y) * ratio;
+      clampCamera();
+      applyCamera();
+      return;
+    }
+
+    if (svgWrapperRef.current && !isDragging && !reduceMotion && !isCompact()) {
       const rect = cachedRect.current;
       const nx = (e.clientX - rect.left) / rect.width - 0.5;
       const ny = (e.clientY - rect.top) / rect.height - 0.5;
       gsap.to(svgWrapperRef.current, { rotateX: -ny * 4, rotateY: nx * 4, duration: 1, ease: "power2.out" });
     }
 
-    if (!isPanning.current && svgRef.current) {
+    if (!isPanning.current && svgRef.current && worldRef.current) {
         const pt = svgRef.current.createSVGPoint();
         pt.x = e.clientX; pt.y = e.clientY;
         const svgP = pt.matrixTransform(worldRef.current!.getScreenCTM()!.inverse());
@@ -505,9 +630,9 @@ export const SkillsConstellation = () => {
     lastPan.current = { x: e.clientX, y: e.clientY };
 
     const ratio = 2400 / (cachedRect.current.svgWidth || 2400);
-
-    camera.current.x += dx * ratio;
-    camera.current.y += dy * ratio;
+    const matrix = isCompact() ? svgRef.current?.getScreenCTM() : null;
+    camera.current.x += dx * (matrix ? 1 / matrix.a : ratio);
+    camera.current.y += dy * (matrix ? 1 / matrix.d : ratio);
     clampCamera();
     applyCamera(false);
   };
@@ -540,6 +665,14 @@ export const SkillsConstellation = () => {
 
     const svgRect = cachedRect.current;
     if (svgRect.width === 0) return;
+
+    if (isCompact()) {
+      const z = Math.max(1.35, camera.current.z);
+      camera.current = { x: -nData.proj.x * z, y: -nData.proj.y * z - 190, z };
+      clampCamera();
+      applyCamera(true);
+      return;
+    }
     
     // 1. Zoom strategy (slightly stronger focus as requested: ~10% bump)
     let targetZ = camera.current.z * 1.10;
@@ -563,11 +696,60 @@ export const SkillsConstellation = () => {
     applyCamera(true, 0.5);
   }, [nodesProj, clampCamera, applyCamera]);
 
+  const selectNode = (id: string) => {
+    setHoveredNode(null);
+    setPinnedNode(pinnedNode === id ? null : id);
+    if (pinnedNode !== id) {
+      focusOnNode(id);
+      const position = nodesProj.find((node) => node.id === id)?.proj;
+      const highlight = cursorMaskRef.current;
+      if (position && highlight && isCompact() && !reduceMotion) {
+        highlight.setAttribute("cx", String(position.x));
+        highlight.setAttribute("cy", String(position.y));
+        gsap.fromTo(highlight, { opacity: 0.7 }, { opacity: 0, delay: 0.45, duration: 0.45, overwrite: true });
+      }
+    }
+  };
+
+  const endTouch = (e: React.PointerEvent, canceled = false) => {
+    if (!touches.current.delete(e.pointerId) || touches.current.size) return;
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (canceled || !start || start.moved) return;
+    if (start.node) selectNode(start.node);
+    else setPinnedNode(null);
+  };
+
+  const zoomBy = (factor: number) => {
+    const previous = camera.current.z;
+    camera.current.z *= factor;
+    clampCamera();
+    const ratio = camera.current.z / previous;
+    camera.current.x *= ratio;
+    camera.current.y *= ratio;
+    clampCamera();
+    applyCamera(true);
+  };
+
   const focusOn = useCallback((x: number, y: number, z: number) => {
     camera.current = { x: -x * z, y: -y * z, z };
     clampCamera();
     applyCamera(true, 0.9);
   }, [applyCamera, clampCamera]);
+
+  const selectRegion = useCallback((id: string) => {
+    const domain = domainsProj.find((entry) => entry.id === id);
+    if (!domain) return;
+    setActiveDomain(id);
+    setPinnedNode(null);
+    focusOn(domain.proj.x, domain.proj.y, isCompact() ? 1.25 : 1.1);
+  }, [domainsProj, focusOn]);
+
+  useEffect(() => {
+    const openRegion = (e: Event) => selectRegion((e as CustomEvent<string>).detail);
+    window.addEventListener("portfolio:knowledge-region", openRegion);
+    return () => window.removeEventListener("portfolio:knowledge-region", openRegion);
+  }, [selectRegion]);
 
   const resetCamera = useCallback(() => {
     setActiveDomain(null);
@@ -593,6 +775,14 @@ export const SkillsConstellation = () => {
   useGSAP(() => {
     const tl = gsap.timeline();
     const defaultCam = getDefaultCamera();
+    if (isCompact() || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      camera.current = defaultCam;
+      applyCamera();
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        gsap.from(worldRef.current, { opacity: 0.3, duration: 0.7, ease: "power2.out" });
+      }
+      return;
+    }
     
     // Start slightly higher so we drop into place smoothly
     gsap.set(worldRef.current, { opacity: 0, y: defaultCam.y - 60, x: defaultCam.x });
@@ -682,7 +872,7 @@ export const SkillsConstellation = () => {
           fill="var(--text-muted)"
           opacity="0.3"
           textAnchor="middle"
-          className="font-display tracking-[0.2em] pointer-events-none uppercase no-pan domain-label font-bold"
+          className="font-display tracking-[0.2em] max-lg:tracking-[0.06em] max-lg:opacity-75 pointer-events-none uppercase no-pan domain-label font-bold"
         >
           {d.label.split('// ')[1]}
         </text>
@@ -767,11 +957,6 @@ export const SkillsConstellation = () => {
     const isCore = node.level === 'B';
     const isRich = !!SKILL_DETAILS[node.id];
     
-    const isMobile = viewportSize.w > 0 && viewportSize.w < 768;
-    if (isMobile && !isHub && !isRich && !isHovered && !isFirstOrder && camera.current.z < 1.3 && searchQuery === "") {
-       opacity = 0;
-    }
-
     const radius = isHub ? 8 : isCore ? 4 : 2.5;
     const fontSize = isHub ? 18 : isCore ? 14 : 14;
 
@@ -790,16 +975,25 @@ export const SkillsConstellation = () => {
           className={`constellation-node transition-all duration-300 no-pan ${isRich ? 'is-rich' : ''} ${opacity === 0 ? 'pointer-events-none' : 'cursor-pointer'}`}
           transform={`translate(${node.proj.x}, ${node.proj.y})`}
           opacity={opacity}
+          data-skill-node={node.id}
+          role="button"
+          tabIndex={0}
+          aria-label={node.label}
+          aria-pressed={pinnedNode === node.id}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
+            selectNode(node.id);
+          }}
           onMouseEnter={() => { if (!pinnedNode && !isDragging) setHoveredNode(node.id); }}
           onMouseLeave={() => { if (!pinnedNode) setHoveredNode(null); }}
           onClick={(e) => {
-            if (isDragging) return;
+            if (isDragging || ("pointerType" in e.nativeEvent && e.nativeEvent.pointerType === "touch")) return;
             e.stopPropagation();
-            setPinnedNode(pinnedNode === node.id ? null : node.id);
-            setHoveredNode(null);
-            if (pinnedNode !== node.id) focusOnNode(node.id);
+            selectNode(node.id);
           }}
         >
+          <circle r="20" fill="transparent" className="lg:hidden" />
           {isHub && <line x1="0" y1="0" x2="0" y2="15" stroke="var(--text-muted)" strokeWidth="1" opacity={isHovered ? 1 : 0.4} />}
           
           {layout.hasLeader && (
@@ -830,7 +1024,7 @@ export const SkillsConstellation = () => {
             fontSize={fontSize}
             fill={isHovered ? "var(--text-primary)" : isFirstOrder ? "var(--text-primary)" : (isRich ? "var(--text-primary)" : "var(--text-muted)")}
             textAnchor={textAnchor as "start" | "middle" | "end"}
-            className={`font-mono tracking-widest pointer-events-none transition-all duration-500 uppercase ${isRich ? 'font-bold' : 'font-medium'}`}
+            className={`skill-label font-mono tracking-widest max-lg:tracking-normal lg:pointer-events-none transition-all duration-300 uppercase ${isHub || isHovered ? 'skill-label-featured max-lg:[font-size:38px]' : 'max-lg:[font-size:26px]'} ${isRich ? 'font-bold' : 'font-medium'}`}
             style={{ textShadow: "0 1px 3px rgba(0,0,0,1), 0 0 7px rgba(0,0,0,0.8)" }}
           >
             {node.label}
@@ -843,16 +1037,27 @@ export const SkillsConstellation = () => {
   renderQueue.sort((a, b) => a.yDepth - b.yDepth);
 
   return (
-    <section aria-label="Skills landscape" className="relative bg-[#030303] overflow-hidden select-none h-[100vh] w-full flex flex-col" ref={containerRef}>
-      {isVisible && (
-        <>
+    <section id="knowledge" aria-label="Knowledge Landscape" className="relative isolate bg-[#030303] overflow-hidden select-none h-[clamp(28rem,calc(100svh-3rem),47rem)] lg:h-[100vh] w-full flex flex-col" ref={(node) => { containerRef.current = node; visibilityRef(node); }}>
+          <h2 className="absolute left-4 top-4 z-40 font-mono text-xs uppercase tracking-widest text-[#f5ede3] lg:sr-only">Knowledge Landscape</h2>
+          <label className="absolute right-4 left-4 top-[5.65rem] z-40 lg:hidden">
+            <span className="sr-only">Knowledge region</span>
+            <select
+              value={activeDomain ?? ""}
+              onChange={(event) => event.target.value ? selectRegion(event.target.value) : resetCamera()}
+              className="w-full min-h-10 border border-border bg-[#0a0a0a] px-3 font-mono text-sm text-text-primary"
+            >
+              <option value="">All regions</option>
+              {DOMAINS.map(({ id, label }) => <option key={id} value={id}>{label.split("// ")[1]}</option>)}
+            </select>
+          </label>
           {/* SEARCH */}
-          <div className="absolute top-6 left-6 z-40 interactive-ui">
+          <div className="absolute top-10 left-4 right-4 lg:top-6 lg:left-6 lg:right-auto z-[45] interactive-ui">
             <div className="relative group/search">
               <div className="flex items-center gap-3 px-4 py-3 bg-[#0a0a0a]/90 backdrop-blur-md border border-border transition-all">
                 <Search className="w-4 h-4 text-text-muted" />
                 <input
-                  type="text"
+                  type="search"
+                  aria-label="Search skills"
                   placeholder="SEARCH SKILLS"
                   value={searchQuery}
                   onChange={(e) => {
@@ -861,7 +1066,7 @@ export const SkillsConstellation = () => {
                       setSearchResults(NODES.filter(n => n.label.toLowerCase().includes(e.target.value.toLowerCase())));
                     } else setSearchResults([]);
                   }}
-                  className="bg-transparent border-none outline-none text-xs font-mono text-text-primary w-32 focus:w-48 transition-all placeholder:text-text-muted/40 uppercase tracking-widest"
+                  className="bg-transparent border-none outline-none text-base lg:text-xs font-mono text-text-primary min-w-0 w-full lg:w-32 lg:focus:w-48 transition-all placeholder:text-text-muted/40 uppercase tracking-widest"
                 />
               </div>
               {searchQuery.length > 1 && searchResults.length > 0 && (
@@ -878,7 +1083,7 @@ export const SkillsConstellation = () => {
                            setSearchResults([]);
                         }
                       }}
-                      className="text-left px-4 py-3 font-mono text-[10px] tracking-widest text-text-muted hover:text-text-primary hover:bg-white/5 uppercase transition-colors border-b border-border/50 last:border-b-0"
+                      className="text-left px-4 min-h-11 py-3 font-mono text-xs lg:text-[10px] tracking-widest text-text-muted hover:text-text-primary hover:bg-white/5 uppercase transition-colors border-b border-border/50 last:border-b-0"
                     >
                       {res.label}
                     </button>
@@ -896,7 +1101,7 @@ export const SkillsConstellation = () => {
           
           <AnimatePresence>
              {showHint && !isDragging && (
-               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute bottom-12 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 bg-[#0a0a0a]/80 backdrop-blur-md border border-border rounded-full pointer-events-none">
+               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="hidden lg:flex absolute bottom-12 left-1/2 -translate-x-1/2 z-40 items-center gap-3 px-4 py-2 bg-[#0a0a0a]/80 backdrop-blur-md border border-border rounded-full pointer-events-none">
                  <MousePointer2 className="w-3.5 h-3.5 text-accent" />
                  <span className="font-mono text-[10px] tracking-widest text-text-muted uppercase">Drag to explore / Scroll to read</span>
                </motion.div>
@@ -904,7 +1109,7 @@ export const SkillsConstellation = () => {
           </AnimatePresence>
 
           {/* DOMAIN FILTERS */}
-          <div className="absolute top-6 right-6 z-40 interactive-ui hidden md:block">
+          <div className="absolute top-6 right-6 z-40 interactive-ui hidden lg:block">
             <div className="flex flex-col items-end gap-1">
               <button 
                  onClick={() => { setActiveDomain(null); resetCamera(); }}
@@ -915,12 +1120,7 @@ export const SkillsConstellation = () => {
               {DOMAINS.map(d => (
                 <button 
                   key={d.id}
-                  onClick={() => {
-                    setActiveDomain(d.id);
-                    setPinnedNode(null);
-                    const dp = domainsProj.find(proj => proj.id === d.id);
-                    if (dp) focusOn(dp.proj.x, dp.proj.y, 1.1);
-                  }}
+                  onClick={() => selectRegion(d.id)}
                   className={`font-mono text-[10px] tracking-widest px-3 py-1 uppercase whitespace-nowrap transition-colors ${activeDomain === d.id ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                 >
                   {d.label.split('// ')[1]}
@@ -929,37 +1129,19 @@ export const SkillsConstellation = () => {
             </div>
           </div>
 
-          {/* CONTROLS */}
-          <div className="absolute bottom-6 left-6 z-30 hidden md:flex items-end gap-4 interactive-ui">
-            <div className="bg-[#0a0a0a]/90 backdrop-blur-md border border-border flex flex-col gap-1 p-1 shadow-2xl">
-              <button onClick={() => { 
-                const oldZ = camera.current.z;
-                camera.current.z *= 1.2; 
-                clampCamera(); 
-                const ratio = camera.current.z / oldZ;
-                camera.current.x *= ratio;
-                camera.current.y *= ratio;
-                clampCamera();
-                applyCamera(true); 
-              }} className="p-2.5 text-text-muted hover:text-white" aria-label="Zoom In"><Plus className="w-3.5 h-3.5" /></button>
-              <button onClick={() => { 
-                const oldZ = camera.current.z;
-                camera.current.z *= 0.8; 
-                clampCamera(); 
-                const ratio = camera.current.z / oldZ;
-                camera.current.x *= ratio;
-                camera.current.y *= ratio;
-                clampCamera();
-                applyCamera(true); 
-              }} className="p-2.5 text-text-muted hover:text-white" aria-label="Zoom Out"><Minus className="w-3.5 h-3.5" /></button>
-              <button onClick={resetCamera} className="p-2.5 text-text-muted hover:text-white" aria-label="Reset"><Maximize className="w-3.5 h-3.5" /></button>
+          <div className="absolute bottom-2 left-4 right-4 lg:bottom-6 lg:left-6 lg:right-auto z-30 flex items-center justify-between gap-3 interactive-ui">
+            <p className="font-mono text-[11px] text-text-muted lg:hidden">Drag Ã‚Â· Pinch Ã‚Â· Tap a skill</p>
+            <div className="bg-[#0a0a0a]/90 backdrop-blur-md border border-border flex lg:flex-col gap-1 p-1 shadow-2xl">
+              <button onClick={() => zoomBy(1.25)} className="grid size-11 lg:size-auto lg:p-2.5 place-items-center text-text-muted hover:text-white" aria-label="Zoom in"><Plus className="w-4 h-4" /></button>
+              <button onClick={() => zoomBy(0.8)} className="grid size-11 lg:size-auto lg:p-2.5 place-items-center text-text-muted hover:text-white" aria-label="Zoom out"><Minus className="w-4 h-4" /></button>
+              <button onClick={resetCamera} className="grid size-11 lg:size-auto lg:p-2.5 place-items-center text-text-muted hover:text-white" aria-label="Reset landscape view"><Maximize className="w-4 h-4" /></button>
             </div>
           </div>
 
           <AnimatePresence>
             {hoveredNode && !pinnedNode && detail && (
               <motion.div
-                className="absolute bottom-28 left-6 z-40 bg-[#0a0a0a] border border-border p-4 shadow-2xl max-w-[280px] pointer-events-none hidden md:block"
+                className="absolute bottom-28 left-6 z-40 bg-[#0a0a0a] border border-border p-4 shadow-2xl max-w-[280px] pointer-events-none hidden lg:block"
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
               >
                 <div className="font-mono text-[10px] text-accent tracking-widest mb-2 uppercase">{detail.title}</div>
@@ -969,55 +1151,15 @@ export const SkillsConstellation = () => {
           </AnimatePresence>
 
           <AnimatePresence>
-            {pinnedNode && activeNodeData && detail && (
+            {pinnedNode && activeNodeData && (
               <motion.div
-                className="fixed md:hidden bottom-0 left-0 right-0 z-50 bg-[#080808]/95 backdrop-blur-2xl border-t border-border p-6 shadow-[0_-20px_40px_rgba(0,0,0,0.8)] rounded-t-2xl interactive-ui"
-                initial={{ opacity: 0, y: "100%" }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: "100%", transition: { duration: 0.2 } }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
-                <button onClick={() => setPinnedNode(null)} className="absolute top-6 right-6 text-text-muted hover:text-white transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-                
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-                  <span className="font-mono text-[9px] tracking-[0.2em] text-text-muted uppercase">MK_ID // {activeNodeData.id.replace(/_/g, ' ')}</span>
-                </div>
-                
-                <h3 className="text-xl font-display font-medium text-text-primary mb-1 uppercase tracking-tight">{activeNodeData.label}</h3>
-                <div className="font-mono text-[9px] text-accent tracking-widest mb-4 uppercase">
-                  {DOMAINS.find(d => d.id === activeNodeData.domainId)?.label.split('// ')[1]}
-                </div>
-                
-                <p className="text-text-muted text-xs font-light leading-relaxed mb-6">{detail.description}</p>
-                
-                <div className="flex flex-wrap gap-2">
-                  {Array.from(firstOrder).slice(0, 4).map(relId => {
-                    const n = nodesProj.find(x => x.id === relId);
-                    if (!n) return null;
-                    return (
-                      <button key={relId} onClick={() => { setPinnedNode(relId); focusOnNode(relId); }}
-                        className="px-3 py-1.5 font-mono text-[9px] tracking-[0.1em] border border-border bg-[#0e0e0e] text-text-muted hover:border-accent/40 hover:text-text-primary transition-colors cursor-pointer"
-                      >
-                        {n.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {pinnedNode && activeNodeData && detail && (
-              <motion.div
-                className="absolute right-0 top-0 bottom-0 z-50 interactive-ui hidden md:flex flex-col w-[34%] min-w-[320px] max-w-[440px] bg-[rgba(10,10,10,0.76)] backdrop-blur-[20px] border-l border-border/40 overflow-hidden shadow-[-20px_0_40px_rgba(0,0,0,0.5)]"
-                initial={{ opacity: 0, x: 40 }}
+                role="region"
+                aria-label="Skill details"
+                className="absolute left-4 right-4 bottom-16 max-h-[53%] lg:left-auto lg:top-0 lg:bottom-0 lg:right-0 lg:max-h-none z-50 interactive-ui flex flex-col lg:w-[34%] lg:min-w-[320px] lg:max-w-[440px] bg-[rgba(10,10,10,0.94)] lg:bg-[rgba(10,10,10,0.76)] backdrop-blur-[20px] border lg:border-0 lg:border-l border-border/40 overflow-hidden shadow-[-20px_0_40px_rgba(0,0,0,0.5)]"
+                initial={reduceMotion ? false : { opacity: 0, x: 40 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
-                transition={{ duration: 0.35, ease: "easeOut" }}
+                exit={{ opacity: 0, x: reduceMotion ? 0 : 20, transition: { duration: reduceMotion ? 0 : 0.2 } }}
+                transition={{ duration: reduceMotion ? 0 : 0.35, ease: "easeOut" }}
               >
                 {/* Subtle top-left highlight sheen */}
                 <div className="absolute top-0 left-0 w-full h-[150px] bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none" />
@@ -1025,26 +1167,26 @@ export const SkillsConstellation = () => {
                 {/* Crimson detailing: tiny top left tick */}
                 <div className="absolute top-0 left-0 w-[2px] h-12 bg-accent/80" />
 
-                <div className="relative p-10 overflow-y-auto h-full flex flex-col">
-                  <button onClick={() => setPinnedNode(null)} className="absolute top-8 right-8 text-text-muted hover:text-white transition-colors">
+                <div className="relative p-4 lg:p-10 overflow-y-auto overscroll-contain h-full flex flex-col">
+                  <button onClick={() => setPinnedNode(null)} aria-label="Close skill details" className="absolute right-1 top-1 grid size-11 place-items-center lg:right-8 lg:top-8 lg:size-auto text-text-muted hover:text-white transition-colors">
                     <X className="w-5 h-5" />
                   </button>
                   
-                  <div className="flex items-center gap-3 mb-5 mt-2">
+                  <div className="flex items-center gap-3 mb-2 pr-10 lg:mb-5 mt-2">
                     <div className="w-1.5 h-1.5 bg-accent" />
                     <span className="font-mono text-[10px] tracking-[0.2em] text-text-muted uppercase">{DOMAINS.find(d => d.id === activeNodeData.domainId)?.label.split('// ')[1]}</span>
                   </div>
                   
-                  <h3 className="text-3xl font-display font-medium text-[#f5ede3] mb-6 uppercase tracking-tight leading-none">{activeNodeData.label}</h3>
+                  <h3 className="text-xl lg:text-3xl font-display font-medium text-[#f5ede3] mb-4 lg:mb-6 uppercase tracking-tight leading-none">{activeNodeData.label}</h3>
                   
-                  <p className="text-[#a0a0a0] text-[13px] font-light leading-relaxed mb-10">{detail.description}</p>
+                  {detail && <p className="text-[#a0a0a0] text-sm lg:text-[13px] font-light leading-relaxed mb-5 lg:mb-10">{detail.description}</p>}
                   
                   <div className="flex-1">
-                    <div className="font-mono text-[10px] text-text-muted tracking-widest mb-4 uppercase flex items-center gap-2">
+                    <div className={detail?.usedIn.length ? "font-mono text-[10px] text-text-muted tracking-widest mb-4 uppercase flex items-center gap-2" : "hidden"}>
                        <div className="w-1 h-1 bg-text-muted/40" /> USED IN
                     </div>
-                    <div className="flex flex-col gap-2 mb-10">
-                      {detail.usedIn.map((u, i) => {
+                    <div className={detail?.usedIn.length ? "flex flex-col gap-2 mb-5 lg:mb-10" : "hidden"}>
+                      {detail?.usedIn.map((u, i) => {
                         if (u.href) {
                           const slug = u.href.split('/').pop();
                           const proj = getProject(slug || '');
@@ -1069,12 +1211,12 @@ export const SkillsConstellation = () => {
                        <div className="w-1 h-1 bg-text-muted/40" /> RELATED SKILLS
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {Array.from(firstOrder).slice(0, 8).map(relId => {
+                      {Array.from(firstOrder).map(relId => {
                         const n = nodesProj.find(x => x.id === relId);
                         if (!n) return null;
                         return (
                           <button key={relId} onClick={() => { setPinnedNode(relId); focusOnNode(relId); }}
-                            className="px-3 py-2 font-mono text-[10px] tracking-[0.1em] border border-border/50 bg-[#0a0a0a]/50 text-[#a0a0a0] hover:border-accent/50 hover:text-[#f5ede3] hover:bg-accent/10 transition-colors cursor-pointer"
+                            className="min-h-11 lg:min-h-0 px-3 py-2 font-mono text-xs lg:text-[10px] tracking-[0.1em] border border-border/50 bg-[#0a0a0a]/50 text-[#a0a0a0] hover:border-accent/50 hover:text-[#f5ede3] hover:bg-accent/10 transition-colors cursor-pointer"
                           >
                             {n.label}
                           </button>
@@ -1089,16 +1231,22 @@ export const SkillsConstellation = () => {
 
           <div 
             ref={svgWrapperRef}
-            className="absolute inset-0 w-full h-full transform-style-3d origin-center"
+            className="absolute inset-x-3 top-[8.5rem] bottom-16 touch-none lg:touch-auto lg:inset-0 transform-style-3d origin-center"
+            data-knowledge-canvas
+            onClick={(e) => {
+              if (isCompact() && !("pointerType" in e.nativeEvent && e.nativeEvent.pointerType === "touch") && !(e.target as Element).closest("[data-skill-node]")) setPinnedNode(null);
+            }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerLeave={onPointerLeave}
+            onPointerUp={(e) => e.pointerType === "touch" ? endTouch(e) : onPointerUp()}
+            onPointerCancel={(e) => endTouch(e, true)}
+            onLostPointerCapture={(e) => endTouch(e, true)}
+            onPointerLeave={(e) => { if (e.pointerType !== "touch") onPointerLeave(); }}
           >
             <svg
               ref={svgRef}
               viewBox="-1200 -800 2400 1600"
-              preserveAspectRatio="xMidYMid slice" className="absolute inset-0"
+              preserveAspectRatio="xMidYMid slice" className="absolute inset-0 max-lg:h-full max-lg:w-full"
             >
               <defs>
                 <radialGradient id="cursor-gradient" cx="50%" cy="50%" r="50%">
@@ -1117,8 +1265,6 @@ export const SkillsConstellation = () => {
               </g>
             </svg>
           </div>
-        </>
-      )}
     </section>
   );
 };
