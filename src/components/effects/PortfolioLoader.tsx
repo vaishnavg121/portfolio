@@ -18,7 +18,7 @@ export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
   const widthTransform = useTransform(progressSpring, v => `${v}%`);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce), (width < 64rem)").matches) {
       onComplete();
       return;
     }
@@ -132,7 +132,7 @@ export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
   return (
     <motion.div
       key="portfolio-loader"
-      className="fixed inset-0 z-[100] bg-background flex flex-col justify-end p-8 md:p-16 overflow-hidden pointer-events-none"
+      className="fixed inset-0 z-[100] bg-background hidden lg:motion-safe:flex flex-col justify-end p-8 md:p-16 overflow-hidden pointer-events-none"
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15, ease: "easeOut" }}
     >
@@ -155,16 +155,18 @@ export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
         {/* Mascot */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 flex items-center justify-center opacity-60">
           <AnimatePresence mode="wait">
-            <motion.img
-              key={getMascotPose()}
-              src={getMascotPose()}
-              alt=""
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, filter: "blur(4px)" }}
-              transition={{ duration: 0.3 }}
-              className="max-h-full object-contain"
-            />
+            <picture key={getMascotPose()}>
+              <source media="(min-width: 64rem) and (prefers-reduced-motion: no-preference)" srcSet={getMascotPose()} />
+              <motion.img
+                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                alt=""
+                initial={{ opacity: 0, filter: "blur(4px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, filter: "blur(4px)" }}
+                transition={{ duration: 0.3 }}
+                className="max-h-32 object-contain"
+              />
+            </picture>
           </AnimatePresence>
         </div>
 

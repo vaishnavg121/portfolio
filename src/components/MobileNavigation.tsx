@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import { ChatbotLauncher } from "./ChatbotLauncher";
 
 const sections = [
   ["work", "Selected work"],
@@ -27,15 +28,18 @@ export function MobileNavigation() {
   }, []);
 
   return (
-    <header className="mobile-header lg:hidden">
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 sm:px-6">
-        <Link href="/#hero" className="inline-flex min-h-12 items-center font-mono text-sm font-semibold tracking-widest">
+    <header className="mobile-header lg:contents">
+      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 sm:px-6 lg:contents">
+        <Link href="/#hero" className="inline-flex min-h-12 items-center lg:hidden font-mono text-sm font-semibold tracking-widest">
           VG / 121
         </Link>
-        <button type="button" aria-haspopup="dialog" aria-controls="mobile-menu" onClick={() => menu.current?.showModal()}
-          className="inline-flex min-h-12 items-center gap-2 px-2 font-mono text-sm uppercase tracking-wider">
-          Menu <Menu aria-hidden="true" size={19} />
-        </button>
+        <div className="flex items-center gap-2 lg:contents">
+          <ChatbotLauncher />
+          <button type="button" aria-haspopup="dialog" aria-controls="mobile-menu" onClick={() => menu.current?.showModal()}
+            className="inline-flex min-h-12 items-center gap-2 px-2 font-mono text-sm uppercase tracking-wider lg:hidden">
+            Menu <Menu aria-hidden="true" size={19} />
+          </button>
+        </div>
       </div>
       <dialog id="mobile-menu" ref={menu} aria-labelledby="mobile-menu-title"
         className="mobile-menu border border-border bg-surface text-text-primary backdrop:bg-black/75"

@@ -18,9 +18,7 @@ export const MASCOT_ASSETS = {
     surprised: "/assets/mascot/poses/surprised.png",
     windBlown: "/assets/mascot/poses/wind-blown.png",
     inspect: "/assets/mascot/poses/inspect.png",
-    wave: "/assets/mascot/poses/wave.png",
-    sitting: "/assets/mascot/poses/sitting.png",
-    inkParticles: "/assets/mascot/poses/ink-particles.png"
+    wave: "/assets/mascot/poses/wave.png"
   }
 };
 

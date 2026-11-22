@@ -19,7 +19,7 @@ export const ChatbotLauncher = () => {
 
   return (
     <>
-      <div className="fixed top-[calc(env(safe-area-inset-top)+0.125rem)] right-25 lg:top-auto lg:right-auto lg:bottom-8 lg:left-8 z-[46] lg:z-50">
+      <div className="lg:fixed lg:bottom-8 lg:left-8 lg:z-50">
         <AnimatePresence>
           {!isOpen && (
             <motion.button
