@@ -1069,6 +1069,7 @@ export const SkillsConstellation = () => {
   return (
     <section id="knowledge" aria-label="Knowledge Landscape" className="relative isolate bg-[#030303] overflow-hidden select-none h-[clamp(28rem,calc(100svh-3rem),47rem)] lg:h-[100vh] w-full flex flex-col" ref={(node) => { containerRef.current = node; visibilityRef(node); }}>
           <h2 className="absolute left-4 top-4 z-40 font-mono text-xs uppercase tracking-widest text-[#f5ede3] lg:sr-only">Knowledge Landscape</h2>
+          <a href="#about" aria-label="Continue to experience" className="absolute right-4 top-0 z-40 inline-flex min-h-10 items-center px-2 font-mono text-xs text-text-muted underline decoration-border underline-offset-4 lg:hidden">Continue</a>
           <label className="absolute right-4 left-4 top-[5.65rem] z-40 lg:hidden">
             <span className="sr-only">Knowledge region</span>
             <select
@@ -1159,12 +1160,12 @@ export const SkillsConstellation = () => {
             </div>
           </div>
 
-          <div className="absolute bottom-2 left-4 right-4 lg:bottom-6 lg:left-6 lg:right-auto z-30 flex items-center justify-between gap-3 touch-manipulation interactive-ui">
-            <div className="font-mono text-[11px] leading-tight text-text-muted lg:hidden">
+          <div className="absolute bottom-2 left-4 right-4 lg:bottom-6 lg:left-6 lg:right-auto z-30 flex items-center justify-between gap-3 touch-pan-y interactive-ui">
+            <div className="font-mono text-[11px] leading-tight text-text-muted text-right pr-8 lg:hidden">
               <p>Drag, pinch or tap</p>
               <p className="mt-1">Zoom for skill labels</p>
             </div>
-            <div className="bg-[#0a0a0a]/90 backdrop-blur-md border border-border flex lg:flex-col gap-1 p-1 shadow-2xl">
+            <div className="order-first bg-[#0a0a0a]/90 backdrop-blur-md border border-border flex lg:flex-col gap-1 p-1 shadow-2xl">
               <button onClick={() => zoomBy(1.25)} className="grid size-11 lg:size-auto lg:p-2.5 place-items-center text-text-muted hover:text-white" aria-label="Zoom in"><Plus className="w-4 h-4" /></button>
               <button onClick={() => zoomBy(0.8)} className="grid size-11 lg:size-auto lg:p-2.5 place-items-center text-text-muted hover:text-white" aria-label="Zoom out"><Minus className="w-4 h-4" /></button>
               <button onClick={resetCamera} className="grid size-11 lg:size-auto lg:p-2.5 place-items-center text-text-muted hover:text-white" aria-label="Reset landscape view"><Maximize className="w-4 h-4" /></button>
@@ -1264,7 +1265,7 @@ export const SkillsConstellation = () => {
 
           <div 
             ref={svgWrapperRef}
-            className="absolute inset-x-3 top-[8.5rem] bottom-16 max-lg:border max-lg:border-[#231d1d] touch-none lg:touch-auto lg:inset-0 transform-style-3d origin-center"
+            className="absolute inset-x-5 top-[8.5rem] bottom-16 max-lg:border max-lg:border-[#231d1d] touch-none lg:touch-auto lg:inset-0 transform-style-3d origin-center"
             data-knowledge-canvas
             onClick={(e) => {
               if (isCompact() && !isTouchClick(e) && !(e.target as Element).closest("[data-skill-node]")) setPinnedNode(null);
