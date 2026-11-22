@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -12,6 +12,7 @@ export const ThriveForceEntry = () => {
   const robotRef = useRef<HTMLDivElement>(null);
   const crosshairRef = useRef<HTMLDivElement>(null);
   const xrayRef = useRef<HTMLDivElement>(null);
+  const [inspecting, setInspecting] = useState(false);
   const transitionRef = useRef<HTMLDivElement>(null);
   
   // DETERMINISTIC SPARKS (No Math.random() for hydration safety)
@@ -54,17 +55,28 @@ export const ThriveForceEntry = () => {
             
       }, transitionRef);
       
+      media.add("(width < 64rem) and (prefers-reduced-motion: no-preference)", () => {
+          gsap.fromTo(".robot-wireframe", { opacity: 0.65 }, {
+              opacity: 0, duration: 0.85, ease: "power2.out",
+              scrollTrigger: { trigger: robotRef.current, start: "top 85%", once: true },
+          });
+          gsap.from(".robot-solid", {
+              opacity: 0.4, duration: 0.85, ease: "power2.out",
+              scrollTrigger: { trigger: robotRef.current, start: "top 85%", once: true },
+          });
+      }, containerRef);
       return () => media.revert();
   }, []);
 
   const handlePointerMove = (e: React.PointerEvent) => {
     // Only update CSS variables on the container to avoid React state lag
-    if (!robotRef.current || e.pointerType === "touch") return;
+    if (!robotRef.current || (e.pointerType === "touch" && !inspecting)) return;
     const rect = robotRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    robotRef.current.style.setProperty('--cursor-x', `${x}px`);
-    robotRef.current.style.setProperty('--cursor-y', `${y}px`);
+    const mask = e.pointerType === "touch" ? xrayRef.current?.getBoundingClientRect() : null;
+    robotRef.current.style.setProperty('--cursor-x', `${mask ? e.clientX - mask.left : x}px`);
+    robotRef.current.style.setProperty('--cursor-y', `${mask ? e.clientY - mask.top : y}px`);
 
     if (crosshairRef.current) {
         gsap.to(crosshairRef.current, { x, y, duration: 0.1, ease: "power2.out", overwrite: "auto" });
@@ -76,7 +88,8 @@ export const ThriveForceEntry = () => {
       gsap.to([xrayRef.current, crosshairRef.current], { opacity: 1, duration: 0.3, overwrite: "auto" });
   };
 
-  const handlePointerLeave = () => {
+  const handlePointerLeave = (e: React.PointerEvent) => {
+      if (e.pointerType === "touch") return;
       gsap.to([xrayRef.current, crosshairRef.current], { opacity: 0, duration: 0.3, overwrite: "auto" });
   };
 
@@ -199,7 +212,7 @@ export const ThriveForceEntry = () => {
                           {/* X-Ray Mask Layer */}
                           <div 
                              ref={xrayRef}
-                             className="absolute inset-0 w-full h-full pointer-events-none opacity-0 z-10"
+                             className={"absolute inset-0 w-full h-full pointer-events-none z-10 " + (inspecting ? "opacity-100 lg:opacity-0" : "opacity-0")}
                              style={{
                                  maskImage: 'radial-gradient(circle 180px at var(--cursor-x, 50%) var(--cursor-y, 50%), black 20%, transparent 80%)',
                                  WebkitMaskImage: 'radial-gradient(circle 180px at var(--cursor-x, 50%) var(--cursor-y, 50%), black 20%, transparent 80%)'
@@ -240,7 +253,10 @@ export const ThriveForceEntry = () => {
                          <div className="absolute top-1/2 left-1/2 w-1 h-1 border border-accent -translate-x-1/2 -translate-y-1/2 rounded-full" />
                       </div>
                   </div>
-
+                  <button type="button" aria-pressed={inspecting} onClick={() => setInspecting(!inspecting)}
+                      className="mt-3 inline-flex min-h-11 w-fit items-center border border-border px-4 font-mono text-xs tracking-wider text-text-primary lg:hidden">
+                    {inspecting ? "Close wireframe inspection" : "Inspect wireframe"}
+                  </button>
               </div>
           </div>
 

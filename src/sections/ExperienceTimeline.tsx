@@ -42,6 +42,18 @@ export const ExperienceTimeline = () => {
     if (!isVisible) return;
 
     const media = gsap.matchMedia();
+    media.add("(width < 64rem) and (prefers-reduced-motion: no-preference)", () => {
+      gsap.utils.toArray<HTMLElement>(".chapter-block").forEach((chapter) => {
+        gsap.fromTo(chapter.querySelector(".chap-content"), { opacity: 0.78, y: 10 }, {
+          opacity: 1, y: 0, duration: 0.45, ease: "power2.out",
+          scrollTrigger: { trigger: chapter, start: "top 87%", once: true },
+        });
+      });
+      gsap.fromTo(".exp-timeline-rail-active", { scaleY: 0 }, {
+        scaleY: 1, ease: "none",
+        scrollTrigger: { trigger: ".exp-timeline-container", start: "top 75%", end: "bottom 40%", scrub: true },
+      });
+    }, containerRef);
     media.add("(min-width: 64rem) and (prefers-reduced-motion: no-preference)", () => {
       const chapters = gsap.utils.toArray('.chapter-block') as HTMLElement[];
 
@@ -118,8 +130,8 @@ export const ExperienceTimeline = () => {
 
         <div className="exp-timeline-container flex flex-col gap-14 lg:gap-40 relative">
 
-          <div className="absolute left-6 md:left-[50%] top-0 bottom-0 w-[1px] bg-border/30 z-0 hidden lg:block" />
-          <div className="exp-timeline-rail-active absolute left-6 md:left-[50%] top-0 bottom-0 w-[1px] bg-accent z-0 hidden lg:block origin-top" />
+          <div className="absolute -left-2 lg:left-[50%] top-0 bottom-0 w-[1px] bg-border/30 z-0" />
+          <div className="exp-timeline-rail-active absolute -left-2 lg:left-[50%] top-0 bottom-0 w-[1px] bg-accent z-0 origin-top" />
 
           {CHAPTERS.map((chapter, i) => (
             <div key={chapter.num} className="relative group chapter-block">

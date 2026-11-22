@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { getImageProps } from "next/image";
 import { motion, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import { THEME_ASSETS, MASCOT_ASSETS } from "@/lib/assets";
 
@@ -18,9 +19,17 @@ export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
   const widthTransform = useTransform(progressSpring, v => `${v}%`);
 
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce), (width < 64rem)").matches) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       onComplete();
       return;
+    }
+
+    if (window.matchMedia("(width < 64rem)").matches) {
+      progressSpring.set(100);
+      setLoadingText("INITIALIZING_MOTION");
+      const update = progressSpring.on("change", (value) => setDisplayProgress(Math.round(value)));
+      const finish = setTimeout(onComplete, 560);
+      return () => { clearTimeout(finish); update(); };
     }
 
     const preloadImage = (src: string) => {
@@ -129,10 +138,18 @@ export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
     return MASCOT_ASSETS.poses.surprised;
   };
 
+  const desktopPose = getMascotPose();
+  const { props: mobilePose } = getImageProps({
+    src: MASCOT_ASSETS.poses.sleep,
+    alt: "",
+    width: 128,
+    height: 128,
+  });
+
   return (
     <motion.div
       key="portfolio-loader"
-      className="fixed inset-0 z-[100] bg-background hidden lg:motion-safe:flex flex-col justify-end p-8 md:p-16 overflow-hidden pointer-events-none"
+      className="fixed inset-0 z-[100] bg-background hidden motion-safe:flex flex-col justify-end p-8 md:p-16 overflow-hidden pointer-events-none"
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15, ease: "easeOut" }}
     >
@@ -155,10 +172,10 @@ export const PortfolioLoader = ({ onComplete }: PortfolioLoaderProps) => {
         {/* Mascot */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 flex items-center justify-center opacity-60">
           <AnimatePresence mode="wait">
-            <picture key={getMascotPose()}>
-              <source media="(min-width: 64rem) and (prefers-reduced-motion: no-preference)" srcSet={getMascotPose()} />
+            <picture key={desktopPose}>
+              <source media="(min-width: 64rem) and (prefers-reduced-motion: no-preference)" srcSet={desktopPose} />
               <motion.img
-                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                src={mobilePose.src}
                 alt=""
                 initial={{ opacity: 0, filter: "blur(4px)" }}
                 animate={{ opacity: 1, filter: "blur(0px)" }}

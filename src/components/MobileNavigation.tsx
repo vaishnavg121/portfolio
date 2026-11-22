@@ -60,6 +60,12 @@ export function MobileNavigation() {
                 {label}
               </Link>
             ))}
+            <button type="button" onClick={() => {
+              menu.current?.close();
+              window.dispatchEvent(new Event("portfolio:command-palette"));
+            }} className="flex min-h-12 w-full items-center py-2 text-left font-medium">
+              Command palette
+            </button>
           </nav>
         </div>
       </dialog>

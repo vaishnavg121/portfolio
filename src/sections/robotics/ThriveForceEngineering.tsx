@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -8,10 +8,11 @@ import { velociraptorAssets } from '../../data/velociraptorAssets';
 gsap.registerPlugin(ScrollTrigger);
 
 export const ThriveForceEngineering = () => {
+  const [activeDiagram, setActiveDiagram] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     
     const ctx = gsap.context(() => {
         // Powertrain line flows down naturally with scroll
@@ -50,6 +51,7 @@ export const ThriveForceEngineering = () => {
   }, []);
 
   const handleFEAHover = (e: React.PointerEvent<HTMLDivElement>, labelId: string) => {
+      if (e.pointerType === "touch") return;
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left - rect.width/2;
       const y = e.clientY - rect.top - rect.height/2;
@@ -64,6 +66,7 @@ export const ThriveForceEngineering = () => {
   };
 
   const handleFEALeave = (e: React.PointerEvent<HTMLDivElement>, labelId: string) => {
+      if (e.pointerType === "touch") return;
       gsap.to(e.currentTarget.querySelector('img'), { x: 0, y: 0, duration: 0.5, ease: "power2.out", overwrite: "auto" });
       gsap.to(`.${labelId}`, { opacity: 0, duration: 0.2, overwrite: "auto" });
   };
@@ -90,6 +93,10 @@ export const ThriveForceEngineering = () => {
                 >
                     <Image src={velociraptorAssets.fea.sideStress} alt="FEA Side" fill className="object-contain p-4 transition-transform duration-1000" />
                     <div className="cursor-lbl-1 absolute top-0 left-0 pointer-events-none opacity-0 bg-[#030303]/80 backdrop-blur-sm border border-white/10 px-3 py-1 font-mono text-[9px] text-accent tracking-widest uppercase z-10">SIDE LOAD</div>
+                    <button type="button" aria-label="Inspect side load diagram" aria-expanded={activeDiagram === "1"} onClick={() => setActiveDiagram(activeDiagram === "1" ? null : "1")} className="absolute right-2 top-2 z-20 min-h-11 border border-border bg-[#080808]/90 px-3 font-mono text-xs text-text-primary lg:hidden">
+                        {activeDiagram === "1" ? "Close" : "Inspect"}
+                    </button>
+                    {activeDiagram === "1" && <span className="absolute bottom-2 left-2 z-20 border border-border bg-[#080808]/90 px-3 py-2 font-mono text-xs text-text-primary lg:hidden">Side load</span>}
                 </div>
                 <div className="flex justify-between items-end border-b border-white/10 pb-4">
                     <div>
@@ -116,6 +123,10 @@ export const ThriveForceEngineering = () => {
                 >
                     <Image src={velociraptorAssets.fea.upwardStress} alt="FEA Upward" fill className="object-contain p-4 transition-transform duration-1000" />
                     <div className="cursor-lbl-2 absolute top-0 left-0 pointer-events-none opacity-0 bg-[#030303]/80 backdrop-blur-sm border border-white/10 px-3 py-1 font-mono text-[9px] text-accent tracking-widest uppercase z-10">UPWARD LOAD</div>
+                    <button type="button" aria-label="Inspect upward load diagram" aria-expanded={activeDiagram === "2"} onClick={() => setActiveDiagram(activeDiagram === "2" ? null : "2")} className="absolute right-2 top-2 z-20 min-h-11 border border-border bg-[#080808]/90 px-3 font-mono text-xs text-text-primary lg:hidden">
+                        {activeDiagram === "2" ? "Close" : "Inspect"}
+                    </button>
+                    {activeDiagram === "2" && <span className="absolute bottom-2 left-2 z-20 border border-border bg-[#080808]/90 px-3 py-2 font-mono text-xs text-text-primary lg:hidden">Upward load</span>}
                 </div>
                 <div className="flex justify-between items-end border-b border-white/10 pb-4">
                     <div>

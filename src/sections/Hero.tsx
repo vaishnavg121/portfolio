@@ -37,6 +37,14 @@ export const Hero = () => {
     if (shouldReduceMotion) return;
 
     const media = gsap.matchMedia();
+    media.add("(width < 64rem)", () => {
+      gsap.to("[data-hero-atmosphere]", {
+        y: 24,
+        opacity: 0.24,
+        ease: "none",
+        scrollTrigger: { trigger: containerRef.current, start: "top top", end: "bottom top", scrub: true },
+      });
+    }, containerRef);
     media.add("(min-width: 64rem)", () => {
       gsap.to('.hero-title-block', {
         y: -150,

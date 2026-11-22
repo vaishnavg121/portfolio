@@ -2,21 +2,46 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { socials } from "@/lib/profile";
+
+type Navigate = (url: string) => void;
+
+const openSection = (id: string, navigate: Navigate) => {
+  const section = document.getElementById(id);
+  if (!section) {
+    navigate("/#" + id);
+    return;
+  }
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  section.scrollIntoView({ behavior: reduce ? "instant" : "smooth" });
+};
+
+const selectRegion = (id: string, navigate: Navigate) => {
+  if (!document.getElementById("knowledge")) {
+    navigate("/?knowledge=" + id + "#knowledge");
+    return;
+  }
+  openSection("knowledge", navigate);
+  window.dispatchEvent(new CustomEvent("portfolio:knowledge-region", { detail: id }));
+};
 
 const COMMANDS = [
-  { id: "projects", label: "Projects", action: () => document.getElementById("work")?.scrollIntoView({ behavior: "smooth" }) },
-  { id: "about", label: "About", action: () => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" }) },
-  { id: "aiml", label: "AI / ML", action: () => console.log("Navigate to AI/ML") },
-  { id: "finance", label: "Finance", action: () => console.log("Navigate to Finance") },
-  { id: "robotics", label: "Robotics", action: () => document.getElementById("robotics")?.scrollIntoView({ behavior: "smooth" }) },
-  { id: "github", label: "GitHub", action: () => window.open("https://github.com/vaishnav", "_blank") },
+  { id: "projects", label: "Projects", action: (navigate: Navigate) => openSection("work", navigate) },
+  { id: "about", label: "About", action: (navigate: Navigate) => openSection("about", navigate) },
+  { id: "aiml", label: "AI / ML", action: (navigate: Navigate) => selectRegion("ai", navigate) },
+  { id: "finance", label: "Finance", action: (navigate: Navigate) => selectRegion("finance", navigate) },
+  { id: "robotics", label: "Robotics", action: (navigate: Navigate) => openSection("robotics", navigate) },
+  { id: "github", label: "GitHub", action: () => window.open(socials.github, "_blank", "noopener,noreferrer") },
   { id: "resume", label: "Resume", action: () => window.open("/resume.pdf", "_blank") },
-  { id: "contact", label: "Contact", action: () => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" }) },
+  { id: "contact", label: "Contact", action: (navigate: Navigate) => openSection("contact", navigate) },
 ];
 
 const SECRET_COMMANDS = ["hamster", "breathing", "notes", "sudo hire vaishnav"];
 
 export const CommandPalette = () => {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -30,8 +55,13 @@ export const CommandPalette = () => {
         setIsOpen(false);
       }
     };
+    const open = () => { setQuery(""); setIsOpen(true); };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("portfolio:command-palette", open);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("portfolio:command-palette", open);
+    };
   }, []);
 
   const filteredCommands = COMMANDS.filter((cmd) =>
@@ -39,7 +69,7 @@ export const CommandPalette = () => {
   );
 
   const handleCommand = (cmd: typeof COMMANDS[0]) => {
-    cmd.action();
+    cmd.action((url) => router.push(url));
     setIsOpen(false);
     setQuery("");
   };
@@ -59,7 +89,7 @@ export const CommandPalette = () => {
         document.getElementById("notes")?.scrollIntoView({ behavior: "smooth" });
       } else if (cmdStr === "sudo hire vaishnav") {
         window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "command-trigger", data: "hire" } }));
-        document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+        openSection("contact", (url) => router.push(url));
       }
       setIsOpen(false);
       setQuery("");
@@ -69,7 +99,7 @@ export const CommandPalette = () => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh] px-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-[max(0.75rem,env(safe-area-inset-top))] lg:pt-[20vh] px-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -82,6 +112,8 @@ export const CommandPalette = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
+            role="dialog"
+            aria-label="Command palette"
             className="relative w-full max-w-lg bg-surface border border-border shadow-2xl rounded-xl overflow-hidden font-mono"
           >
             <div className="flex items-center px-4 border-b border-border">
@@ -89,13 +121,15 @@ export const CommandPalette = () => {
               <input
                 autoFocus
                 type="text"
+                aria-label="Search commands"
                 placeholder="Type a command or search..."
                 value={query}
                 onChange={handleInput}
                 className="w-full bg-transparent py-4 text-text-primary focus:outline-none placeholder:text-text-muted"
               />
+              <button type="button" aria-label="Close command palette" onClick={() => setIsOpen(false)} className="grid size-11 shrink-0 place-items-center lg:hidden"><X size={18} /></button>
             </div>
-            <div className="max-h-64 overflow-y-auto py-2">
+            <div className="max-h-[min(16rem,45dvh)] overflow-y-auto py-2">
               {filteredCommands.length === 0 ? (
                 <div className="px-4 py-8 text-center text-text-muted text-sm">
                   No commands found.
@@ -105,7 +139,7 @@ export const CommandPalette = () => {
                   <button
                     key={cmd.id}
                     onClick={() => handleCommand(cmd)}
-                    className="w-full text-left px-4 py-3 text-sm text-text-primary hover:bg-surface-elevated hover:text-accent focus:bg-surface-elevated focus:text-accent transition-colors flex items-center justify-between group"
+                    className="w-full min-h-11 lg:min-h-0 text-left px-4 py-3 text-sm text-text-primary hover:bg-surface-elevated hover:text-accent focus:bg-surface-elevated focus:text-accent transition-colors flex items-center justify-between group"
                   >
                     <span>{cmd.label}</span>
                     <span className="text-text-muted text-xs opacity-0 group-hover:opacity-100 transition-opacity">

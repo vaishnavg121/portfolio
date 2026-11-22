@@ -283,6 +283,15 @@ export const CompanionController = () => {
       if (isTouch || profile.mode === "DOCKED") {
          targetX = window.innerWidth - 60;
          targetY = window.innerHeight - 60;
+         if (isTouch && isColliding(targetX, targetY)) {
+           const alternativeDocks = [
+             [targetX, targetY - 78],
+             [60, targetY],
+             [60, targetY - 78],
+           ];
+           const clearDock = alternativeDocks.find(([x, y]) => !isColliding(x, y));
+           if (clearDock) [targetX, targetY] = clearDock;
+         }
       } else if (activeHoverTargetRef.current && !isTouch) {
          const rect = activeHoverTargetRef.current.getBoundingClientRect();
          const margin = 40;

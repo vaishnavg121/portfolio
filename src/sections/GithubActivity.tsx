@@ -3,13 +3,14 @@
 import { useEffect, useState, useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { fetchGithubContributions, GithubCalendarData } from "@/lib/actions/github";
+import { fetchGithubContributions, GithubCalendarData, GithubContribution } from "@/lib/actions/github";
 import { socials } from "@/lib/profile";
 import { THEME_ASSETS } from "@/lib/assets";
 import { useSectionVisibility } from "@/lib/visibility";
 
 export const GithubActivity = () => {
   const [calendarData, setCalendarData] = useState<GithubCalendarData | null>(null);
+  const [dayDetail, setDayDetail] = useState<GithubContribution | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -236,6 +237,15 @@ export const GithubActivity = () => {
                           <div
                             key={`${wIdx}-${dIdx}`}
                             tabIndex={0}
+                            role="button"
+                            aria-label={day.date + ", " + day.count + " contributions"}
+                            aria-pressed={dayDetail?.date === day.date}
+                            onClick={() => setDayDetail((current) => current?.date === day.date ? null : day)}
+                            onKeyDown={(event) => {
+                              if (event.key !== "Enter" && event.key !== " ") return;
+                              event.preventDefault();
+                              event.currentTarget.click();
+                            }}
                             data-github-cell={day.date}
                             data-level={day.level}
                             data-cursor="INSPECT"
@@ -245,7 +255,7 @@ export const GithubActivity = () => {
                               }));
                             }}
                             style={{ marginTop: dIdx === 0 && new Date(day.date).getDay() !== 0 ? `${new Date(day.date).getDay() * (12 + 3)}px` : '0' }}
-                            className={`w-[12px] h-[12px] rounded-[1px] transition-all duration-300 hover:scale-125 hover:z-10 focus:scale-125 focus:z-10 hover:border hover:border-white focus:border-white focus:outline-none cursor-crosshair group/day relative ${getColor(day.level)} ${day.level === 0 ? 'opacity-20 hover:opacity-100' : 'hover:brightness-110 shadow-sm'}`}
+                            className={`w-[12px] h-[12px] rounded-[1px] transition-all duration-300 aria-pressed:ring aria-pressed:ring-[#e8ddd0] aria-pressed:opacity-100 hover:scale-125 hover:z-10 focus:scale-125 focus:z-10 hover:border hover:border-white focus:border-white focus:outline-none cursor-crosshair group/day relative ${getColor(day.level)} ${day.level === 0 ? 'opacity-20 hover:opacity-100' : 'hover:brightness-110 shadow-sm'}`}
                           >
                              <div data-familiar-avoid className="absolute opacity-0 group-hover/day:opacity-100 bg-[#090a0b] text-text-primary text-[10px] font-mono p-2 rounded pointer-events-none transform -translate-y-full -translate-x-1/2 left-1/2 -top-2 z-50 whitespace-nowrap transition-opacity border border-[#cc3333]/20 shadow-2xl">
                                <span className="text-[#cc3333] font-bold">{day.count}</span> count {"//"} {new Date(day.date).toDateString()}
@@ -259,6 +269,11 @@ export const GithubActivity = () => {
               )}
             </div>
 
+            {calendarData && (
+              <p aria-live="polite" className="mb-3 min-h-5 font-mono text-xs text-text-muted lg:hidden">
+                {dayDetail ? new Date(dayDetail.date + "T00:00:00").toLocaleDateString(undefined, { dateStyle: "medium" }) + " · " + dayDetail.count + " contributions" : "Swipe for dates · Tap a day for its count"}
+              </p>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.04] pt-8 mt-2 relative z-20">
               <div className="text-[9px] font-mono text-text-muted/40 uppercase tracking-widest flex items-center gap-2">
                 365D TRACE <span className="opacity-30">{"///"}</span> <span className="text-text-muted/20">CODE {"//"} BUILD {"//"} ITERATE</span>

@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { BootSlash, PortfolioLoader } from "@/components/effects";
 
 export const EntrySequence = () => {
   const [stage, setStage] = useState(0); // 0: loader, 1: slash, 2: done
 
+  const showSlash = useCallback(() => setStage(1), []);
+  const finish = useCallback(() => setStage(2), []);
+
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce), (width < 64rem)").matches) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setStage(2);
     }
@@ -20,11 +23,11 @@ export const EntrySequence = () => {
     <>
       <AnimatePresence>
         {stage === 0 && (
-          <PortfolioLoader key="loader" onComplete={() => setStage(1)} />
+          <PortfolioLoader key="loader" onComplete={showSlash} />
         )}
       </AnimatePresence>
 
-      {stage === 1 && <BootSlash onComplete={() => setStage(2)} />}
+      {stage === 1 && <BootSlash onComplete={finish} />}
     </>
   );
 };

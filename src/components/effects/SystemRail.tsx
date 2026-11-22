@@ -36,7 +36,9 @@ export const SystemRail = () => {
   const yPos = useTransform(smoothProgress, [0, 1], ["0%", "85vh"]);
 
   return (
-    <div className="fixed right-6 md:right-12 top-0 bottom-0 w-[1px] pointer-events-none z-40 hidden md:block">
+    <>
+    <motion.div aria-hidden="true" className="fixed top-[calc(3rem+env(safe-area-inset-top))] left-0 right-0 z-[46] h-px origin-left bg-accent pointer-events-none lg:hidden" style={{ scaleX: scrollYProgress }} />
+    <div className="fixed right-6 md:right-12 top-0 bottom-0 w-[1px] pointer-events-none z-40 hidden lg:block">
       {/* Background Track */}
       <div className="absolute inset-0 bg-[#333] opacity-20" />
       
@@ -54,6 +56,7 @@ export const SystemRail = () => {
         </div>
       </motion.div>
     </div>
+    </>
   );
 };
 

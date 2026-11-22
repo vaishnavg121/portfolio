@@ -36,7 +36,6 @@ export const PointerProvider = ({ children }: { children: React.ReactNode }) => 
       readingMode.set(1);
       return;
     }
-    if ("ontouchstart" in window || navigator.maxTouchPoints > 0) return;
 
     const flushPointer = () => {
       const pending = pendingRef.current;
@@ -50,7 +49,8 @@ export const PointerProvider = ({ children }: { children: React.ReactNode }) => 
       rafIdRef.current = null;
     };
 
-    const handlePointerMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!e.isPrimary || (e.pointerType === "touch" && e.target instanceof Element && e.target.closest("[data-knowledge-canvas]"))) return;
       breakReadingMode();
       pendingRef.current = { clientX: e.clientX, clientY: e.clientY };
       if (rafIdRef.current === null) {

@@ -19,7 +19,7 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({ bgX, bgY, mounte
   const durationLayerA = shouldReduceMotion ? 0 : 3;
 
   return (
-    <div className="absolute inset-0 z-0 opacity-40 pointer-events-none flex items-center justify-center overflow-hidden">
+    <div data-hero-atmosphere className="absolute inset-0 z-0 opacity-40 pointer-events-none flex items-center justify-center overflow-hidden">
       <motion.div
         className="w-full h-full relative"
         style={{ x: shouldReduceMotion ? 0 : bgX, y: shouldReduceMotion ? 0 : bgY }}

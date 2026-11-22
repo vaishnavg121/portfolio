@@ -40,6 +40,8 @@ export const BootSlash = ({ onComplete }: BootSlashProps) => {
         }
       });
 
+      if (window.matchMedia("(width < 64rem)").matches) tl.timeScale(1.7);
+
       // Solid paths
       const core = document.querySelector("#slash-core") as SVGPathElement;
       const coreLength = core ? core.getTotalLength() : 2000;
