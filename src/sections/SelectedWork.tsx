@@ -2,11 +2,11 @@
 
 import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
-import { MobileWorkCards } from "./MobileWorkCards";
+import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { MoveRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, MoveRight } from "lucide-react";
 import { EmberField, FlowLines, GridEffect, BlueprintEffect, SwaNeetiInk, MagneticEffect, usePointer } from "@/components/effects";
 import { PROJECT_ASSETS } from "@/lib/assets";
 import { useRouter } from "next/navigation";
@@ -32,8 +32,91 @@ const PROJECTS = profileProjects.map((p) => ({
   assets: PROJECT_ASSETS[p.slug as keyof typeof PROJECT_ASSETS],
 }));
 
+function ProjectDetails({ project, onOpen, mobile = false }: {
+  project: typeof PROJECTS[number];
+  onOpen: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+  mobile?: boolean;
+}) {
+  return (
+    <>
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, y: 12 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+      }}
+      className="flex items-baseline gap-4 mb-4"
+    >
+      <span className="font-mono text-4xl text-border opacity-50 tracking-tighter">{project.id}</span>
+      <div className="font-mono text-accent text-xs tracking-widest uppercase">{project.category}</div>
+    </motion.div>
+
+    <motion.h3
+      variants={{
+        hidden: { opacity: 0, y: 12 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+      }}
+      className="text-3xl lg:text-6xl font-display font-medium mb-4 lg:mb-6 uppercase tracking-tight leading-none"
+    >
+      {project.title}
+    </motion.h3>
+
+    <motion.p
+      variants={{
+        hidden: { opacity: 0, y: 12 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+      }}
+      className="text-text-muted text-base lg:text-lg mb-5 lg:mb-8 max-w-sm leading-relaxed border-l border-border pl-4"
+    >
+      {project.description}
+    </motion.p>
+
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, y: 12 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+      }}
+      className="flex flex-wrap gap-2 mb-4 lg:mb-10"
+    >
+      {project.tags.map(tag => (
+        <span key={tag} className="text-[10px] font-mono border border-[#333] px-2 py-1 text-text-muted uppercase tracking-wider">
+          {tag}
+        </span>
+      ))}
+    </motion.div>
+
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, y: 12 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+      }}
+      className="relative z-40"
+    >
+      <MagneticEffect intensity={0.3}>
+        <Link
+          href={`/work/${project.slug}`}
+          onClick={(e) => onOpen(e)}
+          data-cursor="VIEW"
+          aria-label={mobile ? "View project: " + project.title : undefined}
+          className="flex min-h-11 lg:min-h-0 items-center gap-3 text-xs font-mono uppercase tracking-widest text-text-primary hover:text-accent transition-colors group"
+          tabIndex={0}
+        >
+          <span className="relative pb-1 transform group-hover:translate-x-1 transition-transform duration-300">
+            View Project
+            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-accent origin-left scale-x-50 group-hover:scale-x-100 transition-transform duration-300" />
+          </span>
+          <MoveRight className="w-4 h-4 group-hover:translate-x-3 transition-transform duration-300 text-accent" />
+        </Link>
+      </MagneticEffect>
+    </motion.div>
+    </>
+  );
+}
+
 export const SelectedWork = () => {
   const containerRef = useRef<HTMLElement>(null);
+  const carousel = useRef<HTMLDivElement>(null);
+  const [slide, setSlide] = useState(0);
+  const [highlightedNode, setHighlightedNode] = useState("");
   const router = useRouter();
   const shouldReduceMotion = useReducedMotion();
   const { sNX, sNY } = usePointer();
@@ -52,15 +135,12 @@ export const SelectedWork = () => {
   const layer2X = useTransform(sNX, [-1, 1], [-5, 5]);
   const layer2Y = useTransform(sNY, [-1, 1], [-5, 5]);
 
-  const handleProjectClick = (slug: string, e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleProjectClick = (slug: string, e: React.MouseEvent<HTMLAnchorElement>) => {
     const card = (e.target as HTMLElement).closest('.project-card');
-    const visual = card?.querySelector('.group');
+    const visual = card?.querySelector('.project-scene');
 
-    if (!card) {
-      router.push(`/work/${slug}`);
-      return;
-    }
+    if (!card || shouldReduceMotion || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
 
     if (visual) {
       gsap.to(visual, { scale: 0.95, opacity: 0, duration: 0.4, ease: "power2.inOut" });
@@ -73,10 +153,29 @@ export const SelectedWork = () => {
     }, 400);
   };
 
+  const goToSlide = (index: number) => {
+    const track = carousel.current;
+    const target = track?.children[index] as HTMLElement | undefined;
+    if (!track || !target) return;
+    track.scrollTo({ left: target.offsetLeft, behavior: shouldReduceMotion ? "instant" : "smooth" });
+  };
+
   useGSAP(() => {
     if (!mounted) return;
 
     const media = gsap.matchMedia();
+    media.add("(width < 64rem) and (prefers-reduced-motion: no-preference)", () => {
+      Array.from(carousel.current?.children ?? []).forEach((card) => {
+        const scene = card.querySelector(".project-scene");
+        if (!scene) return;
+        gsap.fromTo(scene.querySelectorAll(".arch-node"), { y: 9, opacity: 0.5 }, {
+          y: 0, opacity: 1, duration: 0.38, stagger: 0.06,
+          clearProps: "transform,opacity",
+          scrollTrigger: { trigger: scene, start: "top 88%", once: true },
+        });
+      });
+    }, containerRef);
+
     media.add("(min-width: 64rem)", () => {
       const projects = gsap.utils.toArray('.project-scene') as HTMLElement[];
 
@@ -176,10 +275,17 @@ export const SelectedWork = () => {
           Selected Work
         </h2>
 
-        <MobileWorkCards />
-        <div className="hidden lg:flex flex-row items-start relative gap-16">
+        <div className="mb-3 flex items-center justify-between gap-3 lg:hidden">
+          <span className="font-mono text-xs text-text-muted">Swipe projects</span>
+          <div className="flex items-center gap-2">
+            <button type="button" aria-label="Previous project" disabled={slide === 0} onClick={() => goToSlide(slide - 1)} className="grid size-11 place-items-center border border-border disabled:opacity-35"><ChevronLeft size={18} /></button>
+            <span aria-live="polite" className="font-mono text-xs tabular-nums">{slide + 1} / {PROJECTS.length}</span>
+            <button type="button" aria-label="Next project" disabled={slide === PROJECTS.length - 1} onClick={() => goToSlide(slide + 1)} className="grid size-11 place-items-center border border-border disabled:opacity-35"><ChevronRight size={18} /></button>
+          </div>
+        </div>
+        <div className="min-w-0 lg:flex flex-row items-start relative gap-16">
 
-          <div className="w-full md:w-5/12 md:sticky md:top-32 relative z-40 min-h-[350px]" data-familiar-avoid>
+          <div className="hidden lg:block w-full lg:w-5/12 lg:sticky lg:top-32 relative z-40 min-h-[350px]" data-familiar-avoid>
             <AnimatePresence mode="wait">
               {mounted && (
                 <motion.div
@@ -194,90 +300,29 @@ export const SelectedWork = () => {
                   }}
                   className="flex flex-col w-full"
                 >
-                  <motion.div
-                    variants={{
-                      hidden: { opacity: 0, y: 12 },
-                      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
-                    }}
-                    className="flex items-baseline gap-4 mb-4"
-                  >
-                    <span className="font-mono text-4xl text-border opacity-50 tracking-tighter">{PROJECTS[activeIndex].id}</span>
-                    <div className="font-mono text-accent text-xs tracking-widest uppercase">{PROJECTS[activeIndex].category}</div>
-                  </motion.div>
-
-                  <motion.h3
-                    variants={{
-                      hidden: { opacity: 0, y: 12 },
-                      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
-                    }}
-                    className="text-4xl md:text-5xl lg:text-6xl font-display font-medium mb-6 uppercase tracking-tight leading-none"
-                  >
-                    {PROJECTS[activeIndex].title}
-                  </motion.h3>
-
-                  <motion.p
-                    variants={{
-                      hidden: { opacity: 0, y: 12 },
-                      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
-                    }}
-                    className="text-text-muted text-base md:text-lg mb-8 max-w-sm leading-relaxed border-l border-border pl-4"
-                  >
-                    {PROJECTS[activeIndex].description}
-                  </motion.p>
-
-                  <motion.div
-                    variants={{
-                      hidden: { opacity: 0, y: 12 },
-                      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
-                    }}
-                    className="flex flex-wrap gap-2 mb-10"
-                  >
-                    {PROJECTS[activeIndex].tags.map(tag => (
-                      <span key={tag} className="text-[10px] font-mono border border-[#333] px-2 py-1 text-text-muted uppercase tracking-wider">
-                        {tag}
-                      </span>
-                    ))}
-                  </motion.div>
-
-                  <motion.div
-                    variants={{
-                      hidden: { opacity: 0, y: 12 },
-                      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
-                    }}
-                    className="relative z-40"
-                  >
-                    <MagneticEffect intensity={0.3}>
-                      <button
-                        onClick={(e) => handleProjectClick(PROJECTS[activeIndex].slug, e)}
-                        data-cursor="VIEW"
-                        className="flex items-center gap-3 text-xs font-mono uppercase tracking-widest text-text-primary hover:text-accent transition-colors group"
-                        tabIndex={0}
-                      >
-                        <span className="relative pb-1 transform group-hover:translate-x-1 transition-transform duration-300">
-                          View Project
-                          <span className="absolute bottom-0 left-0 w-full h-[1px] bg-accent origin-left scale-x-50 group-hover:scale-x-100 transition-transform duration-300" />
-                        </span>
-                        <MoveRight className="w-4 h-4 group-hover:translate-x-3 transition-transform duration-300 text-accent" />
-                      </button>
-                    </MagneticEffect>
-                  </motion.div>
+                  <ProjectDetails project={PROJECTS[activeIndex]} onOpen={(event) => handleProjectClick(PROJECTS[activeIndex].slug, event)} />
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          <div className="w-full md:w-7/12 flex flex-col gap-32 md:gap-48 relative z-20">
+          <div ref={carousel} aria-label="Project scenes" className="relative z-20 flex w-full min-w-0 gap-4 max-lg:snap-x max-lg:snap-mandatory max-lg:overflow-x-auto max-lg:overscroll-x-contain lg:w-7/12 lg:flex-col lg:gap-48"
+            onScroll={(event) => {
+              const { scrollLeft, children } = event.currentTarget;
+              const stride = (children[1] as HTMLElement | undefined)?.offsetLeft;
+              if (stride) setSlide(Math.round(scrollLeft / stride));
+            }}>
             {PROJECTS.map((project, i) => (
-              <div key={project.id} className="project-scene relative min-h-[500px] flex items-center justify-center p-8 border border-border overflow-hidden group bg-[#0a0a0a]" data-cursor="VIEW">
+              <article key={project.id} className="project-card project-slide min-w-0 max-lg:flex max-lg:basis-full max-lg:shrink-0 max-lg:snap-start max-lg:flex-col max-lg:border max-lg:border-border max-lg:bg-surface" data-project={project.slug}>
+              <div className="project-scene relative flex min-h-[20rem] items-center justify-center p-5 lg:min-h-[500px] lg:p-8 border-b lg:border border-border overflow-hidden group bg-[#0a0a0a]" data-cursor="VIEW">
 
                 <div
-                  className={`absolute z-0 leading-none select-none pointer-events-none arch-bg-num text-white ${
+                  className={`absolute z-0 leading-none select-none pointer-events-none arch-bg-num text-white opacity-[0.04] lg:opacity-0 ${
                     i === 0 ? "top-[-10%] -right-[15%] text-[200px] md:text-[400px] font-thin" :
                     i === 1 ? "bottom-[-15%] -left-[10%] text-[250px] md:text-[350px] font-light" :
                     i === 2 ? "bottom-[-30%] -right-[10%] text-[300px] md:text-[500px] font-medium" :
                     "top-[10%] left-[15%] text-[200px] md:text-[300px] font-bold tracking-widest"
                   }`}
-                  style={{ opacity: 0 }}
                 >
                   0{i + 1}
                 </div>
@@ -322,7 +367,7 @@ export const SelectedWork = () => {
                   SYS_VISUAL // {project.theme.toUpperCase()}
                 </div>
 
-                <div className="relative z-20 w-full max-w-xs flex flex-col gap-1">
+                <div className="relative z-20 mt-4 lg:mt-0 w-full max-w-xs flex flex-col gap-1">
                   {project.assets?.diagram ? (
                     <div className="relative w-full aspect-square">
                       <Image
@@ -342,9 +387,23 @@ export const SelectedWork = () => {
                           <div
                             key={node}
                             className="flex flex-col group/node transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.02]"
+                            role="button"
+                            tabIndex={0}
+                            aria-pressed={highlightedNode === project.slug + "-" + nIdx}
+                            onClick={(event) => {
+                              const key = project.slug + "-" + nIdx;
+                              setHighlightedNode((current) => current === key ? "" : key);
+                              window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "pipeline-hover", target: event.currentTarget } }));
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key !== "Enter" && event.key !== " ") return;
+                              event.preventDefault();
+                              event.currentTarget.click();
+                            }}
+                            data-highlighted={highlightedNode === project.slug + "-" + nIdx || undefined}
                             onMouseEnter={(e) => window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "pipeline-hover", target: e.currentTarget } }))}
                           >
-                            <div className="arch-node bg-[#111] border-l-2 border-accent/30 group-hover/node:border-accent text-text-primary px-4 py-3 font-mono text-xs shadow-xl tracking-wider flex justify-between items-center transition-all duration-300 group-hover/pipeline:opacity-50 group-hover/node:!opacity-100 group-hover/node:bg-[#151515]">
+                            <div className="arch-node [[data-highlighted=true]>&]:border-accent [[data-highlighted=true]>&]:bg-[#221313] bg-[#111] border-l-2 border-accent/30 group-hover/node:border-accent text-text-primary px-3 lg:px-4 py-2.5 lg:py-3 font-mono text-xs shadow-xl tracking-wider flex justify-between items-center transition-all duration-300 group-hover/pipeline:opacity-50 group-hover/node:!opacity-100 group-hover/node:bg-[#151515]">
                               <span>{node}</span>
                               <span className="text-[#444] text-[10px] group-hover/node:text-accent/70 transition-colors">{`0${nIdx + 1}`}</span>
                             </div>
@@ -358,6 +417,10 @@ export const SelectedWork = () => {
                   )}
                 </div>
               </div>
+              <div className="flex-1 p-5 lg:hidden" data-familiar-avoid>
+                <ProjectDetails mobile project={project} onOpen={(event) => handleProjectClick(project.slug, event)} />
+              </div>
+              </article>
             ))}
           </div>
         </div>

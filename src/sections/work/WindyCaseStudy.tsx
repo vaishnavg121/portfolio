@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useRef } from 'react';
-import Image from 'next/image';
+import { VisualSlot } from './VisualSlot';
 import Link from 'next/link';
 import { MoveLeft, ArrowRight, ExternalLink } from 'lucide-react';
 import gsap from 'gsap';
@@ -12,29 +12,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
 }
-
-const VisualSlot = ({ src, alt, className = "", objectFit = "contain" }: { src: string, alt: string, className?: string, objectFit?: "cover" | "contain" }) => {
-  return (
-    <div className={`relative w-full bg-[#030303] border border-white/5 overflow-hidden flex items-center justify-center group ${className}`} data-familiar-protect data-familiar-reaction="inspect">
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(45deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%, #fff)", backgroundSize: "4px 4px" }} />
-      <div className="absolute inset-0 border border-accent/20 scale-[0.98] opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-700 pointer-events-none" />
-      <span className="absolute bottom-4 left-4 font-mono text-[10px] text-text-muted tracking-widest z-10 uppercase mix-blend-difference pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500">{alt}</span>
-      <Image 
-        src={src} 
-        alt={alt} 
-        fill 
-        sizes="100vw"
-        className={`${objectFit === "cover" ? "object-cover" : "object-contain"} opacity-0 transition-opacity duration-700`}
-        onError={(e) => {
-          (e.target as HTMLElement).style.display = 'none';
-        }}
-        onLoad={(e) => {
-          (e.target as HTMLElement).style.opacity = '1';
-        }}
-      />
-    </div>
-  );
-};
 
 const SectionHeader = ({ number, title }: { number: string, title: string }) => (
   <div className="mb-6 lg:mb-14 case-section-header">

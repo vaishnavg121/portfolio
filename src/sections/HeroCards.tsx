@@ -96,6 +96,13 @@ const CARDS = [
   { id: 'contact', title: 'CONTACT', subtitle: 'LET’S CONNECT', num: '04', Icon: IconContact }
 ];
 
+const desktopPositions = [
+  { x: 0, y: 40, rotate: -2 },
+  { x: 180, y: 10, rotate: 1 },
+  { x: 360, y: 50, rotate: -1 },
+  { x: 540, y: 20, rotate: 2 },
+];
+
 export const HeroCards = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -108,42 +115,27 @@ export const HeroCards = () => {
 
     const mm = gsap.matchMedia();
 
-    mm.add(
-      {
-        isDesktop: "(min-width: 64rem)"
-      },
-      (context) => {
-        const { isDesktop } = context.conditions as { isDesktop: boolean };
+    mm.add("(width < 64rem)", () => {
+      gsap.from(cards, { y: 16, opacity: 0.25, duration: 0.52, stagger: 0.07, ease: "power2.out", clearProps: "transform,opacity" });
+    }, containerRef);
 
-        // Desktop: Staggered horizontal fan.
-        // Mobile: Stepped vertical stack to prevent overflow.
-        const restingProps = isDesktop
-          ? [
-              { x: 0, y: 40, rotate: -2 },
-              { x: 180, y: 10, rotate: 1 },
-              { x: 360, y: 50, rotate: -1 },
-              { x: 540, y: 20, rotate: 2 }
-            ]
-          : [
-              { x: 0, y: 0, rotate: -2 },
-              { x: 25, y: 35, rotate: -1 },
-              { x: 50, y: 70, rotate: 1 },
-              { x: 75, y: 105, rotate: 3 }
-            ];
+    mm.add(
+      "(min-width: 64rem)",
+      () => {
 
         gsap.set(cards, { opacity: 0, y: "+=40" });
         cards.forEach((card, i) => {
           gsap.to(card, {
             opacity: 1,
-            x: restingProps[i].x,
-            y: restingProps[i].y,
-            rotate: restingProps[i].rotate,
+            x: desktopPositions[i].x,
+            y: desktopPositions[i].y,
+            rotate: desktopPositions[i].rotate,
             duration: 0.9,
             delay: 1.1 + (i * 0.15),
             ease: "power3.out",
             onComplete: () => {
               gsap.set(card, { clearProps: "y" });
-              gsap.set(card, { x: restingProps[i].x, y: restingProps[i].y, rotate: restingProps[i].rotate });
+              gsap.set(card, { x: desktopPositions[i].x, y: desktopPositions[i].y, rotate: desktopPositions[i].rotate });
             }
           });
         });
@@ -155,9 +147,9 @@ export const HeroCards = () => {
         const onContainerEnter = () => {
           cards.forEach((c, i) => {
             gsap.to(c, {
-              x: restingProps[i].x + (isDesktop ? (i * 10) : (i * 4)), 
-              y: restingProps[i].y + (isDesktop ? (i % 2 === 0 ? -5 : 5) : (i * 4)),
-              rotate: isDesktop ? restingProps[i].rotate * 0.5 : restingProps[i].rotate * 0.5,
+              x: desktopPositions[i].x + (i * 10),
+              y: desktopPositions[i].y + (i % 2 === 0 ? -5 : 5),
+              rotate: desktopPositions[i].rotate * 0.5,
               duration: 0.6,
               ease: "power2.out"
             });
@@ -167,9 +159,9 @@ export const HeroCards = () => {
         const onContainerLeave = () => {
           cards.forEach((c, i) => {
             gsap.to(c, {
-              x: restingProps[i].x,
-              y: restingProps[i].y,
-              rotate: restingProps[i].rotate,
+              x: desktopPositions[i].x,
+              y: desktopPositions[i].y,
+              rotate: desktopPositions[i].rotate,
               scale: 1,
               zIndex: CARDS.length - i,
               borderColor: "rgba(255,255,255,0.05)",
@@ -193,8 +185,8 @@ export const HeroCards = () => {
         const cardHandlers = cards.map((card, i) => {
           const onEnter = () => {
             gsap.to(card, {
-              y: restingProps[i].y - (isDesktop ? 12 : 20),
-              x: restingProps[i].x - (isDesktop ? 5 : 10),
+              y: desktopPositions[i].y - 12,
+              x: desktopPositions[i].x - 5,
               rotate: 0,
               scale: 1.05,
               zIndex: 20, 
@@ -214,8 +206,8 @@ export const HeroCards = () => {
               if (i !== j) {
                 const distance = j - i;
                 gsap.to(sibling, {
-                  x: restingProps[j].x + (isDesktop ? (distance > 0 ? 15 : -10) : (distance > 0 ? 15 : -5)),
-                  y: restingProps[j].y + (isDesktop ? (distance > 0 ? 5 : -5) : (distance > 0 ? 15 : -5)),
+                  x: desktopPositions[j].x + (distance > 0 ? 15 : -10),
+                  y: desktopPositions[j].y + (distance > 0 ? 5 : -5),
                   scale: 0.98,
                   zIndex: CARDS.length - j,
                   borderColor: "rgba(255,255,255,0.02)",
@@ -227,34 +219,23 @@ export const HeroCards = () => {
           };
 
           const onDown = () => gsap.to(card, { scale: 0.98, duration: 0.1 });
-          const onUp = () => {
-            gsap.to(card, { scale: 1.05, duration: 0.1 });
-            document.getElementById(CARDS[i].id)?.scrollIntoView({ behavior: 'smooth' });
-          };
-          const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              document.getElementById(CARDS[i].id)?.scrollIntoView({ behavior: 'smooth' });
-            }
-          };
+          const onUp = () => gsap.to(card, { scale: 1.05, duration: 0.1 });
 
           card.addEventListener('mouseenter', onEnter);
           card.addEventListener('mousedown', onDown);
           card.addEventListener('mouseup', onUp);
-          card.addEventListener('keydown', onKeyDown);
 
-          return { card, onEnter, onDown, onUp, onKeyDown };
+          return { card, onEnter, onDown, onUp };
         });
 
         // Cleanup event listeners for matchMedia
         return () => {
           container.removeEventListener('mouseenter', onContainerEnter);
           container.removeEventListener('mouseleave', onContainerLeave);
-          cardHandlers.forEach(({ card, onEnter, onDown, onUp, onKeyDown }) => {
+          cardHandlers.forEach(({ card, onEnter, onDown, onUp }) => {
             card.removeEventListener('mouseenter', onEnter);
             card.removeEventListener('mousedown', onDown);
             card.removeEventListener('mouseup', onUp);
-            card.removeEventListener('keydown', onKeyDown as EventListener);
           });
         };
       },
@@ -267,21 +248,22 @@ export const HeroCards = () => {
   return (
     <div 
       ref={containerRef} 
-      className="hidden lg:block relative mt-8 md:mt-[clamp(4rem,100vh-42rem,20rem)] ml-2 perspective-1000 w-[300px] h-[380px] md:w-[800px] md:h-[360px] z-20"
+      className="relative mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:mt-[clamp(4rem,100vh-42rem,20rem)] lg:ml-2 lg:block perspective-1000 w-full lg:w-[800px] lg:h-[360px] z-20"
       aria-label="Quick Navigation"
     >
       {CARDS.map((card, i) => (
         <button
           key={card.id}
-          className="hero-card absolute top-0 left-0 w-[180px] h-[260px] md:w-[210px] md:h-[310px] bg-[#050505]/95 backdrop-blur-md border border-white/5 rounded-sm p-5 md:p-6 text-left shadow-[0_12px_40px_rgba(0,0,0,0.6)] flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent overflow-hidden group"
+          className="hero-card lg:motion-reduce:[transform:var(--resting-position)] relative h-[9.25rem] min-w-0 lg:absolute lg:top-0 lg:left-0 lg:w-[210px] lg:h-[310px] bg-[#050505]/95 backdrop-blur-md border border-white/5 rounded-sm p-3 lg:p-6 text-left shadow-[0_12px_40px_rgba(0,0,0,0.6)] flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent overflow-hidden group active:border-accent motion-safe:active:scale-[0.98]"
           style={{ 
             zIndex: CARDS.length - i,
-            transform: shouldReduceMotion ? `translate(${i * 20}px, ${i * 30}px)` : 'none' 
-          }}
+            "--resting-position": `translate(${desktopPositions[i].x}px, ${desktopPositions[i].y}px) rotate(${desktopPositions[i].rotate}deg)`
+          } as React.CSSProperties}
+          onClick={() => document.getElementById(card.id)?.scrollIntoView({ behavior: shouldReduceMotion ? "instant" : "smooth" })}
           aria-label={`Scroll to ${card.title}`}
         >
           {/* Highlight overlay */}
-          <div className="card-highlight absolute inset-0 bg-gradient-to-br from-white/[0.06] to-transparent opacity-0 pointer-events-none" />
+          <div className="card-highlight absolute inset-0 bg-gradient-to-br from-white/[0.06] to-transparent opacity-0 max-lg:group-active:opacity-100 max-lg:group-focus-visible:opacity-100 pointer-events-none" />
           
           {/* Subtle line accent left */}
           <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-accent/0 group-hover:bg-accent/60 transition-colors duration-500" />
@@ -291,17 +273,17 @@ export const HeroCards = () => {
             <span className="font-mono text-xs md:text-sm text-accent/80 tracking-widest leading-none mb-auto">{card.num}</span>
             
             {/* Top/Center: Large Symbol */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-4 md:mt-6">
+            <div className="absolute inset-x-0 top-2.5 flex items-center justify-center pointer-events-none [&>svg]:size-16 lg:inset-0 lg:mt-6 lg:[&>svg]:size-32">
               <card.Icon />
             </div>
 
             {/* Bottom Content */}
             <div className="mt-auto relative bg-[#050505]/40 pt-4 -mx-2 px-2 -mb-2 pb-2 backdrop-blur-sm rounded-sm">
-              <div className="w-6 h-[1px] bg-white/20 mb-3 group-hover:w-12 group-hover:bg-accent/70 transition-all duration-500" />
-              <div className="font-display text-base md:text-lg text-white/90 tracking-widest uppercase mb-1.5">{card.title}</div>
+              <div className="w-6 h-[1px] bg-white/20 mb-1.5 lg:mb-3 group-hover:w-12 group-hover:bg-accent/70 transition-all duration-500" />
+              <div className="font-display text-xs lg:text-lg text-white/90 tracking-wider lg:tracking-widest uppercase mb-0.5 lg:mb-1.5">{card.title}</div>
               <div className="flex items-center justify-between">
-                <div className="font-mono text-[9px] md:text-[10px] text-text-muted tracking-widest uppercase">{card.subtitle}</div>
-                <span className="card-arrow font-mono text-[11px] md:text-xs text-accent opacity-0 -translate-x-2 leading-none">&#x2192;</span>
+                <div className="font-mono text-[9px] lg:text-[10px] text-text-muted tracking-widest uppercase">{card.subtitle}</div>
+                <span className="card-arrow font-mono text-[11px] md:text-xs text-accent lg:opacity-0 lg:-translate-x-2 leading-none">&#x2192;</span>
               </div>
             </div>
           </div>
