@@ -386,7 +386,7 @@ export const SelectedWork = () => {
                         {project.architecture.map((node, nIdx) => (
                           <div
                             key={node}
-                            className="flex flex-col group/node transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.02]"
+                            className="flex flex-col group/node transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.02] max-lg:aria-pressed:z-10 motion-safe:max-lg:aria-pressed:-translate-y-0.5 motion-safe:max-lg:aria-pressed:scale-[1.02]"
                             role="button"
                             tabIndex={0}
                             aria-pressed={highlightedNode === project.slug + "-" + nIdx}

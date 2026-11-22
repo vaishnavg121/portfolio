@@ -25,6 +25,7 @@ export const SkillsConstellation = () => {
   const svgRef = useRef<SVGSVGElement>(null);
   const worldRef = useRef<SVGGElement>(null);
   const nodeRefs = useRef<{ [key: string]: SVGGElement | null }>({});
+  const lastTouchEnd = useRef(-Infinity);
   const touches = useRef(new Map<number, TouchPoint>());
   const touchStart = useRef<{ point: TouchPoint; node?: string; moved: boolean } | null>(null);
   const reduceMotion = useReducedMotion();
@@ -542,6 +543,7 @@ export const SkillsConstellation = () => {
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.pointerType === "touch") {
+      e.preventDefault();
       const point = { x: e.clientX, y: e.clientY };
       touches.current.set(e.pointerId, point);
       if (touches.current.size === 1) {
@@ -713,12 +715,37 @@ export const SkillsConstellation = () => {
 
   const endTouch = (e: React.PointerEvent, canceled = false) => {
     if (!touches.current.delete(e.pointerId) || touches.current.size) return;
+    lastTouchEnd.current = performance.now();
     const start = touchStart.current;
     touchStart.current = null;
     if (canceled || !start || start.moved) return;
-    if (start.node) selectNode(start.node);
-    else setPinnedNode(null);
+    if (start.node) {
+      selectNode(start.node);
+      return;
+    }
+    if (pinnedNode) {
+      setPinnedNode(null);
+      return;
+    }
+
+    const matrix = worldRef.current?.getScreenCTM();
+    if (!matrix) return;
+    let nearest: string | undefined;
+    let distance = 14;
+    for (const node of nodesProj) {
+      const point = new DOMPoint(node.proj.x, node.proj.y).matrixTransform(matrix);
+      const delta = Math.hypot(point.x - start.point.x, point.y - start.point.y);
+      if (delta < distance) {
+        nearest = node.id;
+        distance = delta;
+      }
+    }
+    if (nearest) selectNode(nearest);
   };
+
+  const isTouchClick = (event: React.MouseEvent) =>
+    ("pointerType" in event.nativeEvent && event.nativeEvent.pointerType === "touch")
+    || (event.detail > 0 && performance.now() - lastTouchEnd.current < 500);
 
   const zoomBy = (factor: number) => {
     const previous = camera.current.z;
@@ -743,15 +770,17 @@ export const SkillsConstellation = () => {
     setActiveDomain(id);
     setPinnedNode(null);
     focusOn(domain.proj.x, domain.proj.y, isCompact() ? 1.25 : 1.1);
-  }, [domainsProj, focusOn]);
+  }, [domainsProj, focusOn, setActiveDomain, setPinnedNode]);
 
   useEffect(() => {
     const openRegion = (e: Event) => selectRegion((e as CustomEvent<string>).detail);
+    const requested = new URLSearchParams(window.location.search).get("knowledge");
+    if (requested) selectRegion(requested);
     window.addEventListener("portfolio:knowledge-region", openRegion);
     return () => window.removeEventListener("portfolio:knowledge-region", openRegion);
   }, [selectRegion]);
 
-  const resetCamera = useCallback(() => {
+  const resetCamera = () => {
     setActiveDomain(null);
     setPinnedNode(null);
     setSearchQuery("");
@@ -759,7 +788,7 @@ export const SkillsConstellation = () => {
     clampCamera();
     applyCamera(true, 1.2);
     if (svgWrapperRef.current) gsap.to(svgWrapperRef.current, { rotateX: 0, rotateY: 0, duration: 1.2, ease: "power3.inOut" });
-  }, [applyCamera, clampCamera, getDefaultCamera]);
+  };
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -777,6 +806,7 @@ export const SkillsConstellation = () => {
     const defaultCam = getDefaultCamera();
     if (isCompact() || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       camera.current = defaultCam;
+      if (!isCompact()) clampCamera();
       applyCamera();
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         gsap.from(worldRef.current, { opacity: 0.3, duration: 0.7, ease: "power2.out" });
@@ -988,7 +1018,7 @@ export const SkillsConstellation = () => {
           onMouseEnter={() => { if (!pinnedNode && !isDragging) setHoveredNode(node.id); }}
           onMouseLeave={() => { if (!pinnedNode) setHoveredNode(null); }}
           onClick={(e) => {
-            if (isDragging || ("pointerType" in e.nativeEvent && e.nativeEvent.pointerType === "touch")) return;
+            if (isDragging || isTouchClick(e)) return;
             e.stopPropagation();
             selectNode(node.id);
           }}
@@ -1024,7 +1054,7 @@ export const SkillsConstellation = () => {
             fontSize={fontSize}
             fill={isHovered ? "var(--text-primary)" : isFirstOrder ? "var(--text-primary)" : (isRich ? "var(--text-primary)" : "var(--text-muted)")}
             textAnchor={textAnchor as "start" | "middle" | "end"}
-            className={`skill-label font-mono tracking-widest max-lg:tracking-normal lg:pointer-events-none transition-all duration-300 uppercase ${isHub || isHovered ? 'skill-label-featured max-lg:[font-size:38px]' : 'max-lg:[font-size:26px]'} ${isRich ? 'font-bold' : 'font-medium'}`}
+            className={`skill-label font-mono tracking-widest max-lg:tracking-normal lg:pointer-events-none transition-all duration-300 uppercase ${isHovered ? 'skill-label-featured max-lg:[font-size:38px]' : isHub ? 'max-lg:[font-size:32px]' : 'max-lg:[font-size:26px]'} ${isRich ? 'font-bold' : 'font-medium'}`}
             style={{ textShadow: "0 1px 3px rgba(0,0,0,1), 0 0 7px rgba(0,0,0,0.8)" }}
           >
             {node.label}
@@ -1129,8 +1159,11 @@ export const SkillsConstellation = () => {
             </div>
           </div>
 
-          <div className="absolute bottom-2 left-4 right-4 lg:bottom-6 lg:left-6 lg:right-auto z-30 flex items-center justify-between gap-3 interactive-ui">
-            <p className="font-mono text-[11px] text-text-muted lg:hidden">Drag Ã‚Â· Pinch Ã‚Â· Tap a skill</p>
+          <div className="absolute bottom-2 left-4 right-4 lg:bottom-6 lg:left-6 lg:right-auto z-30 flex items-center justify-between gap-3 touch-manipulation interactive-ui">
+            <div className="font-mono text-[11px] leading-tight text-text-muted lg:hidden">
+              <p>Drag, pinch or tap</p>
+              <p className="mt-1">Zoom for skill labels</p>
+            </div>
             <div className="bg-[#0a0a0a]/90 backdrop-blur-md border border-border flex lg:flex-col gap-1 p-1 shadow-2xl">
               <button onClick={() => zoomBy(1.25)} className="grid size-11 lg:size-auto lg:p-2.5 place-items-center text-text-muted hover:text-white" aria-label="Zoom in"><Plus className="w-4 h-4" /></button>
               <button onClick={() => zoomBy(0.8)} className="grid size-11 lg:size-auto lg:p-2.5 place-items-center text-text-muted hover:text-white" aria-label="Zoom out"><Minus className="w-4 h-4" /></button>
@@ -1231,10 +1264,10 @@ export const SkillsConstellation = () => {
 
           <div 
             ref={svgWrapperRef}
-            className="absolute inset-x-3 top-[8.5rem] bottom-16 touch-none lg:touch-auto lg:inset-0 transform-style-3d origin-center"
+            className="absolute inset-x-3 top-[8.5rem] bottom-16 max-lg:border max-lg:border-[#231d1d] touch-none lg:touch-auto lg:inset-0 transform-style-3d origin-center"
             data-knowledge-canvas
             onClick={(e) => {
-              if (isCompact() && !("pointerType" in e.nativeEvent && e.nativeEvent.pointerType === "touch") && !(e.target as Element).closest("[data-skill-node]")) setPinnedNode(null);
+              if (isCompact() && !isTouchClick(e) && !(e.target as Element).closest("[data-skill-node]")) setPinnedNode(null);
             }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
