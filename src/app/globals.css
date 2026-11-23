@@ -70,7 +70,69 @@ body {
     background: var(--background);
   }
 
-  [data-knowledge-canvas] [data-overview] .skill-label:not(.skill-label-featured) {
+  .knowledge-layout {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    gap: 0.625rem;
+    min-height: 32rem;
+    height: min(49rem, calc(100svh - 3rem - env(safe-area-inset-top)));
+    padding: 0.75rem max(var(--mobile-gutter, 1rem), env(safe-area-inset-right)) 0.75rem max(var(--mobile-gutter, 1rem), env(safe-area-inset-left));
+  }
+
+  .knowledge-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.84fr);
+    column-gap: 0.5rem;
+  }
+
+  .knowledge-title-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .knowledge-filter { grid-column: 2; grid-row: 2; }
+  .knowledge-search { grid-column: 1; grid-row: 2; position: relative; }
+  .knowledge-toolbar { min-width: 0; }
+  .knowledge-stage {
+    position: relative;
+    display: grid;
+    min-width: 0;
+    min-height: 0;
+    grid-template-rows: minmax(8rem, 1fr) auto;
+  }
+
+  .knowledge-canvas {
+    min-width: 0;
+    min-height: 0;
+    border: 1px solid var(--border);
+    background: radial-gradient(ellipse at center, #141011, #050505 78%);
+  }
+
+  .knowledge-layout:has(.knowledge-details) .knowledge-details {
+    max-height: clamp(8.75rem, 29svh, 15.5rem);
+    border-top-color: var(--accent);
+  }
+
+  .knowledge-hint { padding-inline-end: 3.5rem; }
+
+  [data-detail-level="overview"] .skill-label:not(.skill-label-featured, .skill-label-landmark),
+  [data-detail-level="regions"] .skill-label:not(.skill-label-featured, .skill-label-landmark, .skill-label-hub) {
+    opacity: 0;
+    pointer-events: none;
+  }
+  :is([data-detail-level="overview"], [data-detail-level="regions"]) .skill-label-landmark {
+    font-size: 37px;
+  }
+  .mobile-domain-label {
+    paint-order: stroke;
+    stroke: #080707;
+    stroke-width: 6px;
+  }
+  [data-detail-level="full"] .mobile-domain-label { opacity: 0.38; }
+  [data-skill-focused] :is(.mobile-domain-label, [aria-pressed="false"] .skill-label) {
     opacity: 0;
     pointer-events: none;
   }
@@ -82,6 +144,28 @@ body {
     margin-inline: auto;
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+}
+
+[data-knowledge-canvas] { touch-action: pan-y pinch-zoom; }
+[data-knowledge-canvas][data-exploring] { touch-action: none; }
+
+@media (width < 64rem) and (orientation: landscape) and (width >= 38rem) {
+  .knowledge-layout { min-height: 19rem; }
+  .knowledge-header {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 0.8fr);
+  }
+  .knowledge-title-row { grid-column: 1; }
+  .knowledge-filter { grid-column: 3; grid-row: 1; }
+  .knowledge-search { grid-column: 2; grid-row: 1; }
+  .knowledge-stage:has(.knowledge-details) {
+    grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.82fr);
+    grid-template-rows: minmax(8rem, 1fr);
+  }
+  .knowledge-layout:has(.knowledge-details) .knowledge-details {
+    max-height: none;
+    border-top-color: var(--border);
+    border-left-color: var(--accent);
   }
 }
 
@@ -139,4 +223,91 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+@media (width < 64rem) {
+  :root {
+    --mobile-gutter: clamp(1rem, 5.1vw, 2.25rem);
+    --mobile-section-space: clamp(2.5rem, 9vw, 4.5rem);
+    --mobile-card-space: clamp(1rem, 4.6vw, 1.5rem);
+  }
+
+  .mobile-gutter {
+    padding-inline: max(var(--mobile-gutter), env(safe-area-inset-left))
+      max(var(--mobile-gutter), env(safe-area-inset-right));
+  }
+
+  .mobile-section { padding-block: var(--mobile-section-space); }
+  .mobile-card-pad { padding: var(--mobile-card-space); }
+  .mobile-card-title { font-size: clamp(1.35rem, 5.2vw, 2rem); line-height: 1.1; }
+  .mobile-section-title { font-size: 0.875rem; line-height: 1.35; color: var(--text-primary); }
+
+  .work-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.625rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .robot-story { gap: 1.375rem; padding-block: 0.5rem var(--mobile-section-space); }
+  .robot-story-text { display: contents; }
+  .robot-story-intro { order: 1; }
+  .robot-story-visual { order: 2; }
+  .robot-story-specs {
+    order: 3;
+    border: 1px solid var(--border);
+    padding: var(--mobile-card-space);
+    background: var(--surface);
+  }
+
+  .notes-section > .group { width: 100%; }
+  .notes-page { width: calc(100% - 2 * var(--mobile-gutter)); margin-inline: auto; }
+  .contact-section { padding-bottom: max(3rem, env(safe-area-inset-bottom)); }
+  .contact-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(100%, 32rem); }
+  .contact-actions a {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    height: 100%;
+    min-height: 4.5rem;
+    min-width: 0;
+    border: 1px solid var(--border);
+    padding: 0.75rem;
+    text-align: start;
+    overflow-wrap: anywhere;
+  }
+
+  .mobile-menu { border-radius: 0.625rem; }
+}
+
+@media (width < 64rem) {
+  .case-cover { padding-block: 1.25rem var(--mobile-section-space); }
+  .case-title {
+    font-size: clamp(1.75rem, 7.3vw, 3.25rem);
+    line-height: 1.1;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+
+  .case-body { padding-block: var(--mobile-section-space); }
+  .case-body > * + * { margin-block-start: var(--mobile-section-space); }
+  .case-section > :is(p, div) > p { line-height: 1.65; }
+  .case-section-header h2 { text-wrap: balance; }
+
+  body:has(.case-image-dialog[open]) { overflow: hidden; }
+  .case-image-dialog {
+    position: fixed;
+    inset: 0;
+    width: min(calc(100% - 2 * var(--mobile-gutter)), 46rem);
+    max-height: calc(100dvh - 2 * var(--mobile-gutter));
+    margin: auto;
+    color: var(--text-primary);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: auto;
+  }
+  .case-image-dialog::backdrop { background: #000d; }
 }

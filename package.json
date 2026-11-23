@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:knowledge": "node --experimental-strip-types --test tests/knowledge-camera.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

@@ -1,0 +1,62 @@
+export type Point = { x: number; y: number };
+export type Camera = Point & { z: number };
+export type Frame = { width: number; height: number; scale: number };
+export type Bounds = { left: number; right: number; top: number; bottom: number };
+export type GestureSample = { center: Point; span: number };
+
+const clamp = (value: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, value));
+
+export function fitCamera(bounds: Bounds, frame: Frame): Camera {
+  const padding = clamp(frame.width * 0.1, 20, 52);
+  const z = Math.min(
+    Math.max(1, frame.width - 2 * padding) / Math.max(1, bounds.right - bounds.left),
+    Math.max(1, frame.height - 2 * padding) / Math.max(1, bounds.bottom - bounds.top),
+  ) / frame.scale;
+  return cameraAt({ x: (bounds.left + bounds.right) / 2, y: (bounds.top + bounds.bottom) / 2 }, z);
+}
+
+export function cameraAt(point: Point, z: number): Camera {
+  return { x: -point.x * z, y: -point.y * z, z };
+}
+
+export function constrainPan(camera: Camera, bounds: Bounds, frame: Frame): Camera {
+  const limit = (offset: number, start: number, end: number, length: number) => {
+    const halfView = length / (2 * frame.scale);
+    const edge = halfView * 0.68;
+    return clamp(offset, -end * camera.z - edge, -start * camera.z + edge);
+  };
+  return {
+    x: limit(camera.x, bounds.left, bounds.right, frame.width),
+    y: limit(camera.y, bounds.top, bounds.bottom, frame.height),
+    z: camera.z,
+  };
+}
+
+export function resizeCamera(camera: Camera, oldScale: number, newScale: number, min: number, max: number): Camera {
+  const z = clamp(camera.z * oldScale / newScale, min, max);
+  return cameraAt({ x: -camera.x / camera.z, y: -camera.y / camera.z }, z);
+}
+
+export function sampleGesture(points: Iterable<Point>): GestureSample | null {
+  const contacts = points[Symbol.iterator]();
+  const first = contacts.next().value;
+  if (!first) return null;
+  const second = contacts.next().value;
+  return second ? {
+    center: { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 },
+    span: Math.hypot(first.x - second.x, first.y - second.y),
+  } : { center: first, span: 0 };
+}
+
+export function moveCamera(
+  camera: Camera, from: GestureSample, to: GestureSample, min: number, max: number,
+): Camera {
+  const zoom = from.span > 0 && to.span > 0 ? Math.max(1, to.span) / Math.max(1, from.span) : 1;
+  const z = clamp(camera.z * zoom, min, max);
+  const ratio = z / camera.z;
+  return {
+    x: to.center.x - (from.center.x - camera.x) * ratio,
+    y: to.center.y - (from.center.y - camera.y) * ratio,
+    z,
+  };
+}
