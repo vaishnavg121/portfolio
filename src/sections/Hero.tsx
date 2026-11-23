@@ -46,7 +46,7 @@ export const Hero = () => {
       });
     }, containerRef);
     media.add("(min-width: 64rem)", () => {
-      gsap.to('.hero-title-block', {
+      gsap.to('.hero-title-block, .hero-card-grid', {
         y: -150,
         opacity: 0,
         ease: "none",
@@ -103,7 +103,7 @@ export const Hero = () => {
   return (
     <motion.section
       ref={(el) => { containerRef.current = el; visibilityRef(el); }}
-      className="relative flex items-center justify-center overflow-hidden pt-14 pb-14 lg:min-h-[100svh] lg:pt-16 lg:pb-0"
+      className="relative flex items-center justify-center overflow-hidden max-lg:pt-9 max-lg:pb-12 lg:min-h-[100svh] lg:pt-16 lg:pb-0"
       id="hero"
       initial={{ x: 0, y: 0 }}
       animate={{ x: (!mounted || shouldReduceMotion) ? 0 : [0, 3, -2, 0], y: (!mounted || shouldReduceMotion) ? 0 : [0, -2, 1, 0] }}
@@ -113,11 +113,11 @@ export const Hero = () => {
 
       <HeroBackground bgX={bgX} bgY={bgY} mounted={mounted} shouldReduceMotion={shouldReduceMotion} />
 
-      <div className="container mx-auto px-5 sm:px-8 lg:px-12 z-10 w-full h-full flex flex-col justify-center lg:pb-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 lg:gap-6 relative">
+      <div className="mobile-gutter container mx-auto lg:px-12 z-10 w-full h-full flex flex-col justify-center lg:pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-x-6 lg:gap-y-0 relative">
 
           <motion.div
-            className="hero-title-block min-w-0 lg:col-span-10 lg:col-start-1 relative z-10"
+            className="hero-title-block min-w-0 lg:col-span-10 lg:col-start-1 lg:row-start-1 relative z-10"
             style={{ x: shouldReduceMotion ? 0 : titleX, y: shouldReduceMotion ? 0 : titleY }}
             data-familiar-avoid
           >
@@ -125,7 +125,7 @@ export const Hero = () => {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: shouldReduceMotion ? 0.2 : 0.4, delay: shouldReduceMotion ? 0.1 : 0.85, ease: "easeOut" }}
-              className="mb-5 lg:mb-6 font-mono text-[11px] lg:text-xs text-text-muted tracking-widest uppercase flex items-center gap-3 lg:gap-4"
+              className="mb-4 lg:mb-6 font-mono text-[11px] lg:text-xs text-text-muted tracking-widest uppercase flex items-center gap-3 lg:gap-4"
             >
               <span>SYS_INIT</span>
               <div className="h-[1px] w-5 lg:w-12 shrink-0 bg-border" />
@@ -142,12 +142,10 @@ export const Hero = () => {
               <br />
               <span className="text-text-muted">{profile.name.split(" ")[2]}</span>
             </motion.h1>
-            <HeroCards />
-            <div data-familiar-anchor className="absolute -bottom-16 left-[75%] w-4 h-4 pointer-events-none" />
           </motion.div>
 
           <motion.div
-            className="hero-subtitle-block min-w-0 lg:col-span-5 lg:col-start-8 lg:-mt-[24rem] relative z-30"
+            className="hero-subtitle-block min-w-0 lg:col-span-5 lg:col-start-8 lg:row-start-3 lg:-mt-[22.5rem] relative z-30"
             style={{ x: shouldReduceMotion ? 0 : subtitleX, y: shouldReduceMotion ? 0 : subtitleY }}
             data-familiar-avoid
           >
@@ -156,20 +154,20 @@ export const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: shouldReduceMotion ? 0.2 : 0.6, delay: shouldReduceMotion ? 0.15 : 0.91, ease: "easeOut" }}
             >
-              <h2 className="text-lg sm:text-xl text-text-primary font-light leading-snug mb-3 border-l-2 border-accent pl-4 lg:pl-5">
+              <h2 className="text-lg sm:text-xl text-text-primary font-light leading-snug mb-3 border-l-2 border-accent pl-3 lg:pl-5">
                 Building at the intersection of <br />
                 <span className="italic font-serif">INTELLIGENCE, MARKETS & MACHINES.</span>
               </h2>
 
-              <p className="text-text-muted text-base lg:text-sm leading-relaxed pl-4 lg:pl-5 mb-3 lg:mb-6 max-w-xl lg:max-w-sm whitespace-pre-line">
+              <p className="text-text-muted text-[0.9375rem] lg:text-sm leading-relaxed lg:pl-5 mb-3 lg:mb-6 max-w-xl lg:max-w-sm whitespace-pre-line">
                 {profile.about}
               </p>
 
-              <div className="hero-links flex flex-wrap items-center gap-x-4 gap-y-1 lg:gap-4 text-xs font-mono tracking-widest uppercase pl-4 lg:pl-5 relative z-30">
+              <div className="hero-links flex flex-wrap items-center gap-x-4 gap-y-1 lg:gap-4 text-xs font-mono tracking-widest uppercase lg:pl-5 relative z-30">
                 <MagneticEffect intensity={0.4}>
                   <button
                     onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: shouldReduceMotion ? "instant" : "smooth" })}
-                    className="flex min-h-11 lg:min-h-0 items-center gap-2 text-text-primary hover:text-accent transition-colors group"
+                    className="flex min-h-11 lg:min-h-0 items-center gap-2 max-lg:border max-lg:border-border max-lg:bg-surface max-lg:px-3 text-text-primary hover:text-accent transition-colors group"
                     data-cursor="VIEW"
                   >
                     Explore Work
@@ -185,7 +183,7 @@ export const Hero = () => {
               </div>
             </motion.div>
 
-            <div className="hero-annotation mt-6 pl-4 lg:mt-0 lg:pl-0 lg:absolute lg:-top-16 lg:-right-24 opacity-80 lg:rotate-[8deg]">
+            <div className="hero-annotation mt-3 lg:mt-0 lg:pl-0 lg:absolute lg:-top-16 lg:-right-24 opacity-80 lg:rotate-[8deg]">
               <motion.span
                 initial={{ opacity: 0, pathLength: 0 }}
                 animate={{ opacity: 1, pathLength: 1 }}
@@ -195,6 +193,14 @@ export const Hero = () => {
                 {`// curiosity usually gets out of hand`}
               </motion.span>
             </div>
+          </motion.div>
+          <motion.div
+            className="hero-card-grid min-w-0 relative lg:col-start-1 lg:col-span-10 lg:row-start-2"
+            style={{ x: shouldReduceMotion ? 0 : titleX, y: shouldReduceMotion ? 0 : titleY }}
+            data-familiar-avoid
+          >
+            <HeroCards />
+            <div data-familiar-anchor className="absolute -bottom-16 left-[75%] w-4 h-4 pointer-events-none" />
           </motion.div>
         </div>
       </div>

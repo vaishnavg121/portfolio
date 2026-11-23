@@ -97,7 +97,7 @@ export const ThriveForceEntry = () => {
     <section ref={containerRef} className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 flex flex-col">
        
        {/* SECTION 1 - INTRO */}
-       <div className="relative w-full py-16 lg:py-0 lg:h-[80vh] flex items-center px-5 lg:px-16 overflow-hidden">
+       <div className="mobile-gutter relative w-full max-lg:py-10 lg:py-0 lg:h-[80vh] flex items-center lg:px-16 overflow-hidden">
           <div className="absolute left-5 lg:left-16 top-1/4 bottom-0 w-[1px] bg-accent/20" />
           <div className="relative z-10">
              <div className="font-mono text-xs text-text-muted tracking-widest uppercase mb-6 flex flex-wrap gap-x-4 gap-y-2">
@@ -114,19 +114,19 @@ export const ThriveForceEntry = () => {
        </div>
 
        {/* SECTION 2 - MACHINE & WEAPON FLOW */}
-       <div className="relative w-full flex flex-col lg:flex-row px-5 lg:px-16">
+       <div className="robot-story mobile-gutter relative w-full flex flex-col lg:flex-row lg:px-16">
           
           {/* Left Column - Scrolling Text */}
-          <div className="w-full lg:w-1/3 flex flex-col gap-10 py-10 lg:gap-0 lg:pt-24 lg:pb-32">
+          <div className="robot-story-text w-full lg:w-1/3 flex flex-col lg:gap-0 lg:pt-24 lg:pb-32">
              
              {/* Velociraptor Specs */}
-             <div className="lg:min-h-screen flex flex-col justify-center">
+             <div className="robot-story-intro lg:min-h-screen flex flex-col justify-center">
                  <h3 className="font-display text-[clamp(30px,3.5vw,52px)] uppercase tracking-tighter text-[#f5ede3] mb-2">Velociraptor</h3>
                  <p className="font-mono text-xs tracking-widest text-accent uppercase mb-6 lg:mb-12">3 LB / 1.36 KG &bull; Horizontal Undercutter</p>
-                 <div className="flex flex-col gap-4 lg:gap-8">
+                 <div className="grid grid-cols-2 gap-3 lg:flex lg:flex-col lg:gap-8">
                      {["Low Center of Mass", "Belt-Driven Weapon", "Symmetrical Drivetrain", "Modular Internal Layout"].map((text, i) => (
                         <div key={i} className="flex items-center gap-4">
-                           <div className="w-12 h-[1px] bg-accent/40" />
+                           <div className="w-4 shrink-0 lg:w-12 h-[1px] bg-accent/40" />
                            <span className="font-mono text-[9px] lg:text-[10px] tracking-widest text-text-muted uppercase">{text}</span>
                         </div>
                      ))}
@@ -134,7 +134,7 @@ export const ThriveForceEntry = () => {
              </div>
 
              {/* Weapon Specs (Trigger for Transition) */}
-             <div ref={transitionRef} className="lg:min-h-screen flex flex-col justify-center text-left relative">
+             <div ref={transitionRef} className="robot-story-specs lg:min-h-screen flex flex-col justify-center text-left relative">
                  <div className="absolute -left-6 lg:-left-16 top-0 bottom-0 w-[1px] bg-accent/20 origin-top" />
                  
                  <div className="mb-6 lg:mb-16">
@@ -164,7 +164,7 @@ export const ThriveForceEntry = () => {
           </div>
 
           {/* Right Column - Sticky Visual */}
-          <div className="w-full lg:w-2/3 relative pb-10 lg:pb-0">
+          <div className="robot-story-visual w-full lg:w-2/3 relative">
               <div className="lg:sticky top-0 lg:h-screen w-full flex flex-col justify-center lg:p-8">
                   
                   <div 

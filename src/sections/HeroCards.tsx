@@ -248,13 +248,13 @@ export const HeroCards = () => {
   return (
     <div 
       ref={containerRef} 
-      className="relative mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:mt-[clamp(4rem,100vh-42rem,20rem)] lg:ml-2 lg:block perspective-1000 w-full lg:w-[800px] lg:h-[360px] z-20"
+      className="relative grid grid-cols-2 gap-3 sm:grid-cols-4 lg:mt-[clamp(4rem,100vh-42rem,20rem)] lg:ml-2 lg:block perspective-1000 w-full lg:w-[800px] lg:h-[360px] z-20"
       aria-label="Quick Navigation"
     >
       {CARDS.map((card, i) => (
         <button
           key={card.id}
-          className="hero-card lg:motion-reduce:[transform:var(--resting-position)] relative h-[9.25rem] min-w-0 lg:absolute lg:top-0 lg:left-0 lg:w-[210px] lg:h-[310px] bg-[#050505]/95 backdrop-blur-md border border-white/5 rounded-sm p-3 lg:p-6 text-left shadow-[0_12px_40px_rgba(0,0,0,0.6)] flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent overflow-hidden group active:border-accent motion-safe:active:scale-[0.98]"
+          className="hero-card lg:motion-reduce:[transform:var(--resting-position)] relative h-[8.75rem] min-w-0 lg:absolute lg:top-0 lg:left-0 lg:w-[210px] lg:h-[310px] bg-[#050505]/95 backdrop-blur-md border border-white/5 rounded-sm p-3 lg:p-6 text-left shadow-[0_12px_40px_rgba(0,0,0,0.6)] flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent overflow-hidden group active:border-accent motion-safe:active:scale-[0.98]"
           style={{ 
             zIndex: CARDS.length - i,
             "--resting-position": `translate(${desktopPositions[i].x}px, ${desktopPositions[i].y}px) rotate(${desktopPositions[i].rotate}deg)`

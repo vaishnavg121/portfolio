@@ -72,22 +72,22 @@ export const ThriveForceEngineering = () => {
   };
 
   return (
-    <section ref={containerRef} className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 flex flex-col gap-9 py-12 lg:gap-16 lg:pt-24 lg:pb-16">
+    <section ref={containerRef} className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 flex flex-col gap-6 py-12 lg:gap-16 lg:pt-24 lg:pb-16">
         
         {/* HEADER */}
-        <div className="w-full px-5 lg:px-16 mb-4">
+        <div className="mobile-gutter w-full lg:px-16 mb-4">
             <h2 className="font-display text-[clamp(32px,4vw,58px)] text-white uppercase tracking-tighter">
                 Engineering The Hit.
             </h2>
         </div>
 
         {/* FEA SECTIONS */}
-        <div className="w-full flex flex-col lg:flex-row gap-8 lg:gap-12 px-5 lg:px-16">
+        <div className="w-full flex flex-col lg:flex-row gap-8 lg:gap-12 mobile-gutter lg:px-16">
             
             {/* SIDE LOAD */}
             <div className="w-full lg:w-1/2 flex flex-col">
                 <div 
-                   className="w-full h-[clamp(12rem,58vw,22rem)] lg:h-[40vh] relative border border-white/5 bg-[#050505] overflow-hidden mb-6"
+                   className="w-full h-[clamp(12rem,58vw,22rem)] lg:h-[40vh] relative border border-white/5 bg-[#050505] overflow-hidden mb-3 lg:mb-6"
                    onPointerMove={(e) => handleFEAHover(e, 'cursor-lbl-1')}
                    onPointerLeave={(e) => handleFEALeave(e, 'cursor-lbl-1')}
                 >
@@ -117,7 +117,7 @@ export const ThriveForceEngineering = () => {
             {/* UPWARD LOAD */}
             <div className="w-full lg:w-1/2 flex flex-col">
                 <div 
-                   className="w-full h-[clamp(12rem,58vw,22rem)] lg:h-[40vh] relative border border-white/5 bg-[#050505] overflow-hidden mb-6"
+                   className="w-full h-[clamp(12rem,58vw,22rem)] lg:h-[40vh] relative border border-white/5 bg-[#050505] overflow-hidden mb-3 lg:mb-6"
                    onPointerMove={(e) => handleFEAHover(e, 'cursor-lbl-2')}
                    onPointerLeave={(e) => handleFEALeave(e, 'cursor-lbl-2')}
                 >
@@ -147,7 +147,7 @@ export const ThriveForceEngineering = () => {
         </div>
 
         {/* POWERTRAIN SECTION */}
-        <div className="powertrain-section w-full px-5 lg:px-16 mt-8">
+        <div className="powertrain-section mobile-gutter w-full lg:px-16 mt-8">
             <h3 className="font-display text-[clamp(24px,3vw,42px)] uppercase tracking-tighter text-[#f5ede3] mb-8">
                 Power To Weapon.
             </h3>

@@ -65,7 +65,7 @@ export const EngineeringNotes = () => {
   }, { scope: containerRef, dependencies: [mounted, isVisible] });
 
   return (
-    <section id="notes" className="py-16 lg:py-32 bg-background relative flex justify-center overflow-hidden" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
+    <section id="notes" className="notes-section mobile-section lg:py-32 bg-background relative flex justify-center overflow-hidden" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at center, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
 
       <div className="notes-bg-text absolute top-20 left-0 text-[12vw] font-display font-bold text-white whitespace-nowrap opacity-0 pointer-events-none select-none z-0">
@@ -80,7 +80,7 @@ export const EngineeringNotes = () => {
           whileInView={{ opacity: 1, rotate: 0, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-          className="w-[calc(100%-2.5rem)] lg:w-[90%] max-w-2xl bg-[#0a0a0a] border border-[#333] shadow-2xl relative px-5 py-8 lg:p-16 overflow-hidden"
+          className="notes-page lg:w-[90%] max-w-2xl bg-[#0a0a0a] border border-[#333] shadow-2xl relative mobile-card-pad lg:p-16 overflow-hidden"
           style={{
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255,255,255,0.05) inset"
           }}

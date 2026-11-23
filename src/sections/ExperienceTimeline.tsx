@@ -122,36 +122,36 @@ export const ExperienceTimeline = () => {
   }, { scope: containerRef, dependencies: [isVisible] });
 
   return (
-    <section className="py-16 lg:py-32 bg-background border-t border-border overflow-hidden relative" id="about" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
-      <div className="container mx-auto px-5 sm:px-8 lg:px-12 max-w-5xl relative z-10">
-        <h2 className="text-sm font-mono text-text-muted mb-12 lg:mb-24 tracking-widest uppercase border-b border-border pb-4 relative z-20">
+    <section className="mobile-section lg:py-32 bg-background border-t border-border overflow-hidden relative" id="about" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
+      <div className="mobile-gutter container mx-auto lg:px-12 max-w-5xl relative z-10">
+        <h2 className="mobile-section-title lg:text-sm font-mono text-text-muted mb-8 lg:mb-24 tracking-widest uppercase border-b border-border pb-4 relative z-20">
           Experience / Chapters
         </h2>
 
-        <div className="exp-timeline-container flex flex-col gap-14 lg:gap-40 relative">
+        <div className="exp-timeline-container flex flex-col gap-8 max-lg:pl-5 lg:gap-40 relative">
 
-          <div className="absolute -left-2 lg:left-[50%] top-0 bottom-0 w-[1px] bg-border/30 z-0" />
-          <div className="exp-timeline-rail-active absolute -left-2 lg:left-[50%] top-0 bottom-0 w-[1px] bg-accent z-0 origin-top" />
+          <div className="absolute left-1 lg:left-[50%] top-0 bottom-0 w-[1px] bg-border/30 z-0" />
+          <div className="exp-timeline-rail-active absolute left-1 lg:left-[50%] top-0 bottom-0 w-[1px] bg-accent z-0 origin-top" />
 
           {CHAPTERS.map((chapter, i) => (
-            <div key={chapter.num} className="relative group chapter-block">
-              <div className="bg-num absolute -top-7 -left-3 lg:-top-24 lg:-left-20 text-[72px] lg:text-[220px] font-display font-bold text-surface-elevated z-0 leading-none select-none transition-transform duration-700 group-hover:-translate-y-4">
+            <div key={chapter.num} className="relative group chapter-block max-lg:border-b max-lg:border-border max-lg:pb-6 max-lg:last:border-b-0 max-lg:last:pb-0">
+              <div className="bg-num absolute -top-3 right-0 lg:right-auto lg:-top-24 lg:-left-20 text-[56px] lg:text-[220px] font-display font-bold text-surface-elevated z-0 leading-none select-none transition-transform duration-700 group-hover:-translate-y-4">
                 0{i + 1}
               </div>
 
               <div className="chap-content relative z-10 grid grid-cols-1 lg:grid-cols-[50%_50%] gap-3 lg:gap-0 items-start" data-familiar-avoid>
                 
                 <div className="pt-2 lg:pr-20 max-w-full">
-                  <div className="font-mono text-accent text-xs tracking-widest mb-4">
+                  <div className="font-mono text-accent text-xs tracking-widest mb-2 lg:mb-4">
                     {chapter.num}
                   </div>
-                  <h3 className="text-2xl lg:text-[clamp(28px,2.8vw,44px)] font-display font-medium text-text-primary mb-2 tracking-tight leading-[1.05] uppercase max-w-full">
+                  <h3 className="mobile-card-title lg:text-[clamp(28px,2.8vw,44px)] font-display font-medium text-text-primary mb-2 tracking-tight leading-[1.05] uppercase max-w-full">
                     {chapter.title}
                   </h3>
                 </div>
 
-                <div className="pt-2 pl-6 border-l border-border lg:border-none lg:pl-20">
-                  <div className="text-text-primary font-mono text-xs tracking-wider mb-4 uppercase">
+                <div className="pt-1 lg:pt-2 lg:pl-20">
+                  <div className="text-text-primary font-mono text-xs tracking-wider mb-2 lg:mb-4 uppercase">
                     {chapter.subtitle}
                   </div>
                   <p className="text-text-muted text-base leading-relaxed max-w-md">

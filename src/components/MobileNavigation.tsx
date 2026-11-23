@@ -29,7 +29,7 @@ export function MobileNavigation() {
 
   return (
     <header className="mobile-header lg:contents">
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 sm:px-6 lg:contents">
+      <div className="mobile-gutter mx-auto flex items-center justify-between lg:contents">
         <Link href="/#hero" className="inline-flex min-h-12 items-center lg:hidden font-mono text-sm font-semibold tracking-widest">
           VG / 121
         </Link>
@@ -56,7 +56,7 @@ export function MobileNavigation() {
           <nav aria-label="Portfolio sections" className="divide-y divide-border">
             {sections.map(([id, label]) => (
               <Link key={id} href={`/#${id}`} onClick={() => menu.current?.close()}
-                className="flex min-h-12 items-center py-2 font-medium hover:text-white focus-visible:text-white">
+                className="flex min-h-12 items-center py-2 font-medium focus-visible:bg-surface-elevated hover:text-white focus-visible:text-white">
                 {label}
               </Link>
             ))}

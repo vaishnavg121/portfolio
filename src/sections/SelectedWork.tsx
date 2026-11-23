@@ -55,7 +55,7 @@ function ProjectDetails({ project, onOpen, mobile = false }: {
         hidden: { opacity: 0, y: 12 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
       }}
-      className="text-3xl lg:text-6xl font-display font-medium mb-4 lg:mb-6 uppercase tracking-tight leading-none"
+      className="mobile-card-title lg:text-6xl font-display font-medium mb-4 lg:mb-6 uppercase tracking-tight leading-none"
     >
       {project.title}
     </motion.h3>
@@ -65,7 +65,7 @@ function ProjectDetails({ project, onOpen, mobile = false }: {
         hidden: { opacity: 0, y: 12 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
       }}
-      className="text-text-muted text-base lg:text-lg mb-5 lg:mb-8 max-w-sm leading-relaxed border-l border-border pl-4"
+      className="text-text-muted text-[0.9375rem] lg:text-lg mb-4 lg:mb-8 max-w-sm leading-relaxed border-l border-border pl-4"
     >
       {project.description}
     </motion.p>
@@ -89,7 +89,7 @@ function ProjectDetails({ project, onOpen, mobile = false }: {
         hidden: { opacity: 0, y: 12 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
       }}
-      className="relative z-40"
+      className="relative z-40 max-lg:mt-auto"
     >
       <MagneticEffect intensity={0.3}>
         <Link
@@ -269,15 +269,13 @@ export const SelectedWork = () => {
   }, { scope: containerRef, dependencies: [mounted] });
 
   return (
-    <section className="py-16 lg:py-32 relative bg-background" id="work" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
-      <div className="container mx-auto px-5 sm:px-8 lg:px-12">
-        <h2 className="text-sm font-mono text-text-muted mb-7 lg:mb-24 tracking-widest uppercase border-b border-border pb-4">
-          Selected Work
-        </h2>
-
-        <div className="mb-3 flex items-center justify-between gap-3 lg:hidden">
-          <span className="font-mono text-xs text-text-muted">Swipe projects</span>
-          <div className="flex items-center gap-2">
+    <section className="mobile-section lg:py-32 relative bg-background" id="work" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
+      <div className="mobile-gutter container mx-auto lg:px-12">
+        <div className="work-heading lg:contents">
+          <h2 className="mobile-section-title lg:text-sm font-mono text-text-muted lg:mb-24 tracking-widest uppercase lg:border-b border-border lg:pb-4">
+            Selected Work
+          </h2>
+          <div className="flex shrink-0 items-center gap-2 lg:hidden">
             <button type="button" aria-label="Previous project" disabled={slide === 0} onClick={() => goToSlide(slide - 1)} className="grid size-11 place-items-center border border-border disabled:opacity-35"><ChevronLeft size={18} /></button>
             <span aria-live="polite" className="font-mono text-xs tabular-nums">{slide + 1} / {PROJECTS.length}</span>
             <button type="button" aria-label="Next project" disabled={slide === PROJECTS.length - 1} onClick={() => goToSlide(slide + 1)} className="grid size-11 place-items-center border border-border disabled:opacity-35"><ChevronRight size={18} /></button>
@@ -314,7 +312,7 @@ export const SelectedWork = () => {
             }}>
             {PROJECTS.map((project, i) => (
               <article key={project.id} className="project-card project-slide min-w-0 max-lg:flex max-lg:basis-full max-lg:shrink-0 max-lg:snap-start max-lg:flex-col max-lg:border max-lg:border-border max-lg:bg-surface" data-project={project.slug}>
-              <div className="project-scene relative flex min-h-[20rem] items-center justify-center p-5 lg:min-h-[500px] lg:p-8 border-b lg:border border-border overflow-hidden group bg-[#0a0a0a]" data-cursor="VIEW">
+              <div className="project-scene relative flex min-h-[16rem] items-center justify-center p-4 lg:min-h-[500px] lg:p-8 border-b lg:border border-border overflow-hidden group bg-[#0a0a0a]" data-cursor="VIEW">
 
                 <div
                   className={`absolute z-0 leading-none select-none pointer-events-none arch-bg-num text-white opacity-[0.04] lg:opacity-0 ${
@@ -363,11 +361,11 @@ export const SelectedWork = () => {
                   {isVisible && project.EffectComponent && <project.EffectComponent />}
                 </motion.div>
 
-                <div className="absolute top-4 right-4 text-[10px] font-mono text-[#333] tracking-widest z-20">
+                <div className="absolute top-4 right-4 text-[10px] font-mono text-text-muted/60 lg:text-[#333] tracking-widest z-20">
                   SYS_VISUAL // {project.theme.toUpperCase()}
                 </div>
 
-                <div className="relative z-20 mt-4 lg:mt-0 w-full max-w-xs flex flex-col gap-1">
+                <div className="relative z-20 mt-7 lg:mt-0 w-full max-w-xs flex flex-col gap-1">
                   {project.assets?.diagram ? (
                     <div className="relative w-full aspect-square">
                       <Image
@@ -403,12 +401,12 @@ export const SelectedWork = () => {
                             data-highlighted={highlightedNode === project.slug + "-" + nIdx || undefined}
                             onMouseEnter={(e) => window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "pipeline-hover", target: e.currentTarget } }))}
                           >
-                            <div className="arch-node [[data-highlighted=true]>&]:border-accent [[data-highlighted=true]>&]:bg-[#221313] bg-[#111] border-l-2 border-accent/30 group-hover/node:border-accent text-text-primary px-3 lg:px-4 py-2.5 lg:py-3 font-mono text-xs shadow-xl tracking-wider flex justify-between items-center transition-all duration-300 group-hover/pipeline:opacity-50 group-hover/node:!opacity-100 group-hover/node:bg-[#151515]">
+                            <div className="arch-node [[data-highlighted=true]>&]:border-accent [[data-highlighted=true]>&]:bg-[#221313] bg-[#111] border-l-2 border-accent/30 group-hover/node:border-accent text-text-primary min-h-10 lg:min-h-0 px-3 lg:px-4 py-2 lg:py-3 font-mono text-xs shadow-xl tracking-wider flex justify-between items-center transition-all duration-300 group-hover/pipeline:opacity-50 group-hover/node:!opacity-100 group-hover/node:bg-[#151515]">
                               <span>{node}</span>
                               <span className="text-[#444] text-[10px] group-hover/node:text-accent/70 transition-colors">{`0${nIdx + 1}`}</span>
                             </div>
                             {nIdx < project.architecture.length - 1 && (
-                              <div className="arch-line w-[1px] h-4 bg-[#333] ml-4 opacity-50 group-hover/node:h-5 group-hover/node:bg-accent/40 transition-all duration-300" />
+                              <div className="arch-line w-[1px] h-2.5 lg:h-4 bg-[#333] ml-4 opacity-50 group-hover/node:h-5 group-hover/node:bg-accent/40 transition-all duration-300" />
                             )}
                           </div>
                         ))}
@@ -417,7 +415,7 @@ export const SelectedWork = () => {
                   )}
                 </div>
               </div>
-              <div className="flex-1 p-5 lg:hidden" data-familiar-avoid>
+              <div className="mobile-card-pad flex flex-1 flex-col lg:hidden" data-familiar-avoid>
                 <ProjectDetails mobile project={project} onOpen={(event) => handleProjectClick(project.slug, event)} />
               </div>
               </article>

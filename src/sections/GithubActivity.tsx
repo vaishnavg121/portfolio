@@ -12,6 +12,7 @@ export const GithubActivity = () => {
   const [calendarData, setCalendarData] = useState<GithubCalendarData | null>(null);
   const [dayDetail, setDayDetail] = useState<GithubContribution | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const calendarViewport = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLElement>(null);
   const [mounted, setMounted] = useState(false);
   const { ref: visibilityRef, isVisible } = useSectionVisibility("300px");
@@ -36,6 +37,7 @@ export const GithubActivity = () => {
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+    const compact = window.matchMedia("(width < 64rem)").matches;
     const ctx = gsap.context(() => {
       gsap.fromTo('.gh-bg-text',
         { y: 150, opacity: 0 },
@@ -43,8 +45,8 @@ export const GithubActivity = () => {
       );
 
       gsap.fromTo('.gh-panel',
-        { y: 50, clipPath: "inset(10% 10% 10% 10%)", opacity: 0 },
-        { y: 0, clipPath: "inset(0% 0% 0% 0%)", opacity: 1, duration: 1.2, ease: "power3.out", scrollTrigger: { trigger: containerRef.current, start: "top 75%" } }
+        compact ? { y: 14, opacity: 0.72 } : { y: 50, clipPath: "inset(10% 10% 10% 10%)", opacity: 0 },
+        { y: 0, ...(compact ? {} : { clipPath: "inset(0% 0% 0% 0%)" }), opacity: 1, duration: compact ? 0.52 : 1.2, ease: "power3.out", scrollTrigger: { trigger: containerRef.current, start: "top 75%" } }
       );
     }, containerRef);
 
@@ -60,7 +62,7 @@ export const GithubActivity = () => {
   };
 
   return (
-    <section className="py-16 lg:py-32 bg-[#050505] relative overflow-hidden group/section border-y border-white/[0.02]" id="github" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
+    <section className="mobile-section lg:py-32 bg-[#050505] relative overflow-hidden group/section border-y border-white/[0.02]" id="github" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
       <div className="gh-bg-text absolute top-10 left-0 right-0 text-[10vw] font-display font-bold text-white whitespace-nowrap opacity-0 pointer-events-none select-none z-0">
         DEVELOPMENT ACTIVITY
       </div>
@@ -79,7 +81,7 @@ export const GithubActivity = () => {
           .anim-atmosphere, .anim-ink-drift { animation: none !important; }
         }
       `}} />
-      <div className="container mx-auto px-4 md:px-8 max-w-[1100px]">
+      <div className="mobile-gutter container mx-auto md:px-8 max-w-[1100px]">
 
         <div className="gh-panel relative rounded-[16px] md:rounded-[24px] overflow-hidden border border-white/[0.05] bg-[#0c0d0e] shadow-[0_32px_100px_rgba(0,0,0,0.5)]">
 
@@ -187,7 +189,7 @@ export const GithubActivity = () => {
               </div>
             </div>
 
-            <div className="w-full overflow-x-auto pb-8 pt-4 custom-scrollbar relative md:[&::-webkit-scrollbar]:hidden" tabIndex={0} role="region" aria-label="Contribution calendar, scroll horizontally for more dates" data-anchor="github-calendar-center">
+            <div ref={calendarViewport} className="w-full overflow-x-auto pb-4 lg:pb-8 pt-3 lg:pt-4 custom-scrollbar relative md:[&::-webkit-scrollbar]:hidden" tabIndex={0} role="region" aria-label="Contribution calendar, scroll horizontally for more dates" data-anchor="github-calendar-center">
               {isLoading ? (
                 <div className="h-[150px] flex items-center justify-center font-mono text-xs text-text-muted tracking-widest">
                   [ FETCHING_DATA ]
@@ -270,9 +272,15 @@ export const GithubActivity = () => {
             </div>
 
             {calendarData && (
-              <p aria-live="polite" className="mb-3 min-h-5 font-mono text-xs text-text-muted lg:hidden">
+              <div className="mb-3 flex items-center justify-between gap-3 lg:hidden">
+              <p aria-live="polite" className="min-h-5 font-mono text-xs text-text-muted">
                 {dayDetail ? new Date(dayDetail.date + "T00:00:00").toLocaleDateString(undefined, { dateStyle: "medium" }) + " · " + dayDetail.count + " contributions" : "Swipe for dates · Tap a day for its count"}
               </p>
+              <button type="button" onClick={() => {
+                const track = calendarViewport.current;
+                if (track) track.scrollTo({ left: track.scrollWidth, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+              }} className="min-h-11 shrink-0 border border-border px-3 font-mono text-xs text-text-primary">Latest</button>
+              </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.04] pt-8 mt-2 relative z-20">
               <div className="text-[9px] font-mono text-text-muted/40 uppercase tracking-widest flex items-center gap-2">

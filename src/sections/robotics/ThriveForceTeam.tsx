@@ -9,18 +9,18 @@ export const ThriveForceTeam = () => {
     <section className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 pb-14 lg:pb-32">
         
         {/* COMBINED TEAM SPREAD */}
-        <div className="w-full px-5 lg:px-16 py-12 lg:pt-32 lg:pb-24 border-b border-white/5">
+        <div className="mobile-gutter w-full lg:px-16 py-12 lg:pt-32 lg:pb-24 border-b border-white/5">
             <h2 className="font-display text-[clamp(30px,3.5vw,52px)] uppercase tracking-tighter leading-none mb-4">
                 Team ThriveForce
             </h2>
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between pt-8 mb-16">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between pt-4 lg:pt-8 mb-7 lg:mb-16">
                 <div className="font-mono text-sm tracking-widest text-text-muted uppercase">Combat Robotics</div>
                 <div className="font-mono text-xs tracking-widest text-accent uppercase mt-4 lg:mt-0">
                     Design &bull; Simulation &bull; Fabrication
                 </div>
             </div>
             
-            <div className="flex flex-col lg:flex-row gap-16 lg:gap-8">
+            <div className="flex flex-col lg:flex-row gap-8">
                 
                 {/* OUR MACHINES (Left) */}
                 <div className="w-full lg:w-1/2 flex flex-col">
@@ -49,12 +49,12 @@ export const ThriveForceTeam = () => {
                 {/* MY ROLE (Right) */}
                 <div className="w-full lg:w-1/2 flex flex-col">
                     <h3 className="font-mono text-xs tracking-widest text-text-muted uppercase mb-8 pb-4 border-b border-white/10">My Role</h3>
-                    <div className="flex flex-col relative w-full h-full min-h-[300px] border border-white/5 bg-[#050505] p-8 lg:p-12 overflow-hidden group">
+                    <div className="flex flex-col relative w-full h-full min-h-[300px] border border-white/5 bg-[#050505] mobile-card-pad lg:p-12 overflow-hidden group">
                         
                         {/* Connecting Line (visual logic linking left and right) */}
                         <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-accent/20 transition-all duration-700 group-hover:bg-accent/40" />
 
-                        <div className="flex flex-col lg:flex-row justify-between w-full h-full gap-12">
+                        <div className="flex flex-col lg:flex-row justify-between w-full h-full gap-7 lg:gap-12">
                             
                             {/* Engineer */}
                             <div className="flex flex-col items-start w-full lg:w-1/2 z-10 relative">
@@ -93,7 +93,7 @@ export const ThriveForceTeam = () => {
         </div>
 
         {/* ACHIEVEMENTS, SPONSORS & CLOSE */}
-        <div className="w-full px-5 lg:px-16 pt-10 lg:pt-16 flex flex-col gap-9 lg:gap-16">
+        <div className="mobile-gutter w-full lg:px-16 pt-10 lg:pt-16 flex flex-col gap-9 lg:gap-16">
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-9 lg:gap-16">
                 {/* Milestones */}

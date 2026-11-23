@@ -61,8 +61,8 @@ export const ContactFooter = () => {
   ];
 
   return (
-    <footer className="py-16 pb-28 lg:py-32 bg-surface relative overflow-hidden" id="contact" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
-      <div className="container mx-auto px-5 sm:px-8 lg:px-12 relative z-10 flex flex-col items-center text-center">
+    <footer className="contact-section mobile-section lg:py-32 bg-surface relative overflow-hidden" id="contact" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
+      <div className="mobile-gutter container mx-auto lg:px-12 relative z-10 flex flex-col items-center text-center">
 
         <div className="mb-8 lg:mb-16 relative">
           <p
@@ -93,7 +93,7 @@ export const ContactFooter = () => {
 
         <div className="contact-line w-24 h-[1px] bg-border mb-7 lg:mb-16 origin-center scale-x-0 motion-reduce:scale-x-100" />
 
-        <div className="flex flex-wrap justify-center gap-4 lg:gap-16 mb-12 lg:mb-32" data-familiar-avoid>
+        <div className="contact-actions flex flex-wrap justify-center gap-3 lg:gap-16 mb-8 lg:mb-32" data-familiar-avoid>
           {LINKS.map((link) => (
             <div key={link.name} className="contact-link opacity-0 motion-reduce:opacity-100">
               <MagneticEffect intensity={0.4}>
@@ -106,7 +106,7 @@ export const ContactFooter = () => {
                   data-cursor="VIEW"
                 >
                   <span className="font-bold text-lg">{link.name} ↗</span>
-                  <span className="text-xs text-text-muted break-all lg:break-normal">{link.display}</span>
+                  <span className="text-xs text-text-muted break-words">{link.display}</span>
                   <span className="absolute -bottom-0 left-0 w-full h-[1px] bg-accent scale-x-0 origin-left group-hover:scale-x-100 transition-transform" />
                 </a>
               </MagneticEffect>
