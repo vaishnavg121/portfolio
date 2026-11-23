@@ -36,8 +36,8 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
   const assets = PROJECT_ASSETS[slug];
 
   return (
-    <main className="min-h-screen bg-background pt-32 pb-24 selection:bg-accent-soft selection:text-accent">
-      <div className="container mx-auto px-6 md:px-12 max-w-4xl">
+    <main className="case-page min-h-screen bg-background pt-12 lg:pt-32 pb-24 selection:bg-accent-soft selection:text-accent">
+      <div className="mobile-gutter container mx-auto lg:px-12 max-w-4xl">
         
         <Link href="/#work" className="inline-flex items-center gap-2 text-text-muted hover:text-text-primary font-mono text-sm tracking-widest uppercase mb-16 group transition-colors">
           <MoveLeft className="w-4 h-4 group-hover:-translate-x-2 transition-transform" />
