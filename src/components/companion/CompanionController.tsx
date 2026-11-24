@@ -7,12 +7,7 @@ import { CompanionRenderer } from "./CompanionRenderer";
 import { CompanionState, CompanionDirection } from "./companion.types";
 import { COMPANION_PROFILES, VELOCITY_THRESHOLDS, CompanionProfile } from "./companion.config";
 
-const coarseQuery = "(pointer: coarse)";
-const mobileReactions: Record<string, CompanionState> = {
-  hero: "IDLE", work: "INSPECT", knowledge: "INSPECT", about: "READ",
-  robotics: "INSPECT", github: "INSPECT", notes: "READ", contact: "WAVE",
-};
-const actionable = "a, button, input, select, textarea, [role=button], [data-knowledge-canvas], [data-portrait], [aria-modal=true]";
+type RequestSource = 'safety' | 'chat' | 'hover' | 'section' | 'movement' | 'idle' | 'scroll' | 'cursor-evasion' | 'init';
 
 interface StateRequest {
   state: CompanionState;
@@ -37,8 +32,6 @@ export const CompanionController = () => {
   
   const profileRef = useRef<CompanionProfile>(COMPANION_PROFILES.home);
   const protectedRectsRef = useRef<{rect: DOMRect, margin: number}[]>([]);
-  const controlRects = useRef<DOMRect[]>([]);
-  const mobile = useRef({ side: "right" as CompanionDirection, queued: null as CompanionState | null, lastActivity: 0, lastScroll: -Infinity });
   const activeHoverTargetRef = useRef<HTMLElement | null>(null);
 
   const activeRequestRef = useRef<StateRequest>({
@@ -100,7 +93,6 @@ export const CompanionController = () => {
     
     // Request section entry wake
     requestState(profileRef.current.defaultState || "IDLE", "route-change", 75, 1000);
-    mobile.current.lastActivity = performance.now();
   }, [pathname, requestState]);
 
   // Handle Reduced Motion
@@ -116,23 +108,20 @@ export const CompanionController = () => {
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     const updateRects = () => {
-      const els = document.querySelectorAll(`[data-familiar-protect], h1, h2, h3, p, img, figure, table, pre, .project-card, .project-scene, .protected-zone, ${actionable}`);
+      const els = Array.from(document.querySelectorAll("[data-familiar-protect], h1, h2, h3, p, a, button, img, figure, table, pre, .project-card, .project-scene, .protected-zone"));
       
       const newRects: {rect: DOMRect, margin: number}[] = [];
-      const controls: DOMRect[] = [];
       els.forEach((el) => {
         if (el.closest("#familiar-root")) return;
+        if (el.tagName === "A" && el.parentElement?.tagName === "P") return;
         
         const rect = el.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0 || rect.bottom < -100 || rect.top > window.innerHeight + 100) return;
-        if (el.matches(actionable)) controls.push(rect);
-        if (el.tagName === "A" && el.parentElement?.tagName === "P") return;
         
         const margin = parseInt(el.getAttribute("data-familiar-margin") || "24", 10);
         newRects.push({ rect, margin });
       });
       protectedRectsRef.current = newRects;
-      controlRects.current = controls;
     };
 
     const throttledUpdate = () => {
@@ -214,58 +203,16 @@ export const CompanionController = () => {
   // Set initial position safely
   useEffect(() => {
     posRef.current = { x: window.innerWidth - 100, y: window.innerHeight - 100 };
-    const wake = window.setTimeout(() => {
-      if (window.matchMedia(coarseQuery).matches) {
-        requestState("IDLE", "mobile-wake", 88, 500);
-        mobile.current.lastActivity = performance.now();
-      } else {
-        requestState("SLEEP", "init", 99, 1500);
-      }
+    setTimeout(() => {
+      requestState("SLEEP", "init", 99, 1500); 
     }, 100);
-    return () => window.clearTimeout(wake);
   }, [requestState]);
-
-  useEffect(() => {
-    const coarse = window.matchMedia(coarseQuery);
-    let section = "";
-    const onActivity = (event?: Event) => {
-      if (!coarse.matches) return;
-      const time = performance.now();
-      mobile.current.lastActivity = time;
-      if (event?.type === "scroll") mobile.current.lastScroll = time;
-    };
-    const observe = new IntersectionObserver((entries) => {
-      if (!coarse.matches) return;
-      const entering = entries.find((entry) => entry.isIntersecting)?.target.id;
-      if (!entering || entering === section) return;
-      const firstSection = !section;
-      section = entering;
-      onActivity();
-      mobile.current.queued = mobileReactions[section] ?? "IDLE";
-      if (!firstSection) {
-        mobile.current.side = mobile.current.side === "right" ? "left" : "right";
-        requestState("WALK", "section-travel", 64, 540);
-      }
-    }, { rootMargin: "-34% 0px -51% 0px" });
-    for (const entry of document.querySelectorAll("main > section[id], main > footer[id]")) observe.observe(entry);
-    window.addEventListener("scroll", onActivity, { passive: true });
-    window.addEventListener("pointerdown", onActivity, { passive: true });
-    return () => {
-      observe.disconnect();
-      window.removeEventListener("scroll", onActivity);
-      window.removeEventListener("pointerdown", onActivity);
-    };
-  }, [pathname, requestState]);
 
   // External interactions (Chatbot, Section changes)
   useEffect(() => {
-    const coarse = window.matchMedia(coarseQuery);
     const handleInteract = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (coarse.matches) mobile.current.lastActivity = performance.now();
-      if (coarse.matches && (detail?.type === "pipeline-hover" || detail?.type === "portrait-touch")) {
-         requestState("INSPECT", detail.type, 89, 1250, 260);
-      } else if (detail?.type === "project-hover") {
+      if (detail?.type === "project-hover") {
          requestState("INSPECT", "project", 80, 1500, 500);
       } else if (detail?.type === "section-enter") {
          const stateType = detail.data === "contact" ? "WAVE" : "READ";
@@ -305,19 +252,8 @@ export const CompanionController = () => {
   useEffect(() => {
     let raf: number;
     let lastTime = performance.now();
-    const coarsePointer = window.matchMedia(coarseQuery);
+    const coarsePointer = window.matchMedia("(pointer: coarse)");
     const writtenPosition = { x: -Infinity, y: -Infinity };
-    const insets = { right: 0, left: 0, bottom: 0 };
-    const updateInsets = () => {
-      const style = getComputedStyle(containerRef.current?.parentElement ?? document.documentElement);
-      insets.right = parseFloat(style.paddingRight) || 0;
-      insets.left = parseFloat(style.paddingLeft) || 0;
-      insets.bottom = parseFloat(style.paddingBottom) || 0;
-    };
-    updateInsets();
-    window.addEventListener("resize", updateInsets, { passive: true });
-    const overlapsControl = (x: number, y: number) => controlRects.current.some((rect) =>
-      x + 25 > rect.left && x - 25 < rect.right && y + 25 > rect.top && y - 25 < rect.bottom);
     
     const isColliding = (x: number, y: number) => {
       const size = 30; // approx half size of familiar
@@ -351,18 +287,16 @@ export const CompanionController = () => {
          const viewport = window.visualViewport;
          const insetX = viewport?.offsetLeft ?? 0;
          const insetY = viewport?.offsetTop ?? 0;
-         const right = insetX + (viewport?.width ?? window.innerWidth) - 48 - insets.right;
-         const left = insetX + 48 + insets.left;
-         targetX = right;
-         targetY = insetY + (viewport?.height ?? window.innerHeight) - 54 - insets.bottom;
-         if (isTouch) {
-           const sides = mobile.current.side === "left" ? [left, right] : [right, left];
-           const docks = sides.flatMap((x) => [0, 74, 148, 222]
-             .map((up) => [x, targetY - up]).filter(([, y]) => y >= insetY + 76));
-           const dock = docks.find(([x, y]) => !overlapsControl(x, y) && !isColliding(x, y))
-             ?? docks.find(([x, y]) => !overlapsControl(x, y))
-             ?? docks[0];
-           if (dock) [targetX, targetY] = dock;
+         targetX = insetX + (viewport?.width ?? window.innerWidth) - 60;
+         targetY = insetY + (viewport?.height ?? window.innerHeight) - 60;
+         if (isTouch && isColliding(targetX, targetY)) {
+           const alternativeDocks = [
+             [targetX, targetY - 78],
+             [insetX + 60, targetY],
+             [insetX + 60, targetY - 78],
+           ];
+           const clearDock = alternativeDocks.find(([x, y]) => !isColliding(x, y));
+           if (clearDock) [targetX, targetY] = clearDock;
          }
       } else if (activeHoverTargetRef.current && !isTouch) {
          const rect = activeHoverTargetRef.current.getBoundingClientRect();
@@ -446,26 +380,6 @@ export const CompanionController = () => {
         containerRef.current.style.transform = `translate3d(${writtenPosition.x}px, ${writtenPosition.y}px, 0)`;
       }
 
-      if (isTouch) {
-        const settled = Math.hypot(targetX - posRef.current.x, targetY - posRef.current.y) < 12;
-        const canTap = settled && time - mobile.current.lastScroll > 240 && !overlapsControl(posRef.current.x, posRef.current.y);
-        if (containerRef.current.hasAttribute("data-can-tap") !== canTap) {
-          containerRef.current.toggleAttribute("data-can-tap", canTap);
-        }
-        const current = activeRequestRef.current;
-        if (time - current.requestedAt >= current.minDuration) {
-          if (time - mobile.current.lastActivity > 17000) {
-            if (current.state !== "SLEEP") requestState("SLEEP", "mobile-rest", 20, 0);
-          } else if (settled && mobile.current.queued) {
-            const next = mobile.current.queued;
-            mobile.current.queued = null;
-            requestState(next, "mobile-section", 63, 1650);
-          } else if (settled && current.state !== "IDLE") {
-            requestState("IDLE", "mobile-idle", 10, 250);
-          }
-        }
-      }
-
       // Direction Hysteresis
       if (Math.abs(targetX - posRef.current.x) > 20) {
         if (targetX > posRef.current.x && direction !== "right") setDirection("right");
@@ -492,10 +406,7 @@ export const CompanionController = () => {
     };
     
     raf = requestAnimationFrame(loop);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", updateInsets);
-    };
+    return () => cancelAnimationFrame(raf);
   }, [reducedMotion, direction, requestState]);
 
   return (
@@ -503,14 +414,8 @@ export const CompanionController = () => {
       <div 
         ref={containerRef}
         className="companion-position absolute -left-4 -top-4 flex size-8 items-center justify-center will-change-transform"
-        data-companion-state={state}
       >
         <CompanionRenderer state={state} direction={direction} intensity={0} />
-        <button type="button" className="companion-tap" aria-label="Greet the companion"
-          onClick={() => {
-            mobile.current.lastActivity = performance.now();
-            requestState(state === "WAVE" ? "SURPRISED" : "WAVE", "mobile-greeting", 100, 1150);
-          }} />
       </div>
       
       {debugMode && (

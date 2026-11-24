@@ -59,7 +59,7 @@ export const ExperienceTimeline = () => {
     <section className="portfolio-chapter chapter-divider experience-section overflow-hidden relative" id="about" ref={containerRef}>
       <div className="portfolio-frame relative z-10">
         <h2 className="chapter-heading mb-8 border-b border-border pb-4 relative z-20 lg:mb-16">
-          Experience &amp; education
+          Experience / Chapters
         </h2>
 
         <div className="exp-timeline-container flex flex-col gap-8 max-lg:pl-5 lg:gap-14 relative">

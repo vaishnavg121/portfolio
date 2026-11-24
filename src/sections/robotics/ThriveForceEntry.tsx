@@ -97,20 +97,20 @@ export const ThriveForceEntry = () => {
   };
 
   return (
-    <section ref={containerRef} className="relative w-full bg-background text-text-primary border-b border-white/5 flex flex-col">
+    <section ref={containerRef} className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 flex flex-col">
        
        {/* SECTION 1 - INTRO */}
        <div className="robot-title portfolio-frame relative">
           <div className="relative z-10">
              <div className="font-mono text-xs text-text-muted tracking-widest uppercase mb-6 flex flex-wrap gap-x-4 gap-y-2">
-                <span>Student robotics</span>
+                <span>06 / ThriveForce</span>
                 <span className="text-accent">Combat Robotics</span>
              </div>
-             <h2 className="robot-chapter-name text-text-primary mb-5">
-                Team ThriveForce
+             <h2 className="robot-chapter-name font-display uppercase text-[#f5ede3] mb-5">
+                Designed<br/>For Impact.
              </h2>
              <div className="font-mono text-[10px] tracking-widest uppercase text-[#e0e0e0]">
-                I help with design and fabrication, and serve as treasurer.
+                Engineer &bull; Treasurer
              </div>
           </div>
        </div>
@@ -143,7 +143,7 @@ export const ThriveForceEntry = () => {
                          <span className="text-accent">~470</span> J
                      </h3>
                      <p className="font-mono text-xs tracking-widest text-text-muted uppercase">
-                         Stored Weapon Energy<br/>Design estimate from the project files
+                         Stored Weapon Energy<br/>Repository Design Value
                      </p>
                  </div>
                  <div className="grid grid-cols-2 gap-5 lg:gap-12">
@@ -178,21 +178,21 @@ export const ThriveForceEntry = () => {
                       {/* Grid / Tech Background */}
                       <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
                       
-                      <div className="absolute top-4 left-3 lg:left-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">Velociraptor CAD</div>
-                      <div className="absolute top-4 right-3 lg:right-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">Rendered view</div>
-                      <div className="absolute bottom-4 left-3 lg:left-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30 max-lg:max-w-[62%]">3 lb undercutter</div>
-                      <div className="absolute bottom-4 right-3 lg:right-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">Built</div>
+                      <div className="absolute top-4 left-3 lg:left-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">VELOCIRAPTOR / CAD</div>
+                      <div className="absolute top-4 right-3 lg:right-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">03/TF</div>
+                      <div className="absolute bottom-4 left-3 lg:left-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30 max-lg:max-w-[62%]">3 LB UNDERCUTTER &middot; ENGINEERED SYSTEM</div>
+                      <div className="absolute bottom-4 right-3 lg:right-6 font-mono text-[9px] tracking-widest text-text-muted uppercase z-30">VERIFIED</div>
 
                       {/* SVG Filter for Red Wireframe Effect */}
                       <svg className="hidden">
-                          <filter id="cad-wireframe" colorInterpolationFilters="sRGB">
+                          <filter id="red-wireframe" colorInterpolationFilters="sRGB">
                               {/* Edge detection */}
                               <feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="-1 -1 -1  -1 8 -1  -1 -1 -1" />
                               {/* Colorize to pure red */}
                               <feColorMatrix type="matrix" values="
-                                0.30 0.43 0.13 0 0
-                                0.28 0.40 0.12 0 0
-                                0.25 0.36 0.11 0 0
+                                1 1 1 0 0
+                                0 0 0 0 0
+                                0 0 0 0 0
                                 0 0 0 1 0" />
                           </filter>
                       </svg>
@@ -201,8 +201,8 @@ export const ThriveForceEntry = () => {
                       <div className="relative w-[85%] h-[75%] mx-auto my-auto z-10" data-familiar-protect data-familiar-reaction="inspect">
                           
                           {/* Wireframe (Base Layer, revealed when solid fades) */}
-                          <div className="robot-wireframe absolute inset-0 w-full h-full opacity-0" style={{ filter: 'url(#cad-wireframe)' }}>
-                              <Image src={velociraptorAssets.renders.hero34} alt="" fill sizes="(width < 64rem) 85vw, 54vw" className="object-contain object-center drop-shadow-[0_0_8px_rgba(185,157,141,0.24)]" />
+                          <div className="robot-wireframe absolute inset-0 w-full h-full opacity-0" style={{ filter: 'url(#red-wireframe)' }}>
+                              <Image src={velociraptorAssets.renders.hero34} alt="" fill sizes="(width < 64rem) 85vw, 54vw" className="object-contain object-center drop-shadow-[0_0_8px_rgba(204,51,51,0.4)]" />
                           </div>
 
                           {/* Solid Render */}
@@ -219,7 +219,7 @@ export const ThriveForceEntry = () => {
                                  WebkitMaskImage: 'radial-gradient(circle 180px at var(--cursor-x, 50%) var(--cursor-y, 50%), black 20%, transparent 80%)'
                              }}
                           >
-                              <div className="absolute inset-0" style={{ filter: 'url(#cad-wireframe)' }}>
+                              <div className="absolute inset-0" style={{ filter: 'url(#red-wireframe)' }}>
                                   <Image src={velociraptorAssets.renders.hero34} alt="" fill sizes="(width < 64rem) 85vw, 54vw" className="object-contain object-center" />
                               </div>
                               <div className="absolute inset-0 bg-accent/5 mix-blend-screen" />
@@ -228,20 +228,20 @@ export const ThriveForceEntry = () => {
 
                       {/* Impact FX overlay (positioned over weapon) */}
                       <div className="impact-fx absolute inset-0 w-full h-full pointer-events-none opacity-0 z-20">
-                          <div className="impact-flash absolute left-[30%] top-[70%] size-32 rounded-full bg-[radial-gradient(circle,#9b817626,transparent_68%)] -translate-x-1/2 -translate-y-1/2" />
+                          <div className="impact-flash absolute left-[30%] top-[70%] size-32 rounded-full bg-[radial-gradient(circle,#bd5f5d60,transparent_68%)] -translate-x-1/2 -translate-y-1/2" />
                           <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 800 800">
-                              <line className="impact-streak" x1="50" y1="700" x2="250" y2="560" stroke="var(--accent)" strokeWidth="2" strokeDasharray="100" strokeDashoffset="100" />
+                              <line className="impact-streak" x1="50" y1="700" x2="250" y2="560" stroke="#cc3333" strokeWidth="2" strokeDasharray="100" strokeDashoffset="100" />
                               {sparks.map((spark) => (
                                   <line 
                                      key={spark.id} 
                                      className="spark-line"
                                      x1="250" y1="560" 
                                      x2={spark.x2 - 270} y2={spark.y2} // Adjust coords to match hero34 weapon position
-                                     stroke="#ac9b8c"
+                                     stroke="#f5ede3" 
                                      strokeWidth={spark.w} 
                                      strokeDasharray={200}
                                      strokeDashoffset={200}
-                                     opacity="0.52"
+                                     opacity="0.8" 
                                   />
                               ))}
                           </svg>

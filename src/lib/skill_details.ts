@@ -9,13 +9,13 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
   "c__": {
     id: "c__",
     title: "C++ / SYSTEMS",
-    description: "I use C++ for algorithms and systems work, including an order book.",
+    description: "Used for algorithmic problem solving, DSA and systems-oriented engineering, including deterministic market/order-book work.",
     usedIn: [{ label: "DSA" }, { label: "Systems" }, { label: "Order Book" }]
   },
   "python": {
     id: "python",
     title: "PYTHON / AI SYSTEMS",
-    description: "Python is the language I use most for training models, working with data, and building tools such as Windy and Swa.Neeti.",
+    description: "Primary language across machine-learning pipelines, RAG systems and agentic applications.",
     usedIn: [
       { label: "Swa.Neeti", href: "/work/swaneeti" },
       { label: "Windy", href: "/work/windy" },
@@ -25,7 +25,7 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
   "machine_learning": {
     id: "machine_learning",
     title: "MACHINE LEARNING",
-    description: "I’ve used machine learning for airport weather forecasts and to look for patterns across several weather variables.",
+    description: "Applied to aviation-weather forecasting and multivariate data analysis, from classical models to recurrent neural-network architectures.",
     usedIn: [
       { label: "IMD Pune" },
       { label: "Windy", href: "/work/windy" }
@@ -34,13 +34,13 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
   "time_series": {
     id: "time_series",
     title: "TIME SERIES",
-    description: "At IMD, I used sequences of weather observations to compare LSTM, GRU, CNN-LSTM, and Attention-LSTM models.",
+    description: "Used during aviation-weather work to model temporal airport observations, including LSTM, GRU, CNN-LSTM and Attention-LSTM experiments.",
     usedIn: [{ label: "India Meteorological Department" }]
   },
   "rag": {
     id: "rag",
     title: "RETRIEVAL-AUGMENTED GENERATION",
-    description: "I use retrieval to give a language model relevant excerpts it can cite. In Windy, those excerpts add context to calculations done in DuckDB.",
+    description: "Used to ground LLM reasoning against retrieved evidence rather than relying only on model knowledge.",
     usedIn: [
       { label: "Swa.Neeti", href: "/work/swaneeti" },
       { label: "Windy", href: "/work/windy" }
@@ -49,7 +49,7 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
   "agentic_systems": {
     id: "agentic_systems",
     title: "AGENTIC SYSTEMS",
-    description: "I split retrieval, reasoning and validation into separate stages so I can see where an answer comes from and what was checked.",
+    description: "Designed multi-stage systems where specialized reasoning, retrieval, validation and execution components cooperate under explicit state and control flows.",
     usedIn: [
       { label: "Swa.Neeti", href: "/work/swaneeti" },
       { label: "Windy", href: "/work/windy" }
@@ -58,7 +58,7 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
   "quant_finance": {
     id: "quant_finance",
     title: "QUANTITATIVE FINANCE",
-    description: "I study derivatives and risk in my finance minor and explore market systems in AlphaCouncil.",
+    description: "Combines Finance-minor coursework in derivatives and risk with practical market-system experimentation through AlphaCouncil.",
     usedIn: [
       { label: "BITS Finance minor" }
     ]
@@ -66,7 +66,7 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
   "postgresql": {
     id: "postgresql",
     title: "POSTGRESQL / DATA",
-    description: "I use PostgreSQL to store the ledger in Spenza and structured research data in Swa.Neeti.",
+    description: "Used for persistent structured data in financial-software and research systems.",
     usedIn: [
       { label: "Spenza", href: "/work/spenza" },
       { label: "Swa.Neeti", href: "/work/swaneeti" }
@@ -75,7 +75,7 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
   "fastapi": {
     id: "fastapi",
     title: "FASTAPI / SYSTEM INTERFACE",
-    description: "I use FastAPI to define the backend endpoints and stream progress in Windy and Swa.Neeti.",
+    description: "Used for typed backend interfaces and streaming AI workflows across several agentic systems.",
     usedIn: [
       { label: "Swa.Neeti", href: "/work/swaneeti" },
       { label: "Windy", href: "/work/windy" }
@@ -84,7 +84,7 @@ export const SKILL_DETAILS: Record<string, SkillDetail> = {
   "robotic_systems": {
     id: "robotic_systems",
     title: "ROBOTICS / PHYSICAL SYSTEMS",
-    description: "With ThriveForce, I work on CAD, simulation and fabrication for competition robots.",
+    description: "Combat-robot engineering through Team ThriveForce, combining CAD, simulation, fabrication and competition constraints.",
     usedIn: [
       { label: "Team ThriveForce" },
       { label: "A7X" },

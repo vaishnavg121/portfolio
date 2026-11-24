@@ -31,7 +31,7 @@ export const knowledgeBase: KnowledgeChunk[] = [
     topic: "college",
     title: "University Education",
     category: "education",
-    content: "Vaishnav studies computer science and minors in finance at BITS Hyderabad (August 2024 to August 2028). His current CGPA is 8.10.",
+    content: "Vaishnav is currently pursuing a B.E. in Computer Science with a Minor in Finance at BITS Pilani, Hyderabad Campus (Aug 2024 - Aug 2028). His current CGPA is 8.10.",
     keywords: ["education", "college", "bits", "pilani", "hyderabad", "cgpa", "degree", "university", "cs", "computer science"],
     priority: 10
   },
@@ -61,7 +61,7 @@ export const knowledgeBase: KnowledgeChunk[] = [
     topic: "gaming",
     title: "Gaming Interests",
     category: "personal",
-    content: "Vaishnav likes story-driven PC games, including Sekiro, Ghost of Tsushima, Black Myth: Wukong, and Spider-Man.",
+    content: "Vaishnav enjoys PC gaming and story-driven games. Liked games include Sekiro, Ghost of Tsushima, Black Myth: Wukong, and Spider-Man. The portfolio lists several games he likes rather than just one favorite.",
     keywords: ["games", "gaming", "sekiro", "wukong", "spider-man", "ghost of tsushima", "play", "favorite game"],
     priority: 8
   },

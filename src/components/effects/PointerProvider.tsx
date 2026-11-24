@@ -50,7 +50,7 @@ export const PointerProvider = ({ children }: { children: React.ReactNode }) => 
     };
 
     const handlePointerMove = (e: PointerEvent) => {
-      if (!e.isPrimary || e.pointerType === "touch") return;
+      if (!e.isPrimary || (e.pointerType === "touch" && e.target instanceof Element && e.target.closest("[data-knowledge-canvas]"))) return;
       breakReadingMode();
       pendingRef.current = { clientX: e.clientX, clientY: e.clientY };
       if (rafIdRef.current === null) {

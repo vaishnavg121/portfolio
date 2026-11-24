@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { InkReveal, PaperNoise } from "@/components/effects";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -12,19 +11,16 @@ if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
 const RULES = [
   {
-    num: "Weather data",
-    project: "/work/imdpune",
-    text: "At IMD Pune, gaps and inconsistent timestamps took as much attention as the forecast models."
+    num: "RULE 01",
+    text: "Never trust an unvalidated model output."
   },
   {
-    num: "Legal research",
-    project: "/work/swaneeti",
-    text: "In Swa.Neeti, I keep evidence about what happened separate from the sources that establish the law."
+    num: "RULE 02",
+    text: "If the evidence doesn't exist, don't invent it."
   },
   {
-    num: "Money",
-    project: "/work/spenza",
-    text: "In Spenza, I store money in minor units so that splitting an expense keeps every last paisa accounted for."
+    num: "RULE 03",
+    text: "Fail closed when the cost of being wrong is high."
   }
 ];
 
@@ -98,7 +94,7 @@ export const EngineeringNotes = () => {
                   }}
                 >
                   <div className="text-accent font-mono text-xs tracking-widest mb-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                    <Link href={rule.project} className="inline-flex min-h-11 items-center gap-2 hover:text-text-primary">{rule.num} <span aria-hidden="true">↗</span></Link>
+                    {rule.num}
                   </div>
                   <div className="text-xl md:text-3xl text-text-primary font-light leading-relaxed font-hand relative inline-block">
                     {rule.text}
@@ -113,7 +109,8 @@ export const EngineeringNotes = () => {
             </div>
 
             <div className="mt-9 pt-5 lg:mt-16 lg:pt-8 border-t border-[#333] flex justify-between items-center opacity-40">
-              <div className="font-mono text-xs">Notes from the projects</div>
+              <div className="font-mono text-xs">CLASSIFIED / PERSONAL</div>
+              <div className="font-mono text-xs text-accent">VG-121</div>
             </div>
           </div>
         </motion.div>

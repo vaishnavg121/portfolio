@@ -7,6 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { fetchGithubContributions, GithubCalendarData, GithubContribution } from "@/lib/actions/github";
 import { socials } from "@/lib/profile";
 import { THEME_ASSETS } from "@/lib/assets";
+import { useSectionVisibility } from "@/lib/visibility";
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
@@ -16,6 +17,7 @@ export const GithubActivity = () => {
   const [isLoading, setIsLoading] = useState(true);
   const calendarViewport = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLElement>(null);
+  const { ref: visibilityRef, isVisible } = useSectionVisibility("300px");
 
   useEffect(() => {
     async function loadData() {
@@ -44,36 +46,104 @@ export const GithubActivity = () => {
 
   const getColor = (level: number) => {
     if (level === 0) return "bg-[#1a1a1a]";
-    if (level === 1) return "bg-[#414642]";
-    if (level === 2) return "bg-[#67706a]";
-    if (level === 3) return "bg-[#928d80]";
-    return "bg-[#c0aa99]";
+    if (level === 1) return "bg-[#331111]";
+    if (level === 2) return "bg-[#661a1a]";
+    if (level === 3) return "bg-[#992626]";
+    return "bg-[#cc3333]";
   };
 
   return (
-    <section className="portfolio-chapter chapter-divider relative overflow-hidden group/section" id="github" ref={containerRef}>
+    <section className="portfolio-chapter chapter-divider relative overflow-hidden group/section" id="github" data-atmosphere-active={isVisible || undefined} ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
       <div className="portfolio-frame">
 
-        <div className="gh-panel relative overflow-hidden border border-border bg-surface">
+        <div className="gh-panel relative overflow-hidden border border-border bg-[#110d0e]">
 
           <div className="absolute inset-0 pointer-events-none opacity-10 mix-blend-overlay" style={{ backgroundImage: `url(${THEME_ASSETS.github.grain})`, backgroundSize: '250px' }} />
 
-          <div className="relative z-10 px-4 py-8 sm:px-6 lg:px-14 lg:py-16">
+          <div className="absolute inset-0 pointer-events-none anim-atmosphere" style={{
+             background: 'radial-gradient(circle at 80% 20%, rgba(204,51,51,0.05), transparent 55%), radial-gradient(circle at 10% 80%, rgba(255,255,255,0.02), transparent 45%)'
+          }} />
+
+          <div className="absolute bottom-0 left-0 w-[40%] h-[90%] pointer-events-none opacity-90" style={{
+             backgroundImage: `url(${THEME_ASSETS.github.inkLeft})`,
+             backgroundPosition: 'left bottom', backgroundRepeat: 'no-repeat', backgroundSize: 'contain',
+             maskImage: 'linear-gradient(to right, black 30%, transparent 100%)',
+             WebkitMaskImage: 'linear-gradient(to right, black 30%, transparent 100%)'
+          }} />
+
+          <div className="absolute top-[10%] right-0 w-[30%] h-[70%] pointer-events-none opacity-60 hidden md:block" style={{
+             backgroundImage: `url(${THEME_ASSETS.github.inkRight})`,
+             backgroundPosition: 'right center', backgroundRepeat: 'no-repeat', backgroundSize: 'contain',
+             maskImage: 'linear-gradient(to left, black 40%, transparent 100%)',
+             WebkitMaskImage: 'linear-gradient(to left, black 40%, transparent 100%)'
+          }} />
+
+          <div className="absolute top-[-15%] right-[-10%] w-[55%] h-[70%] pointer-events-none opacity-35 hidden md:block" style={{
+             backgroundImage: `url(${THEME_ASSETS.github.crescent})`,
+             backgroundPosition: 'top right', backgroundRepeat: 'no-repeat', backgroundSize: 'contain',
+             maskImage: 'linear-gradient(to bottom left, black 40%, transparent 100%)',
+             WebkitMaskImage: 'linear-gradient(to bottom left, black 40%, transparent 100%)'
+          }} />
+
+          <div className="absolute bottom-0 right-[5%] w-[60%] h-[50%] pointer-events-none opacity-90" style={{
+             backgroundImage: `url(${THEME_ASSETS.github.bottomBrush})`,
+             backgroundPosition: 'right bottom', backgroundRepeat: 'no-repeat', backgroundSize: 'contain',
+             maskImage: 'linear-gradient(to top, black 50%, transparent 100%)',
+             WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)'
+          }} />
+
+          <div className="absolute inset-0 pointer-events-none opacity-15 hidden md:block" style={{
+             backgroundImage: `url(${THEME_ASSETS.github.speckles})`,
+             backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundSize: 'cover',
+             maskImage: 'radial-gradient(circle at center, transparent 40%, black 100%)',
+             WebkitMaskImage: 'radial-gradient(circle at center, transparent 40%, black 100%)'
+          }} />
+
+          <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_120px_rgba(0,0,0,0.8)]" />
+
+          <div className="absolute top-5 left-5 w-3 h-[1px] bg-[#cc3333]/60 pointer-events-none" />
+          <div className="absolute top-5 left-5 w-[1px] h-3 bg-[#cc3333]/60 pointer-events-none" />
+
+          <div className="absolute bottom-5 left-5 w-3 h-[1px] bg-[#cc3333]/60 pointer-events-none" />
+          <div className="absolute bottom-5 left-5 w-[1px] h-3 bg-[#cc3333]/60 pointer-events-none" />
+
+          <div className="absolute top-5 right-5 w-3 h-[1px] bg-[#cc3333]/60 pointer-events-none" />
+          <div className="absolute top-5 right-5 w-[1px] h-3 bg-[#cc3333]/60 pointer-events-none" />
+
+          <div className="absolute bottom-5 right-5 w-3 h-[1px] bg-[#cc3333]/60 pointer-events-none" />
+          <div className="absolute bottom-5 right-5 w-[1px] h-3 bg-[#cc3333]/60 pointer-events-none" />
+
+          <div className="hidden md:block absolute top-6 left-1/2 -translate-x-1/2 text-[8px] font-mono text-[#cc3333]/40 tracking-[0.4em] pointer-events-none">
+            {"//"} DISCIPLINE COMPOUNDS.
+          </div>
+          <div className="absolute top-6 right-8 text-[9px] font-mono text-text-muted/20 tracking-[0.2em] pointer-events-none hidden md:block">
+            [SYS_LOG]
+          </div>
+
+          <div className="hidden lg:flex absolute left-6 top-1/2 -translate-y-1/2 flex-col items-center gap-10 pointer-events-none opacity-30">
+             <div className="w-[1px] h-20 bg-gradient-to-b from-transparent via-white to-transparent" />
+             <div className="text-[8px] font-mono tracking-[0.5em] rotate-180" style={{ writingMode: 'vertical-rl' }}>
+               BUILD {"//"} LEARN {"//"} ITERATE
+             </div>
+             <div className="w-[1px] h-20 bg-gradient-to-b from-transparent via-[#cc3333] to-transparent" />
+          </div>
+
+          <div className="relative z-10 px-4 py-8 sm:px-6 lg:pl-28 lg:pr-16 lg:py-16">
 
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 lg:mb-16">
               <div>
                 <div className="flex flex-wrap items-center gap-2 lg:gap-3 mb-3">
                   <h2 className="chapter-heading">
-                    GitHub activity
+                    Development Activity
                   </h2>
                   <div className="hidden h-[1px] w-12 bg-white/10 lg:block"></div>
-                  <span className="text-[10px] font-mono text-text-muted opacity-50 uppercase tracking-widest">{calendarData?.currentYear || new Date().getFullYear()}</span>
+                  <span className="text-[10px] font-mono text-text-muted opacity-50 uppercase tracking-widest">Activity_Matrix // {calendarData?.currentYear || new Date().getFullYear()}</span>
                 </div>
                 <h3 className="font-mono text-xs uppercase tracking-widest text-text-muted">
-                  Contribution calendar
+                  System Commits
                 </h3>
               </div>
-              <div className="text-xs font-mono mt-6 md:mt-0 flex flex-col items-start md:items-end border-l md:border-l-0 md:border-r border-border pl-4 md:pl-0 md:pr-4">
+              <div className="text-xs font-mono mt-6 md:mt-0 flex flex-col items-start md:items-end border-l md:border-l-0 md:border-r border-[#cc3333]/20 pl-4 md:pl-0 md:pr-4">
                 <a
                   href={socials.github}
                   target="_blank"
@@ -85,7 +155,7 @@ export const GithubActivity = () => {
                   @vaishnavg121 ↗
                 </a>
                 {calendarData && (
-                  <span className="text-accent mt-1 tracking-widest">
+                  <span className="text-[#cc3333] mt-1 tracking-widest">
                     {calendarData.totalContributions} <span className="text-text-muted">CONTRIBUTIONS</span>
                   </span>
                 )}
@@ -95,11 +165,11 @@ export const GithubActivity = () => {
             <div ref={calendarViewport} className="w-full overflow-x-auto pb-4 lg:pb-8 pt-3 lg:pt-4 custom-scrollbar relative md:[&::-webkit-scrollbar]:hidden" tabIndex={0} role="region" aria-label="Contribution calendar, scroll horizontally for more dates" data-anchor="github-calendar-center">
               {isLoading ? (
                 <div className="h-[150px] flex items-center justify-center font-mono text-xs text-text-muted tracking-widest">
-                  Loading contributions…
+                  [ FETCHING_DATA ]
                 </div>
               ) : !calendarData || calendarData.grid.length === 0 ? (
                 <div className="h-[150px] flex items-center justify-center font-mono text-xs text-text-muted tracking-widest">
-                  The contribution calendar is unavailable right now.
+                  [ DATA_UNAVAILABLE // PENDING_TOKEN ]
                 </div>
               ) : (
                 <div className="min-w-max flex flex-col">
@@ -162,8 +232,8 @@ export const GithubActivity = () => {
                             style={{ marginTop: dIdx === 0 && new Date(day.date).getDay() !== 0 ? `${new Date(day.date).getDay() * (12 + 3)}px` : '0' }}
                             className={`w-[12px] h-[12px] rounded-[1px] transition-all duration-300 aria-pressed:ring aria-pressed:ring-[#e8ddd0] aria-pressed:opacity-100 hover:scale-125 hover:z-10 focus:scale-125 focus:z-10 hover:border hover:border-white focus:border-white focus:outline-none cursor-crosshair group/day relative ${getColor(day.level)} ${day.level === 0 ? 'opacity-20 hover:opacity-100' : 'hover:brightness-110 shadow-sm'}`}
                           >
-                             <div data-familiar-avoid className="absolute opacity-0 group-hover/day:opacity-100 bg-[#090a0b] text-text-primary text-[10px] font-mono p-2 rounded pointer-events-none transform -translate-y-full -translate-x-1/2 left-1/2 -top-2 z-50 whitespace-nowrap transition-opacity border border-border shadow-2xl">
-                               <span className="text-accent font-bold">{day.count}</span> contributions · {new Date(day.date).toDateString()}
+                             <div data-familiar-avoid className="absolute opacity-0 group-hover/day:opacity-100 bg-[#090a0b] text-text-primary text-[10px] font-mono p-2 rounded pointer-events-none transform -translate-y-full -translate-x-1/2 left-1/2 -top-2 z-50 whitespace-nowrap transition-opacity border border-[#cc3333]/20 shadow-2xl">
+                               <span className="text-[#cc3333] font-bold">{day.count}</span> count {"//"} {new Date(day.date).toDateString()}
                              </div>
                           </div>
                         ))}
@@ -187,16 +257,16 @@ export const GithubActivity = () => {
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.04] pt-8 mt-2 relative z-20">
               <div className="text-[9px] font-mono text-text-muted/40 uppercase tracking-widest flex items-center gap-2">
-                Past year
+                365D TRACE <span className="opacity-30">{"///"}</span> <span className="text-text-muted/20">CODE {"//"} BUILD {"//"} ITERATE</span>
               </div>
               <div className="flex items-center gap-2 text-[9px] font-mono text-text-muted">
                 <span className="opacity-40">LESS</span>
                 <div className="flex gap-[2px]">
                   <div className="w-[12px] h-[12px] bg-[#1a1a1a] opacity-20 rounded-[1px]" />
-                  <div className="w-[12px] h-[12px] bg-[#414642] rounded-[1px] shadow-sm" />
-                  <div className="w-[12px] h-[12px] bg-[#67706a] rounded-[1px] shadow-sm" />
-                  <div className="w-[12px] h-[12px] bg-[#928d80] rounded-[1px] shadow-sm" />
-                  <div className="w-[12px] h-[12px] bg-[#c0aa99] rounded-[1px] shadow-sm" />
+                  <div className="w-[12px] h-[12px] bg-[#331111] rounded-[1px] shadow-sm" />
+                  <div className="w-[12px] h-[12px] bg-[#661a1a] rounded-[1px] shadow-sm" />
+                  <div className="w-[12px] h-[12px] bg-[#992626] rounded-[1px] shadow-sm" />
+                  <div className="w-[12px] h-[12px] bg-[#cc3333] rounded-[1px] shadow-sm" />
                 </div>
                 <span className="opacity-40">MORE</span>
               </div>

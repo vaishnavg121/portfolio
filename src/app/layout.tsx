@@ -4,6 +4,7 @@ import "./globals.css";
 import React from "react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { CommandPalette } from "@/components/CommandPalette";
+import { CustomCursor } from "@/components/CustomCursor";
 import { CompanionTester } from "@/components/companion/CompanionTester";
 import { PointerProvider, SystemRail } from "@/components/effects";
 import { Companion } from "@/components/companion";
@@ -29,12 +30,12 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  title: "Vaishnav Gadamsetty — Projects and notes",
-  description: "I study computer science and finance at BITS Hyderabad. This is a collection of my work in machine learning, software, and robotics.",
+  title: "Vaishnav Gadamsetty — AI, Finance & Systems",
+  description: "Computer Science and Finance student at BITS Pilani Hyderabad building across AI/ML, RAG & agentic systems, quantitative finance, systems and robotics.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#101112",
+  themeColor: "#0a0a0a",
 };
 
 export default function RootLayout({
@@ -50,6 +51,7 @@ export default function RootLayout({
       <body className="min-h-full bg-background text-text-primary flex flex-col selection:bg-accent-soft selection:text-accent">
         <div className="portfolio-content">
           <PointerProvider>
+            <CustomCursor />
             <SystemRail />
             <MobileNavigation />
             {children}
@@ -57,7 +59,7 @@ export default function RootLayout({
             <CompanionTester />
           </PointerProvider>
         </div>
-        <div id="familiar-root">
+        <div id="familiar-root" aria-hidden="true">
           <Companion />
         </div>
       </body>

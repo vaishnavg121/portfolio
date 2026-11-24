@@ -1,3 +1,4 @@
+import { EntrySequence } from "@/sections/EntrySequence";
 import { Hero } from "@/sections/Hero";
 import { SelectedWork } from "@/sections/SelectedWork";
 import { SkillsConstellation } from "@/sections/SkillsConstellation";
@@ -10,6 +11,7 @@ import { ContactFooter } from "@/sections/ContactFooter";
 export default function Home() {
   return (
     <main className="relative bg-background">
+      <EntrySequence />
       <Hero />
       <SelectedWork />
       <SkillsConstellation />

@@ -97,10 +97,10 @@ const CARDS = [
 ];
 
 const desktopPositions = [
-  { y: 6, rotate: -0.4 },
-  { y: 1, rotate: 0.3 },
-  { y: 7, rotate: -0.3 },
-  { y: 3, rotate: 0.4 },
+  { y: 20, rotate: -2 },
+  { y: 3, rotate: 1 },
+  { y: 23, rotate: -1 },
+  { y: 10, rotate: 2 },
 ];
 
 export const HeroCards = () => {
@@ -123,7 +123,7 @@ export const HeroCards = () => {
       "(min-width: 64rem)",
       () => {
 
-        gsap.set(cards, { opacity: 0.8 });
+        gsap.set(cards, { opacity: 0.6 });
         cards.forEach((card, i) => {
           gsap.to(card, {
             opacity: 1,
@@ -131,7 +131,7 @@ export const HeroCards = () => {
             y: desktopPositions[i].y,
             rotate: desktopPositions[i].rotate,
             duration: 0.72,
-            delay: i * 0.045,
+            delay: 0.16 + i * 0.075,
             ease: "power3.out",
             overwrite: "auto",
           });
@@ -273,7 +273,7 @@ export const HeroCards = () => {
             <span className="font-mono text-xs md:text-sm text-accent/80 tracking-widest leading-none mb-auto">{card.num}</span>
             
             {/* Top/Center: Large Symbol */}
-            <div className="absolute inset-x-0 top-2.5 flex items-center justify-center pointer-events-none [&>svg]:size-16 lg:top-0 lg:[&>svg]:size-[4.6rem]">
+            <div className="absolute inset-x-0 top-2.5 flex items-center justify-center pointer-events-none [&>svg]:size-16 lg:inset-0 lg:mt-3 lg:[&>svg]:size-24 xl:[&>svg]:size-28">
               <card.Icon />
             </div>
 

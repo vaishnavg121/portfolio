@@ -7,7 +7,7 @@ import { ThriveForceTeam } from './ThriveForceTeam';
 
 export const ThriveForceSection = () => {
   return (
-    <section id="robotics" className="chapter-divider relative w-full bg-background text-text-primary">
+    <section id="robotics" className="chapter-divider relative w-full bg-[#0b0809] text-white">
       {/* 01 & 02: Cinematic Intro, Machine, Weapon & Impact */}
       <ThriveForceEntry />
       
