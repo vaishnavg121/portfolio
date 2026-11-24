@@ -151,6 +151,7 @@ export function connectPortrait(frameElement: HTMLElement, canvas: HTMLCanvasEle
 
   const start = (event: PointerEvent) => {
     if (reduced.matches || event.pointerType !== "touch" || touchId !== null) return;
+    window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "portrait-touch" } }));
     touchId = event.pointerId;
     const point = pointerPoint(event);
     position = { ...point };

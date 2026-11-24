@@ -59,7 +59,7 @@ export default function RootLayout({
             <CompanionTester />
           </PointerProvider>
         </div>
-        <div id="familiar-root" aria-hidden="true">
+        <div id="familiar-root">
           <Companion />
         </div>
       </body>
