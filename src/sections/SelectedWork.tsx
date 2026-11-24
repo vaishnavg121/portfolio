@@ -59,7 +59,7 @@ function ProjectDetails({ project }: { project: Project }) {
 function ProjectAction({ project }: { project: Project }) {
   return (
     <MagneticEffect intensity={0.24}>
-      <Link href={`/work/${project.slug}`} data-cursor="VIEW" aria-label={"View project: " + project.title}
+      <Link href={`/work/${project.slug}`} data-cursor="VIEW" aria-label={"Read case study: " + project.title}
         className="project-action portfolio-control group inline-flex min-h-11 items-center gap-3 px-3.5 font-mono text-xs uppercase tracking-wide">
         Read case study <MoveRight className="size-4 text-accent transition-transform group-hover:translate-x-1" />
       </Link>

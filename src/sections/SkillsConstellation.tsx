@@ -169,37 +169,26 @@ export const SkillsConstellation = () => {
     });
 
     const step = 50;
-    const yMin = -1800, yMax = 1800;
-    const xMin = -2600, xMax = 2600;
-    
-    for (let y = yMin; y <= yMax; y += step) {
-      const ratio = (y - yMin) / (yMax - yMin);
-      const bandIdx = Math.max(0, Math.min(BANDS - 1, Math.floor(ratio * BANDS)));
-      let d = "";
-      for (let x = xMin; x <= xMax; x += step) {
-        const px = x + Math.sin(y / 180) * 12 + Math.cos((x+y)/300) * 8;
-        const py = y + Math.sin(x / 180) * 12 + Math.cos((x-y)/300) * 8;
-        const p = project(px, py, getZ(px, py));
-        d += x === xMin ? `M ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} ` : `L ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} `;
-      }
-      terrainBands[bandIdx].d += d;
-    }
-    
-    for (let x = xMin; x <= xMax; x += step) {
-      for (let y = yMin; y < yMax; y += step) {
-        const ratio = (y - yMin) / (yMax - yMin);
-        const bandIdx = Math.max(0, Math.min(BANDS - 1, Math.floor(ratio * BANDS)));
-        
-        const px1 = x + Math.sin(y / 180) * 12 + Math.cos((x+y)/300) * 8;
-        const py1 = y + Math.sin(x / 180) * 12 + Math.cos((x-y)/300) * 8;
-        const p1 = project(px1, py1, getZ(px1, py1));
-        
-        const y2 = y + step;
-        const px2 = x + Math.sin(y2 / 180) * 12 + Math.cos((x+y2)/300) * 8;
-        const py2 = y2 + Math.sin(x / 180) * 12 + Math.cos((x-y2)/300) * 8;
-        const p2 = project(px2, py2, getZ(px2, py2));
-        
-        terrainBands[bandIdx].d += `M ${formatSvgNumber(p1.x)} ${formatSvgNumber(p1.y)} L ${formatSvgNumber(p2.x)} ${formatSvgNumber(p2.y)} `;
+    const rows = 73;
+    const columns = 105;
+    const bandAt = (row: number) => Math.min(BANDS - 1, Math.floor(row * BANDS / (rows - 1)));
+    const grid = Array.from({ length: rows }, (_, row) => {
+      const y = -1800 + row * step;
+      return Array.from({ length: columns }, (_, column) => {
+        const x = -2600 + column * step;
+        const px = x + Math.sin(y / 180) * 12 + Math.cos((x + y) / 300) * 8;
+        const py = y + Math.sin(x / 180) * 12 + Math.cos((x - y) / 300) * 8;
+        const point = project(px, py, getZ(px, py));
+        return `${formatSvgNumber(point.x)} ${formatSvgNumber(point.y)}`;
+      });
+    });
+
+    grid.forEach((line, row) => { terrainBands[bandAt(row)].d += `M${line.join("L")}`; });
+    for (let column = 0; column < columns; column++) {
+      for (let row = 0; row < rows - 1; row++) {
+        const band = bandAt(row);
+        if (!row || bandAt(row - 1) !== band) terrainBands[band].d += `M${grid[row][column]}`;
+        terrainBands[band].d += `L${grid[row + 1][column]}`;
       }
     }
 
@@ -916,9 +905,9 @@ export const SkillsConstellation = () => {
     renderQueue.push({
       yDepth,
       element: (
-        <path 
+        <use
           key={`terrain-base-${i}`}
-          d={b.d}
+          href={`#terrain-band-${i}`}
           fill="none"
           stroke={`rgba(176, 181, 176, ${b.baseAlpha})`}
           strokeWidth="0.8"
@@ -931,9 +920,9 @@ export const SkillsConstellation = () => {
     renderQueue.push({
       yDepth: yDepth + 0.1, // draw slightly above base layer
       element: (
-        <path 
+        <use
           key={`terrain-highlight-${i}`}
-          d={b.d}
+          href={`#terrain-band-${i}`}
           fill="none"
           stroke={`rgba(198, 195, 183, ${b.peakAlpha})`}
           strokeWidth="1.2"
@@ -1262,6 +1251,7 @@ export const SkillsConstellation = () => {
               preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full"
             >
               <defs>
+                {terrainBands.map((band, index) => <path key={index} id={`terrain-band-${index}`} d={band.d} />)}
                 <radialGradient id="cursor-gradient" cx="50%" cy="50%" r="50%">
                   <stop offset="0%" stopColor="white" stopOpacity="1" />
                   <stop offset="10%" stopColor="white" stopOpacity="0.95" />
