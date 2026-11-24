@@ -6,25 +6,32 @@ import { motion, MotionValue } from "framer-motion";
 interface HeroBackgroundProps {
   bgX: MotionValue<number>;
   bgY: MotionValue<number>;
-  mounted: boolean;
   shouldReduceMotion: boolean | null;
 }
 
-export const HeroBackground: React.FC<HeroBackgroundProps> = ({ bgX, bgY, mounted, shouldReduceMotion }) => {
-  if (!mounted) return null;
-
-  const durationLayerD = shouldReduceMotion ? 0 : 5;
-  const durationLayerC = shouldReduceMotion ? 0 : 4;
-  const durationLayerB = shouldReduceMotion ? 0 : 3.5;
-  const durationLayerA = shouldReduceMotion ? 0 : 3;
+export const HeroBackground: React.FC<HeroBackgroundProps> = ({ bgX, bgY, shouldReduceMotion }) => {
+  const durationLayerB = shouldReduceMotion ? 0 : 2.3;
+  const durationLayerA = shouldReduceMotion ? 0 : 1.7;
 
   return (
-    <div data-hero-atmosphere className="absolute inset-0 z-0 opacity-40 pointer-events-none flex items-center justify-center overflow-hidden">
+    <div aria-hidden="true" data-hero-atmosphere className="absolute inset-0 z-0 opacity-60 pointer-events-none flex items-center justify-center overflow-hidden">
       <motion.div
         className="w-full h-full relative"
         style={{ x: shouldReduceMotion ? 0 : bgX, y: shouldReduceMotion ? 0 : bgY }}
       >
         <svg viewBox="0 0 1440 900" className="w-full h-full absolute inset-0" preserveAspectRatio="xMidYMid slice">
+          <g className="hero-orbit" transform="translate(1190 315) rotate(-27)" fill="none">
+            <ellipse rx="238" ry="137" stroke="#967b75" strokeWidth="1" />
+            <ellipse rx="291" ry="69" stroke="#825253" strokeWidth="1" strokeDasharray="2 7" />
+            <motion.ellipse rx="268" ry="105" stroke="#bd4a50" strokeWidth="1.4"
+              initial={shouldReduceMotion ? false : { pathLength: 0.1 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 1.8, ease: "easeOut" }} />
+            <path d="M-304 0H304M0-160V160" stroke="#66464a" strokeDasharray="2 5" />
+            <path d="M-238 -8V8M-246 0H-230M238-8V8M230 0H246" stroke="#ba7270" />
+            <circle cx="209" cy="-67" r="4" fill="#d96a6a" />
+            <circle cx="-196" cy="72" r="2" fill="#ae8a80" />
+          </g>
           {/* Layer D - Very Faint Topo / System Structure */}
           <g stroke="var(--text-muted)" strokeWidth="0.5" opacity="0.04">
             {/* Grid structure */}

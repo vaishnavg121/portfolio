@@ -97,10 +97,10 @@ const CARDS = [
 ];
 
 const desktopPositions = [
-  { x: 0, y: 40, rotate: -2 },
-  { x: 180, y: 10, rotate: 1 },
-  { x: 360, y: 50, rotate: -1 },
-  { x: 540, y: 20, rotate: 2 },
+  { y: 20, rotate: -2 },
+  { y: 3, rotate: 1 },
+  { y: 23, rotate: -1 },
+  { y: 10, rotate: 2 },
 ];
 
 export const HeroCards = () => {
@@ -116,27 +116,24 @@ export const HeroCards = () => {
     const mm = gsap.matchMedia();
 
     mm.add("(width < 64rem)", () => {
-      gsap.from(cards, { y: 16, opacity: 0.25, duration: 0.52, stagger: 0.07, ease: "power2.out", clearProps: "transform,opacity" });
+      gsap.from(cards, { y: 12, opacity: 0.6, duration: 0.42, stagger: 0.055, ease: "power2.out", clearProps: "transform,opacity" });
     }, containerRef);
 
     mm.add(
       "(min-width: 64rem)",
       () => {
 
-        gsap.set(cards, { opacity: 0, y: "+=40" });
+        gsap.set(cards, { opacity: 0.6 });
         cards.forEach((card, i) => {
           gsap.to(card, {
             opacity: 1,
-            x: desktopPositions[i].x,
+            x: 0,
             y: desktopPositions[i].y,
             rotate: desktopPositions[i].rotate,
-            duration: 0.9,
-            delay: 1.1 + (i * 0.15),
+            duration: 0.72,
+            delay: 0.16 + i * 0.075,
             ease: "power3.out",
-            onComplete: () => {
-              gsap.set(card, { clearProps: "y" });
-              gsap.set(card, { x: desktopPositions[i].x, y: desktopPositions[i].y, rotate: desktopPositions[i].rotate });
-            }
+            overwrite: "auto",
           });
         });
 
@@ -147,7 +144,7 @@ export const HeroCards = () => {
         const onContainerEnter = () => {
           cards.forEach((c, i) => {
             gsap.to(c, {
-              x: desktopPositions[i].x + (i * 10),
+              x: i * 3,
               y: desktopPositions[i].y + (i % 2 === 0 ? -5 : 5),
               rotate: desktopPositions[i].rotate * 0.5,
               duration: 0.6,
@@ -159,19 +156,18 @@ export const HeroCards = () => {
         const onContainerLeave = () => {
           cards.forEach((c, i) => {
             gsap.to(c, {
-              x: desktopPositions[i].x,
+              x: 0,
               y: desktopPositions[i].y,
               rotate: desktopPositions[i].rotate,
               scale: 1,
               zIndex: CARDS.length - i,
-              borderColor: "rgba(255,255,255,0.05)",
-              backgroundColor: "rgba(5,5,5,0.95)",
+              borderColor: "var(--border)",
               duration: 0.6,
               ease: "power2.out"
             });
             
             const arrow = c.querySelector('.card-arrow');
-            if (arrow) gsap.to(arrow, { opacity: 0, x: -5, duration: 0.2 });
+            if (arrow) gsap.to(arrow, { opacity: 0.7, x: 0, duration: 0.2 });
             
             const highlight = c.querySelector('.card-highlight');
             if (highlight) gsap.to(highlight, { opacity: 0, duration: 0.3 });
@@ -186,12 +182,11 @@ export const HeroCards = () => {
           const onEnter = () => {
             gsap.to(card, {
               y: desktopPositions[i].y - 12,
-              x: desktopPositions[i].x - 5,
+              x: -4,
               rotate: 0,
               scale: 1.05,
               zIndex: 20, 
-              borderColor: "rgba(255,255,255,0.25)",
-              backgroundColor: "rgba(10,10,10,0.98)",
+              borderColor: "var(--accent)",
               duration: 0.4,
               ease: "power3.out"
             });
@@ -206,11 +201,11 @@ export const HeroCards = () => {
               if (i !== j) {
                 const distance = j - i;
                 gsap.to(sibling, {
-                  x: desktopPositions[j].x + (distance > 0 ? 15 : -10),
+                  x: distance > 0 ? 9 : -5,
                   y: desktopPositions[j].y + (distance > 0 ? 5 : -5),
                   scale: 0.98,
                   zIndex: CARDS.length - j,
-                  borderColor: "rgba(255,255,255,0.02)",
+                  borderColor: "var(--border)",
                   duration: 0.4,
                   ease: "power2.out"
                 });
@@ -222,6 +217,8 @@ export const HeroCards = () => {
           const onUp = () => gsap.to(card, { scale: 1.05, duration: 0.1 });
 
           card.addEventListener('mouseenter', onEnter);
+          card.addEventListener('focus', onEnter);
+          card.addEventListener('blur', onContainerLeave);
           card.addEventListener('mousedown', onDown);
           card.addEventListener('mouseup', onUp);
 
@@ -234,6 +231,8 @@ export const HeroCards = () => {
           container.removeEventListener('mouseleave', onContainerLeave);
           cardHandlers.forEach(({ card, onEnter, onDown, onUp }) => {
             card.removeEventListener('mouseenter', onEnter);
+            card.removeEventListener('focus', onEnter);
+            card.removeEventListener('blur', onContainerLeave);
             card.removeEventListener('mousedown', onDown);
             card.removeEventListener('mouseup', onUp);
           });
@@ -248,16 +247,17 @@ export const HeroCards = () => {
   return (
     <div 
       ref={containerRef} 
-      className="relative grid grid-cols-2 gap-3 sm:grid-cols-4 lg:mt-[clamp(4rem,100vh-42rem,20rem)] lg:ml-2 lg:block perspective-1000 w-full lg:w-[800px] lg:h-[360px] z-20"
+      className="hero-deck relative grid w-full grid-cols-2 gap-2.5 sm:grid-cols-4 lg:block perspective-1000"
       aria-label="Quick Navigation"
     >
       {CARDS.map((card, i) => (
         <button
           key={card.id}
-          className="hero-card lg:motion-reduce:[transform:var(--resting-position)] relative h-[8.75rem] min-w-0 lg:absolute lg:top-0 lg:left-0 lg:w-[210px] lg:h-[310px] bg-[#050505]/95 backdrop-blur-md border border-white/5 rounded-sm p-3 lg:p-6 text-left shadow-[0_12px_40px_rgba(0,0,0,0.6)] flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent overflow-hidden group active:border-accent motion-safe:active:scale-[0.98]"
+          className="hero-card relative h-[8.25rem] min-w-0 border rounded-sm p-3 lg:p-[clamp(0.75rem,1.15vw,1.25rem)] text-left flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent overflow-hidden group active:border-accent motion-safe:active:scale-[0.98]"
           style={{ 
             zIndex: CARDS.length - i,
-            "--resting-position": `translate(${desktopPositions[i].x}px, ${desktopPositions[i].y}px) rotate(${desktopPositions[i].rotate}deg)`
+            "--deck-progress": i / (CARDS.length - 1),
+            "--resting-position": `translateY(${desktopPositions[i].y}px) rotate(${desktopPositions[i].rotate}deg)`
           } as React.CSSProperties}
           onClick={() => document.getElementById(card.id)?.scrollIntoView({ behavior: shouldReduceMotion ? "instant" : "smooth" })}
           aria-label={`Scroll to ${card.title}`}
@@ -273,17 +273,17 @@ export const HeroCards = () => {
             <span className="font-mono text-xs md:text-sm text-accent/80 tracking-widest leading-none mb-auto">{card.num}</span>
             
             {/* Top/Center: Large Symbol */}
-            <div className="absolute inset-x-0 top-2.5 flex items-center justify-center pointer-events-none [&>svg]:size-16 lg:inset-0 lg:mt-6 lg:[&>svg]:size-32">
+            <div className="absolute inset-x-0 top-2.5 flex items-center justify-center pointer-events-none [&>svg]:size-16 lg:inset-0 lg:mt-3 lg:[&>svg]:size-24 xl:[&>svg]:size-28">
               <card.Icon />
             </div>
 
             {/* Bottom Content */}
-            <div className="mt-auto relative bg-[#050505]/40 pt-4 -mx-2 px-2 -mb-2 pb-2 backdrop-blur-sm rounded-sm">
+            <div className="mt-auto relative pt-4 -mx-1 px-1 -mb-1 pb-1 rounded-sm">
               <div className="w-6 h-[1px] bg-white/20 mb-1.5 lg:mb-3 group-hover:w-12 group-hover:bg-accent/70 transition-all duration-500" />
-              <div className="font-display text-xs lg:text-lg text-white/90 tracking-wider lg:tracking-widest uppercase mb-0.5 lg:mb-1.5">{card.title}</div>
+              <div className="font-display text-xs lg:text-[clamp(0.76rem,1.12vw,1.05rem)] text-white/90 tracking-wide uppercase mb-0.5 lg:mb-1.5">{card.title}</div>
               <div className="flex items-center justify-between">
                 <div className="font-mono text-[9px] lg:text-[10px] text-text-muted tracking-widest uppercase">{card.subtitle}</div>
-                <span className="card-arrow font-mono text-[11px] md:text-xs text-accent lg:opacity-0 lg:-translate-x-2 leading-none">&#x2192;</span>
+                <span className="card-arrow font-mono text-[11px] md:text-xs text-accent lg:opacity-70 leading-none">&#x2192;</span>
               </div>
             </div>
           </div>

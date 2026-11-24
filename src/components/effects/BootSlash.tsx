@@ -40,7 +40,7 @@ export const BootSlash = ({ onComplete }: BootSlashProps) => {
         }
       });
 
-      if (window.matchMedia("(width < 64rem)").matches) tl.timeScale(1.7);
+      tl.timeScale(window.matchMedia("(width < 64rem)").matches ? 2 : 1.6);
 
       // Solid paths
       const core = document.querySelector("#slash-core") as SVGPathElement;
@@ -76,8 +76,7 @@ export const BootSlash = ({ onComplete }: BootSlashProps) => {
         duration: 0.1,
         stagger: 0.02,
         ease: "power2.inOut",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any, 0);
+      }, 0);
 
       // Main core stroke (140 - 260ms)
       tl.to(core, {
@@ -151,8 +150,7 @@ export const BootSlash = ({ onComplete }: BootSlashProps) => {
             rotation: rand * 4,
             duration: 0.4 + (rand / 200),
             ease: "power2.out",
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any, 0.19 + (i * 0.01)
+          }, 0.19 + (i * 0.01)
         );
       });
 

@@ -10,22 +10,22 @@ import { PointerProvider, SystemRail } from "@/components/effects";
 import { Companion } from "@/components/companion";
 
 const inter = Inter({
-  variable: "--font-sans",
+  variable: "--portfolio-sans",
   subsets: ["latin"],
 });
 
 const spaceGrotesk = Space_Grotesk({
-  variable: "--font-display",
+  variable: "--portfolio-display",
   subsets: ["latin"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
+  variable: "--portfolio-mono",
   subsets: ["latin"],
 });
 
 const caveat = Caveat({
-  variable: "--font-hand",
+  variable: "--portfolio-hand",
   subsets: ["latin"],
 });
 
