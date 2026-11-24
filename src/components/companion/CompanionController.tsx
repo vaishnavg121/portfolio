@@ -112,6 +112,7 @@ export const CompanionController = () => {
       
       const newRects: {rect: DOMRect, margin: number}[] = [];
       els.forEach((el) => {
+        if (el.closest("#familiar-root")) return;
         if (el.tagName === "A" && el.parentElement?.tagName === "P") return;
         
         const rect = el.getBoundingClientRect();
@@ -251,6 +252,8 @@ export const CompanionController = () => {
   useEffect(() => {
     let raf: number;
     let lastTime = performance.now();
+    const coarsePointer = window.matchMedia("(pointer: coarse)");
+    const writtenPosition = { x: -Infinity, y: -Infinity };
     
     const isColliding = (x: number, y: number) => {
       const size = 30; // approx half size of familiar
@@ -273,7 +276,7 @@ export const CompanionController = () => {
       const dt = Math.min((time - lastTime) / 1000, 0.1);
       lastTime = time;
       
-      const isTouch = window.matchMedia("(pointer: coarse)").matches;
+      const isTouch = coarsePointer.matches;
       const profile = profileRef.current;
       
       let targetX = posRef.current.x;
@@ -281,13 +284,16 @@ export const CompanionController = () => {
       
       // Determine base target
       if (isTouch || profile.mode === "DOCKED") {
-         targetX = window.innerWidth - 60;
-         targetY = window.innerHeight - 60;
+         const viewport = window.visualViewport;
+         const insetX = viewport?.offsetLeft ?? 0;
+         const insetY = viewport?.offsetTop ?? 0;
+         targetX = insetX + (viewport?.width ?? window.innerWidth) - 60;
+         targetY = insetY + (viewport?.height ?? window.innerHeight) - 60;
          if (isTouch && isColliding(targetX, targetY)) {
            const alternativeDocks = [
              [targetX, targetY - 78],
-             [60, targetY],
-             [60, targetY - 78],
+             [insetX + 60, targetY],
+             [insetX + 60, targetY - 78],
            ];
            const clearDock = alternativeDocks.find(([x, y]) => !isColliding(x, y));
            if (clearDock) [targetX, targetY] = clearDock;
@@ -369,7 +375,10 @@ export const CompanionController = () => {
         posRef.current.y += (targetY - posRef.current.y) * (1 - Math.exp(-speedFactor * dt));
       }
 
-      containerRef.current.style.transform = `translate3d(${posRef.current.x}px, ${posRef.current.y}px, 0)`;
+      if (Math.hypot(posRef.current.x - writtenPosition.x, posRef.current.y - writtenPosition.y) >= 0.08) {
+        Object.assign(writtenPosition, posRef.current);
+        containerRef.current.style.transform = `translate3d(${writtenPosition.x}px, ${writtenPosition.y}px, 0)`;
+      }
 
       // Direction Hysteresis
       if (Math.abs(targetX - posRef.current.x) > 20) {

@@ -1,5 +1,3 @@
-/* eslint-disable react-hooks/refs */
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import React, { useRef, useState, useMemo, useEffect, useCallback } from "react";
 import gsap from "gsap";
@@ -39,6 +37,7 @@ export const SkillsConstellation = () => {
   const touchFrame = useRef(0);
   const lastSample = useRef<GestureSample | null>(null);
   const compactFrame = useRef<Frame | null>(null);
+  const desktopFrame = useRef<Frame | null>(null);
   const atOverview = useRef(true);
   const focusedSkill = useRef<string | null>(null);
   const [exploring, setExploring] = useState(false);
@@ -256,8 +255,9 @@ export const SkillsConstellation = () => {
            pts.push({ ...project(x, y, z), originalY: y });
        }
        
-       return { a, b, pts };
-    }).filter(Boolean) as { a: string, b: string, pts: {x: number, y: number, originalY: number}[] }[];
+       const path = pts.map((point, i) => `${i ? "L" : "M"} ${formatSvgNumber(point.x)} ${formatSvgNumber(point.y)}`).join(" ");
+       return { a, b, path, depth: (pts[0].originalY + pts[pts.length - 1].originalY) / 2 };
+    }).filter((edge) => edge !== null);
 
     return { terrainBands, nodesProj: nData, edgesProj: eData, domainsProj: dData };
   }, []);
@@ -399,21 +399,33 @@ export const SkillsConstellation = () => {
   }, [nodesProj, domainsProj]);
 
   const overview = useCallback((frame: Frame) => fitCamera(bounds, frame), [bounds]);
-  const getDefaultCamera = useCallback(() =>
-    isCompact() && compactFrame.current ? overview(compactFrame.current) : { x: -190, y: 240, z: 0.82 },
-  [overview]);
+  const getDefaultCamera = useCallback(() => {
+    const frame = isCompact() ? compactFrame.current : desktopFrame.current;
+    return frame ? overview(frame) : { x: 0, y: 0, z: 1 };
+  }, [overview]);
 
   const zoomLimits = useCallback(() => {
-    const frame = compactFrame.current;
-    return isCompact() && frame
-      ? { min: overview(frame).z * 0.8, max: 1.75 / frame.scale }
-      : { min: 0.85, max: 2.5 };
+    const compact = isCompact();
+    const frame = compact ? compactFrame.current : desktopFrame.current;
+    if (!frame) return { min: 0.65, max: 2.5 };
+    const fit = overview(frame).z;
+    return { min: fit * 0.8, max: compact ? 1.75 / frame.scale : Math.max(2.5, fit * 2.8) };
   }, [overview]);
 
   const toSvgPoint = (x: number, y: number) => {
     const matrix = svgRef.current?.getScreenCTM();
     return matrix ? new DOMPoint(x, y).matrixTransform(matrix.inverse()) : null;
   };
+
+  const renderedCamera = useCallback((compact = isCompact()) => {
+    if (compact) return { ...visibleCamera.current };
+    const world = worldRef.current;
+    return world ? {
+      x: Number(gsap.getProperty(world, "x")),
+      y: Number(gsap.getProperty(world, "y")),
+      z: Number(gsap.getProperty(world, "scaleX")),
+    } : { ...camera.current };
+  }, []);
 
   const applyCamera = useCallback((animate = false, duration = 0.5) => {
     const world = worldRef.current;
@@ -444,60 +456,51 @@ export const SkillsConstellation = () => {
     }
   }, []);
 
-  const getCameraBounds = useCallback((z: number) => {
-    const safeWorldWidth = 2400; 
-    const safeWorldHeight = 1250;
-    
-    const limitX = Math.max(0, safeWorldWidth * z - 1200);
-    const limitY = Math.max(0, safeWorldHeight * z - 800);
-    
-    return {
-      minX: -limitX,
-      maxX: limitX,
-      minY: -limitY,
-      maxY: limitY
-    };
-  }, []);
-
   const clampCamera = useCallback(() => {
-    if (isCompact() && compactFrame.current) {
-      const { min, max } = zoomLimits();
-      camera.current.z = Math.max(min, Math.min(max, camera.current.z));
-      camera.current = constrainPan(camera.current, bounds, compactFrame.current);
-      return;
-    }
-    const minZ = 0.85;
-    const maxZ = 2.5;
-    camera.current.z = Math.max(minZ, Math.min(maxZ, camera.current.z));
-    
-    const desktopBounds = getCameraBounds(camera.current.z);
-    
-    camera.current.x = Math.max(desktopBounds.minX, Math.min(desktopBounds.maxX, camera.current.x));
-    camera.current.y = Math.max(desktopBounds.minY, Math.min(desktopBounds.maxY, camera.current.y));
-  }, [getCameraBounds, bounds, zoomLimits]);
+    const frame = isCompact() ? compactFrame.current : desktopFrame.current;
+    const { min, max } = zoomLimits();
+    camera.current.z = Math.max(min, Math.min(max, camera.current.z));
+    if (frame) camera.current = constrainPan(camera.current, bounds, frame);
+  }, [bounds, zoomLimits]);
 
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
+    const visible = visibleCamera.current;
     const updateRects = () => {
       const rect = svgWrapperRef.current?.getBoundingClientRect();
       if (!rect || !rect.width || !rect.height) return;
       cachedRect.current = { width: rect.width, height: rect.height, left: rect.left, top: rect.top, svgWidth: svg.getBoundingClientRect().width };
       setViewportSize({ w: rect.width, h: rect.height });
+      const frame = { width: svg.clientWidth, height: svg.clientHeight, scale: Math.max(svg.clientWidth / 2400, svg.clientHeight / 1600) };
+      if (!frame.scale) return;
       if (!isCompact()) {
-        if (compactFrame.current) {
-          compactFrame.current = null;
-          setExploring(false);
-          camera.current = getDefaultCamera();
-          clampCamera();
-          applyCamera();
+        const previous = desktopFrame.current;
+        if (previous?.width === frame.width && previous.height === frame.height && !compactFrame.current) return;
+        desktopFrame.current = frame;
+        const prior = compactFrame.current ?? previous;
+        const current = compactFrame.current ? visible : renderedCamera(false);
+        const { min, max } = zoomLimits();
+        camera.current = prior && !atOverview.current
+          ? resizeCamera(current, prior.scale, frame.scale, min, max)
+          : overview(frame);
+        const selected = nodesProj.find(({ id }) => id === focusedSkill.current)?.proj;
+        if (selected) {
+          camera.current = cameraAt(selected, camera.current.z);
+          const sheetWidth = Math.min(440, Math.max(320, (containerRef.current?.clientWidth ?? frame.width) * 0.34));
+          camera.current.x -= sheetWidth / (2 * frame.scale);
         }
+        compactFrame.current = null;
+        setExploring(false);
+        clampCamera();
+        applyCamera();
         return;
       }
 
-      const previous = compactFrame.current;
-      const frame = { width: svg.clientWidth, height: svg.clientHeight, scale: Math.max(svg.clientWidth / 2400, svg.clientHeight / 1600) };
-      if (!frame.scale || (previous?.width === frame.width && previous.height === frame.height)) return;
+      const previous = compactFrame.current ?? desktopFrame.current;
+      const current = compactFrame.current ? visible : renderedCamera(false);
+      if (compactFrame.current?.width === frame.width && compactFrame.current.height === frame.height) return;
+      desktopFrame.current = null;
       compactFrame.current = frame;
       const target = nodesProj.find(({ id }) => id === focusedSkill.current)?.proj;
       const { min, max } = zoomLimits();
@@ -506,7 +509,7 @@ export const SkillsConstellation = () => {
         const z = Math.max(min, Math.min(max, scale));
         camera.current = cameraAt(target, z);
       } else if (previous && !atOverview.current) {
-        camera.current = resizeCamera(visibleCamera.current, previous.scale, frame.scale, min, max);
+        camera.current = resizeCamera(current, previous.scale, frame.scale, min, max);
       } else {
         camera.current = overview(frame);
       }
@@ -521,9 +524,9 @@ export const SkillsConstellation = () => {
     return () => {
       observer.disconnect();
       cancelAnimationFrame(touchFrame.current);
-      gsap.killTweensOf(visibleCamera.current);
+      gsap.killTweensOf(visible);
     };
-  }, [applyCamera, clampCamera, getDefaultCamera, nodesProj, overview, setExploring, zoomLimits]);
+  }, [applyCamera, clampCamera, nodesProj, overview, renderedCamera, setExploring, zoomLimits]);
 
   useEffect(() => {
     if (!isVisible) return;
@@ -565,7 +568,7 @@ export const SkillsConstellation = () => {
       
       const point = toSvgPoint(e.clientX, e.clientY);
       if (!point) return;
-      const selectedCamera = isCompact() ? visibleCamera.current : camera.current;
+      const selectedCamera = renderedCamera();
       const { min, max } = zoomLimits();
       const from = { center: point, span: 1 };
       const to = { center: point, span: Math.exp(-e.deltaY * 0.008) };
@@ -576,7 +579,7 @@ export const SkillsConstellation = () => {
       clampCamera();
       applyCamera();
     }
-  }, [applyCamera, clampCamera, zoomLimits]);
+  }, [applyCamera, clampCamera, renderedCamera, zoomLimits]);
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -630,6 +633,7 @@ export const SkillsConstellation = () => {
     }
 
     if ((e.target as Element).closest('.no-pan') || (e.target as Element).closest('.interactive-ui')) return;
+    camera.current = renderedCamera();
     isPanning.current = true;
     lastPan.current = { x: e.clientX, y: e.clientY };
     setIsDragging(true);
@@ -654,7 +658,7 @@ export const SkillsConstellation = () => {
       const rect = svgWrapperRef.current.getBoundingClientRect();
       const nx = (e.clientX - rect.left) / rect.width - 0.5;
       const ny = (e.clientY - rect.top) / rect.height - 0.5;
-      gsap.to(svgWrapperRef.current, { rotateX: -ny * 4, rotateY: nx * 4, duration: 1, ease: "power2.out" });
+      gsap.to(svgWrapperRef.current, { rotateX: -ny * 2.5, rotateY: nx * 2.5, duration: 0.55, ease: "power2.out", overwrite: "auto" });
     }
 
     if (!isCompact() && !isPanning.current && svgRef.current && worldRef.current) {
@@ -672,14 +676,12 @@ export const SkillsConstellation = () => {
 
     if (!isPanning.current) return;
     
-    const dx = e.clientX - lastPan.current.x;
-    const dy = e.clientY - lastPan.current.y;
+    const previous = toSvgPoint(lastPan.current.x, lastPan.current.y);
+    const next = toSvgPoint(e.clientX, e.clientY);
     lastPan.current = { x: e.clientX, y: e.clientY };
-
-    const ratio = 2400 / (cachedRect.current.svgWidth || 2400);
-    const matrix = isCompact() ? svgRef.current?.getScreenCTM() : null;
-    camera.current.x += dx * (matrix ? 1 / matrix.a : ratio);
-    camera.current.y += dy * (matrix ? 1 / matrix.d : ratio);
+    if (!previous || !next) return;
+    camera.current.x += next.x - previous.x;
+    camera.current.y += next.y - previous.y;
     clampCamera();
     applyCamera(false);
   };
@@ -725,27 +727,19 @@ export const SkillsConstellation = () => {
       return;
     }
 
-    // 1. Zoom strategy (slightly stronger focus as requested: ~10% bump)
-    let targetZ = camera.current.z * 1.10;
-    const maxZoomIn = camera.current.z * 1.15;
-    const maxZoomOut = camera.current.z * 0.95;
-    targetZ = Math.max(maxZoomOut, Math.min(maxZoomIn, targetZ));
-    targetZ = Math.max(0.9, Math.min(1.8, targetZ)); 
-    
-    // 2. Base camera (place node at 38% viewport width and 50% height to leave room for right panel)
-    const rect = svgRect;
-    const svgScale = rect.svgWidth ? rect.svgWidth / 2400 : 1;
-    
-    const targetScreenX = rect.width * 0.38;
-    const targetScreenY = rect.height * 0.50;
-
-    const targetCamX = (targetScreenX - rect.width / 2) / svgScale - nData.proj.x * targetZ;
-    const targetCamY = (targetScreenY - rect.height / 2) / svgScale - nData.proj.y * targetZ;
-
-    camera.current = { x: targetCamX, y: targetCamY, z: targetZ };
+    const canvas = svgRef.current?.getBoundingClientRect();
+    if (!canvas) return;
+    const sheetWidth = Math.min(440, Math.max(320, (containerRef.current?.clientWidth ?? canvas.width) * 0.34));
+    const target = toSvgPoint(canvas.left + (canvas.width - sheetWidth) / 2, canvas.top + canvas.height / 2);
+    if (!target) return;
+    const z = Math.min(1.65, Math.max(1, renderedCamera().z));
+    const centered = cameraAt(nData.proj, z);
+    focusedSkill.current = nodeId;
+    atOverview.current = false;
+    camera.current = { x: centered.x + target.x, y: centered.y + target.y, z };
     clampCamera();
-    applyCamera(true, 0.5);
-  }, [nodesProj, clampCamera, applyCamera, zoomLimits]);
+    applyCamera(true, 0.44);
+  }, [nodesProj, clampCamera, applyCamera, renderedCamera, zoomLimits]);
 
   const selectNode = (id: string) => {
     setHoveredNode(null);
@@ -812,7 +806,7 @@ export const SkillsConstellation = () => {
       : event.detail > 0 && performance.now() - lastTouchEnd.current < 500;
 
   const zoomBy = (factor: number) => {
-    if (isCompact()) camera.current = { ...visibleCamera.current };
+    camera.current = renderedCamera();
     atOverview.current = false;
     const previous = camera.current.z;
     camera.current.z *= factor;
@@ -890,36 +884,9 @@ export const SkillsConstellation = () => {
   }, [exploring]);
 
   useGSAP(() => {
-    const tl = gsap.timeline();
-    const defaultCam = getDefaultCamera();
-    if (isCompact() || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      camera.current = defaultCam;
-      if (!isCompact()) clampCamera();
-      applyCamera();
-      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        gsap.from(worldRef.current, { opacity: 0.3, duration: 0.7, ease: "power2.out" });
-      }
-      return;
-    }
-    
-    // Start slightly higher so we drop into place smoothly
-    gsap.set(worldRef.current, { opacity: 0, y: defaultCam.y - 60, x: defaultCam.x });
-    
-    tl.to(worldRef.current, { opacity: 1, y: defaultCam.y, duration: 1.5, ease: "power2.out", onComplete: () => {
-      camera.current = { ...defaultCam };
-      clampCamera();
-      applyCamera(false);
-    }}, 0);
-    
-    tl.fromTo('.topo-terrain', 
-      { opacity: 0 }, 
-      { opacity: 1, duration: 1.5, stagger: 0.01, ease: "power2.out" }, 0.2
-    );
-
-    tl.fromTo('.constellation-node',
-      { opacity: 0, scale: 0 },
-      { opacity: 1, scale: 1, duration: 0.8, stagger: 0.01, ease: "back.out(1.5)" }, 1.5
-    );
+    camera.current = getDefaultCamera();
+    clampCamera();
+    applyCamera();
   }, { scope: containerRef });
 
 
@@ -1002,7 +969,7 @@ export const SkillsConstellation = () => {
         <text
           key={`compact-domain-${i}`}
           x={d.proj.x}
-          y={d.proj.y + 66}
+          y={d.proj.y + (d.id === "web" ? 112 : 66)}
           fontSize="57"
           fill="#b9b1a4"
           textAnchor="middle"
@@ -1016,7 +983,7 @@ export const SkillsConstellation = () => {
   });
 
   edgesProj.forEach((e, edgeIdx) => {
-    const { a, b, pts } = e;
+    const { a, b, path, depth } = e;
     const isDirectActive = activeNode && (
        (activeNode === a && firstOrder.has(b)) || 
        (activeNode === b && firstOrder.has(a))
@@ -1030,19 +997,12 @@ export const SkillsConstellation = () => {
     const opacity = isDirectActive ? 0.84 : isSecondActive ? 0.38 : 0.12;
     const stroke = isDirectActive ? "#bb6567" : isSecondActive ? "#7b7270" : "#494040";
     
-    let fullPathD = "";
-    pts.forEach((p, idx) => {
-        fullPathD += idx === 0 ? `M ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} ` : `L ${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)} `;
-    });
-    
-    const midY = (pts[0].originalY + pts[pts.length - 1].originalY) / 2;
-
     renderQueue.push({
-      yDepth: midY,
+      yDepth: depth,
       element: (
         <path
           key={`edge-${edgeIdx}`}
-          d={fullPathD}
+          d={path}
           fill="none"
           strokeWidth="1.5"
           style={{ stroke, opacity }}
@@ -1144,7 +1104,7 @@ export const SkillsConstellation = () => {
             fontSize={fontSize}
             fill={isHovered ? "var(--text-primary)" : isFirstOrder ? "var(--text-primary)" : (isRich ? "var(--text-primary)" : "var(--text-muted)")}
             textAnchor={textAnchor as "start" | "middle" | "end"}
-            className={`skill-label font-mono tracking-widest max-lg:tracking-normal lg:pointer-events-none transition-all duration-300 uppercase ${isHovered ? 'skill-label-featured max-lg:[font-size:33px]' : landmarkSkills.has(node.id) ? 'skill-label-landmark' : isHub || isFirstOrder ? 'skill-label-hub max-lg:[font-size:21px]' : 'max-lg:[font-size:17px]'} ${isRich ? 'font-bold' : 'font-medium'}`}
+            className={`skill-label font-mono tracking-widest max-lg:tracking-normal lg:pointer-events-none transition-opacity duration-200 uppercase ${pinnedNode === node.id && node.label.length > 13 ? 'max-lg:hidden' : ''} ${isHovered ? 'skill-label-featured max-lg:[font-size:31px]' : landmarkSkills.has(node.id) ? 'skill-label-landmark' : isHub || isFirstOrder ? 'skill-label-hub max-lg:[font-size:21px]' : 'max-lg:[font-size:17px]'} ${isRich ? 'font-bold' : 'font-medium'}`}
             style={{ textShadow: "0 1px 3px rgba(0,0,0,1), 0 0 7px rgba(0,0,0,0.8)" }}
           >
             {node.label}
@@ -1157,27 +1117,27 @@ export const SkillsConstellation = () => {
   renderQueue.sort((a, b) => a.yDepth - b.yDepth);
 
   return (
-    <section id="knowledge" aria-label="Knowledge Landscape" className="knowledge-layout relative isolate bg-[#030303] select-none lg:overflow-hidden lg:h-[100vh] w-full lg:flex lg:flex-col" ref={(node) => { containerRef.current = node; visibilityRef(node); }}>
+    <section id="knowledge" aria-label="Knowledge Landscape" className="knowledge-layout relative isolate select-none lg:overflow-hidden lg:h-[100svh] w-full lg:flex lg:flex-col" ref={(node) => { containerRef.current = node; visibilityRef(node); }}>
           <header className="knowledge-header lg:contents">
-            <div className="knowledge-title-row lg:contents">
-              <h2 className="font-display text-xl font-semibold tracking-tight text-text-primary lg:sr-only">Knowledge Landscape</h2>
+            <div className="knowledge-title-row">
+              <h2 className="chapter-heading">Knowledge Landscape</h2>
               <a href="#about" aria-label="Continue to experience" onClick={() => setExploring(false)} className="inline-flex min-h-11 items-center text-xs text-text-muted underline decoration-border underline-offset-4 lg:hidden">Continue</a>
             </div>
-          <label className="knowledge-filter min-w-0 lg:hidden">
+          <label className="knowledge-filter min-w-0 xl:hidden">
             <span className="sr-only">Knowledge region</span>
             <select
               value={activeDomain ?? ""}
               onChange={(event) => event.target.value ? selectRegion(event.target.value) : resetCamera()}
-              className="w-full min-h-11 border border-border bg-surface px-2 text-xs text-text-primary"
+              className="portfolio-control w-full min-h-11 px-2 text-xs"
             >
               <option value="">All regions</option>
               {DOMAINS.map(({ id, label }) => <option key={id} value={id}>{label.split("// ")[1]}</option>)}
             </select>
           </label>
           {/* SEARCH */}
-          <div className="knowledge-search min-w-0 lg:absolute lg:top-6 lg:left-6 z-[45] interactive-ui">
+          <div className="knowledge-search min-w-0 z-[45] interactive-ui">
             <div className="relative group/search">
-              <div className="flex min-h-11 items-center gap-2 px-2 lg:min-h-0 lg:gap-3 lg:px-4 lg:py-3 bg-[#0a0a0a]/90 backdrop-blur-md border border-border transition-all focus-within:border-text-muted">
+              <div className="knowledge-search-box flex min-h-11 items-center gap-2 px-2 lg:gap-3 lg:px-4">
                 <Search className="w-4 h-4 shrink-0 text-text-muted" />
                 <input
                   type="search"
@@ -1190,7 +1150,7 @@ export const SkillsConstellation = () => {
                       setSearchResults(NODES.filter(n => n.label.toLowerCase().includes(e.target.value.toLowerCase())));
                     } else setSearchResults([]);
                   }}
-                  className="bg-transparent border-none outline-none text-base lg:text-xs font-mono text-text-primary min-w-0 w-full lg:w-32 lg:focus:w-48 transition-all placeholder:text-text-muted/75 lg:uppercase lg:tracking-widest"
+                  className="bg-transparent border-none outline-none text-base lg:text-xs font-mono text-text-primary min-w-0 w-full placeholder:text-text-muted/80"
                 />
               </div>
               {searchQuery.length > 1 && searchResults.length > 0 && (
@@ -1235,11 +1195,12 @@ export const SkillsConstellation = () => {
           </AnimatePresence>
 
           {/* DOMAIN FILTERS */}
-          <div className="absolute top-6 right-6 z-40 interactive-ui hidden lg:block">
-            <div className="flex flex-col items-end gap-1">
+          <div className="knowledge-desktop-regions absolute z-40 interactive-ui hidden xl:block">
+            <div className="flex items-center gap-1">
               <button 
                  onClick={() => { setActiveDomain(null); resetCamera(); }}
-                 className={`font-mono text-[10px] tracking-widest px-3 py-1 uppercase whitespace-nowrap transition-colors ${!activeDomain ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                 aria-pressed={!activeDomain}
+                 className="knowledge-region-button"
               >
                 ALL REGIONS
               </button>
@@ -1247,7 +1208,8 @@ export const SkillsConstellation = () => {
                 <button 
                   key={d.id}
                   onClick={() => selectRegion(d.id)}
-                  className={`font-mono text-[10px] tracking-widest px-3 py-1 uppercase whitespace-nowrap transition-colors ${activeDomain === d.id ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                  aria-pressed={activeDomain === d.id}
+                  className="knowledge-region-button"
                 >
                   {d.label.split('// ')[1]}
                 </button>
@@ -1255,11 +1217,11 @@ export const SkillsConstellation = () => {
             </div>
           </div>
 
-          <div className="knowledge-toolbar lg:absolute lg:bottom-6 lg:left-6 z-30 flex items-center justify-between gap-2 interactive-ui">
-            <button type="button" aria-pressed={exploring} aria-controls="knowledge-map" onClick={() => setExploring((value) => !value)} className="knowledge-explore min-h-11 border border-border bg-surface px-3 text-sm font-medium aria-pressed:border-accent aria-pressed:text-text-primary lg:hidden">
+          <div className="knowledge-toolbar z-30 flex items-center justify-between gap-2 interactive-ui">
+            <button type="button" aria-pressed={exploring} aria-controls="knowledge-map" onClick={() => setExploring((value) => !value)} className="knowledge-explore portfolio-control min-h-11 px-3 text-sm font-medium aria-pressed:border-accent lg:hidden">
               {exploring ? "Finish exploring" : "Explore map"}
             </button>
-            <div className="bg-[#0a0a0a]/90 backdrop-blur-md border border-border flex lg:flex-col gap-1 lg:p-1 shadow-2xl">
+            <div className="knowledge-zoom flex gap-1 lg:p-1">
               <button onClick={() => zoomBy(1.25)} className="grid size-11 lg:size-auto lg:p-2.5 place-items-center text-text-muted hover:text-white" aria-label="Zoom in"><Plus className="w-4 h-4" /></button>
               <button onClick={() => zoomBy(0.8)} className="grid size-11 lg:size-auto lg:p-2.5 place-items-center text-text-muted hover:text-white" aria-label="Zoom out"><Minus className="w-4 h-4" /></button>
               <button onClick={resetCamera} className="grid size-11 lg:size-auto lg:p-2.5 place-items-center text-text-muted hover:text-white" aria-label="Reset landscape view"><Maximize className="w-4 h-4" /></button>
@@ -1281,7 +1243,7 @@ export const SkillsConstellation = () => {
           <div className="knowledge-stage lg:contents">
           <div
             ref={svgWrapperRef}
-            className="knowledge-canvas relative lg:absolute lg:inset-0 transform-style-3d origin-center"
+            className="knowledge-canvas relative transform-style-3d origin-center"
             id="knowledge-map"
             data-exploring={exploring || undefined}
             data-skill-focused={!!pinnedNode || undefined}
@@ -1300,7 +1262,7 @@ export const SkillsConstellation = () => {
             <svg
               ref={svgRef}
               viewBox="-1200 -800 2400 1600"
-              preserveAspectRatio="xMidYMid slice" className="absolute inset-0 max-lg:h-full max-lg:w-full"
+              preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full"
             >
               <defs>
                 <radialGradient id="cursor-gradient" cx="50%" cy="50%" r="50%">
@@ -1318,17 +1280,20 @@ export const SkillsConstellation = () => {
                 {renderQueue.map(({ element }) => element)}
               </g>
             </svg>
+            {pinnedNode && activeNodeData && activeNodeData.label.length > 13 && (
+              <p className="knowledge-selection lg:hidden" aria-hidden="true">{activeNodeData.label}</p>
+            )}
           </div>
           <AnimatePresence>
             {pinnedNode && activeNodeData && (
               <motion.div
                 role="region"
                 aria-label="Skill details"
-                className="knowledge-details lg:absolute lg:top-0 lg:bottom-0 lg:right-0 z-50 interactive-ui flex flex-col lg:w-[34%] lg:min-w-[320px] lg:max-w-[440px] bg-surface lg:bg-[rgba(10,10,10,0.76)] lg:backdrop-blur-[20px] border lg:border-0 lg:border-l border-border/40 overflow-hidden shadow-[-20px_0_40px_rgba(0,0,0,0.5)]"
-                initial={reduceMotion ? false : { opacity: 0, x: isCompact() ? 0 : 40, y: isCompact() ? 8 : 0 }}
+                className="knowledge-details lg:absolute z-50 interactive-ui flex flex-col lg:w-[34%] lg:min-w-[320px] lg:max-w-[440px] overflow-hidden"
+                initial={reduceMotion ? false : { opacity: 0.68, x: isCompact() ? 0 : 14, y: isCompact() ? 6 : 0 }}
                 animate={{ opacity: 1, x: 0, y: 0 }}
                 exit={{ opacity: 0, x: reduceMotion || isCompact() ? 0 : 20, transition: { duration: reduceMotion ? 0 : 0.2 } }}
-                transition={{ duration: reduceMotion ? 0 : 0.35, ease: "easeOut" }}
+                transition={{ duration: reduceMotion ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
               >
                 {/* Subtle top-left highlight sheen */}
                 <div className="absolute top-0 left-0 w-full h-[150px] bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none" />

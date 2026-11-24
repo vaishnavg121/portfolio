@@ -72,33 +72,33 @@ export const ThriveForceEngineering = () => {
   };
 
   return (
-    <section ref={containerRef} className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 flex flex-col gap-6 py-12 lg:gap-16 lg:pt-24 lg:pb-16">
+    <section ref={containerRef} className="portfolio-chapter chapter-divider relative w-full text-[#f5ede3] flex flex-col gap-6 lg:gap-12">
         
         {/* HEADER */}
-        <div className="mobile-gutter w-full lg:px-16 mb-4">
+        <div className="portfolio-frame mb-4">
             <h2 className="font-display text-[clamp(32px,4vw,58px)] text-white uppercase tracking-tighter">
                 Engineering The Hit.
             </h2>
         </div>
 
         {/* FEA SECTIONS */}
-        <div className="w-full flex flex-col lg:flex-row gap-8 lg:gap-12 mobile-gutter lg:px-16">
+        <div className="portfolio-frame flex flex-col lg:flex-row gap-8 lg:gap-12">
             
             {/* SIDE LOAD */}
             <div className="w-full lg:w-1/2 flex flex-col">
                 <div 
-                   className="w-full h-[clamp(12rem,58vw,22rem)] lg:h-[40vh] relative border border-white/5 bg-[#050505] overflow-hidden mb-3 lg:mb-6"
+                   className="robot-analysis-visual w-full h-[clamp(12rem,58vw,22rem)] lg:h-[40vh] relative overflow-hidden mb-3 lg:mb-6"
                    onPointerMove={(e) => handleFEAHover(e, 'cursor-lbl-1')}
                    onPointerLeave={(e) => handleFEALeave(e, 'cursor-lbl-1')}
                 >
-                    <Image src={velociraptorAssets.fea.sideStress} alt="FEA Side" fill className="object-contain p-4 transition-transform duration-1000" />
+                    <Image src={velociraptorAssets.fea.sideStress} alt="FEA Side" fill sizes="(width < 64rem) 90vw, 44vw" className="object-contain p-4 transition-transform duration-700" />
                     <div className="cursor-lbl-1 absolute top-0 left-0 pointer-events-none opacity-0 bg-[#030303]/80 backdrop-blur-sm border border-white/10 px-3 py-1 font-mono text-[9px] text-accent tracking-widest uppercase z-10">SIDE LOAD</div>
                     <button type="button" aria-label="Inspect side load diagram" aria-expanded={activeDiagram === "1"} onClick={() => setActiveDiagram(activeDiagram === "1" ? null : "1")} className="absolute right-2 top-2 z-20 min-h-11 border border-border bg-[#080808]/90 px-3 font-mono text-xs text-text-primary lg:hidden">
                         {activeDiagram === "1" ? "Close" : "Inspect"}
                     </button>
                     {activeDiagram === "1" && <span className="absolute bottom-2 left-2 z-20 border border-border bg-[#080808]/90 px-3 py-2 font-mono text-xs text-text-primary lg:hidden">Side load</span>}
                 </div>
-                <div className="flex justify-between items-end border-b border-white/10 pb-4">
+                <div className="robot-analysis-metrics">
                     <div>
                         <div className="text-accent font-mono text-sm mb-1">2000 N</div>
                         <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">Side Load</div>
@@ -107,7 +107,7 @@ export const ThriveForceEngineering = () => {
                         <div className="text-[#e0e0e0] font-mono text-xl mb-1">449 MPa</div>
                         <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">Max Von Mises</div>
                     </div>
-                    <div className="text-right hidden sm:block">
+                    <div className="text-right">
                         <div className="text-[#e0e0e0] font-mono text-xl mb-1">~1.9 FoS</div>
                         <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">~0.7mm Disp</div>
                     </div>
@@ -117,18 +117,18 @@ export const ThriveForceEngineering = () => {
             {/* UPWARD LOAD */}
             <div className="w-full lg:w-1/2 flex flex-col">
                 <div 
-                   className="w-full h-[clamp(12rem,58vw,22rem)] lg:h-[40vh] relative border border-white/5 bg-[#050505] overflow-hidden mb-3 lg:mb-6"
+                   className="robot-analysis-visual w-full h-[clamp(12rem,58vw,22rem)] lg:h-[40vh] relative overflow-hidden mb-3 lg:mb-6"
                    onPointerMove={(e) => handleFEAHover(e, 'cursor-lbl-2')}
                    onPointerLeave={(e) => handleFEALeave(e, 'cursor-lbl-2')}
                 >
-                    <Image src={velociraptorAssets.fea.upwardStress} alt="FEA Upward" fill className="object-contain p-4 transition-transform duration-1000" />
+                    <Image src={velociraptorAssets.fea.upwardStress} alt="FEA Upward" fill sizes="(width < 64rem) 90vw, 44vw" className="object-contain p-4 transition-transform duration-700" />
                     <div className="cursor-lbl-2 absolute top-0 left-0 pointer-events-none opacity-0 bg-[#030303]/80 backdrop-blur-sm border border-white/10 px-3 py-1 font-mono text-[9px] text-accent tracking-widest uppercase z-10">UPWARD LOAD</div>
                     <button type="button" aria-label="Inspect upward load diagram" aria-expanded={activeDiagram === "2"} onClick={() => setActiveDiagram(activeDiagram === "2" ? null : "2")} className="absolute right-2 top-2 z-20 min-h-11 border border-border bg-[#080808]/90 px-3 font-mono text-xs text-text-primary lg:hidden">
                         {activeDiagram === "2" ? "Close" : "Inspect"}
                     </button>
                     {activeDiagram === "2" && <span className="absolute bottom-2 left-2 z-20 border border-border bg-[#080808]/90 px-3 py-2 font-mono text-xs text-text-primary lg:hidden">Upward load</span>}
                 </div>
-                <div className="flex justify-between items-end border-b border-white/10 pb-4">
+                <div className="robot-analysis-metrics">
                     <div>
                         <div className="text-accent font-mono text-sm mb-1">2000 N</div>
                         <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">Upward Load</div>
@@ -137,7 +137,7 @@ export const ThriveForceEngineering = () => {
                         <div className="text-[#e0e0e0] font-mono text-xl mb-1">208 MPa</div>
                         <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">Max Von Mises</div>
                     </div>
-                    <div className="text-right hidden sm:block">
+                    <div className="text-right">
                         <div className="text-[#e0e0e0] font-mono text-xl mb-1">~4.0 FoS</div>
                         <div className="text-text-muted font-mono text-[9px] tracking-widest uppercase">~0.1mm Disp</div>
                     </div>
@@ -147,7 +147,7 @@ export const ThriveForceEngineering = () => {
         </div>
 
         {/* POWERTRAIN SECTION */}
-        <div className="powertrain-section mobile-gutter w-full lg:px-16 mt-8">
+        <div className="powertrain-section portfolio-frame mt-8">
             <h3 className="font-display text-[clamp(24px,3vw,42px)] uppercase tracking-tighter text-[#f5ede3] mb-8">
                 Power To Weapon.
             </h3>

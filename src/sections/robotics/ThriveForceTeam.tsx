@@ -6,11 +6,11 @@ import { velociraptorAssets } from '../../data/velociraptorAssets';
 
 export const ThriveForceTeam = () => {
   return (
-    <section className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 pb-14 lg:pb-32">
+    <section className="robot-team chapter-divider relative w-full text-[#f5ede3] pb-14 lg:pb-24">
         
         {/* COMBINED TEAM SPREAD */}
-        <div className="mobile-gutter w-full lg:px-16 py-12 lg:pt-32 lg:pb-24 border-b border-white/5">
-            <h2 className="font-display text-[clamp(30px,3.5vw,52px)] uppercase tracking-tighter leading-none mb-4">
+        <div className="portfolio-frame portfolio-chapter border-b border-border">
+            <h2 className="chapter-heading mb-4">
                 Team ThriveForce
             </h2>
             <div className="flex flex-col lg:flex-row lg:items-center justify-between pt-4 lg:pt-8 mb-7 lg:mb-16">
@@ -27,8 +27,8 @@ export const ThriveForceTeam = () => {
                     <h3 className="font-mono text-xs tracking-widest text-text-muted uppercase mb-8 pb-4 border-b border-white/10">Our Machines</h3>
                     <div className="flex flex-col border-t border-white/5">
                         {thriveforceData.robots.map((robot, i) => (
-                            <div key={i} className="group relative w-full border-b border-white/5 py-6 px-4 hover:bg-[#080808] transition-colors duration-500 overflow-hidden">
-                                <div className="absolute left-0 top-0 bottom-0 w-0 bg-accent transition-all duration-500 group-hover:w-[2px]" />
+                            <div key={i} className="group relative w-full border-b border-border py-5 px-4 hover:bg-[#191214] transition-colors duration-300 overflow-hidden">
+                                <div className="absolute left-0 top-0 bottom-0 w-0.5 origin-bottom scale-y-0 bg-accent transition-transform duration-300 group-hover:scale-y-100" />
                                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between transition-transform duration-500 group-hover:translate-x-2">
                                     <div className="flex items-center gap-6">
                                         <div className="font-mono text-[10px] text-accent tracking-widest uppercase">0{i+1}</div>

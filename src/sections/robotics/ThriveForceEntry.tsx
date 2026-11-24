@@ -12,6 +12,7 @@ export const ThriveForceEntry = () => {
   const robotRef = useRef<HTMLDivElement>(null);
   const crosshairRef = useRef<HTMLDivElement>(null);
   const xrayRef = useRef<HTMLDivElement>(null);
+  const pointerFrame = useRef(0);
   const [inspecting, setInspecting] = useState(false);
   const transitionRef = useRef<HTMLDivElement>(null);
   
@@ -44,7 +45,7 @@ export const ThriveForceEntry = () => {
           
           // 1. Weapon Focus / Impact Flash
           tl.set(".impact-fx", { opacity: 1 }, 0)
-            .fromTo(".impact-flash", { scale: 0.5, opacity: 1 }, { scale: 2.5, opacity: 0, duration: 0.2 }, 0)
+            .fromTo(".impact-flash", { scale: 0.8, opacity: 0.4 }, { scale: 1.45, opacity: 0, duration: 0.25 }, 0)
             .fromTo(".impact-streak", { strokeDashoffset: 300 }, { strokeDashoffset: 0, duration: 0.15 }, 0)
             .fromTo(".spark-line", { strokeDashoffset: 200 }, { strokeDashoffset: 0, duration: 0.15, stagger: 0.01 }, 0)
             .to(".spark-line", { opacity: 0, duration: 0.05 }, 0.2)
@@ -53,7 +54,7 @@ export const ThriveForceEntry = () => {
             .to(".robot-solid", { opacity: 0, duration: 0.4 }, 0.3)
             .fromTo(".robot-wireframe", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0.3);
             
-      }, transitionRef);
+      }, containerRef);
       
       media.add("(width < 64rem) and (prefers-reduced-motion: no-preference)", () => {
           gsap.fromTo(".robot-wireframe", { opacity: 0.65 }, {
@@ -65,22 +66,24 @@ export const ThriveForceEntry = () => {
               scrollTrigger: { trigger: robotRef.current, start: "top 85%", once: true },
           });
       }, containerRef);
-      return () => media.revert();
+      return () => {
+        cancelAnimationFrame(pointerFrame.current);
+        media.revert();
+      };
   }, []);
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    // Only update CSS variables on the container to avoid React state lag
     if (!robotRef.current || (e.pointerType === "touch" && !inspecting)) return;
-    const rect = robotRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const mask = e.pointerType === "touch" ? xrayRef.current?.getBoundingClientRect() : null;
-    robotRef.current.style.setProperty('--cursor-x', `${mask ? e.clientX - mask.left : x}px`);
-    robotRef.current.style.setProperty('--cursor-y', `${mask ? e.clientY - mask.top : y}px`);
-
-    if (crosshairRef.current) {
-        gsap.to(crosshairRef.current, { x, y, duration: 0.1, ease: "power2.out", overwrite: "auto" });
-    }
+    cancelAnimationFrame(pointerFrame.current);
+    const { clientX, clientY } = e;
+    pointerFrame.current = requestAnimationFrame(() => {
+      const frame = robotRef.current?.getBoundingClientRect();
+      const mask = xrayRef.current?.getBoundingClientRect();
+      if (!frame || !mask) return;
+      xrayRef.current?.style.setProperty("--cursor-x", `${clientX - mask.left}px`);
+      xrayRef.current?.style.setProperty("--cursor-y", `${clientY - mask.top}px`);
+      gsap.set(crosshairRef.current, { x: clientX - frame.left, y: clientY - frame.top });
+    });
   };
 
   const handlePointerEnter = (e: React.PointerEvent) => {
@@ -97,14 +100,13 @@ export const ThriveForceEntry = () => {
     <section ref={containerRef} className="relative w-full bg-[#030303] text-[#f5ede3] border-b border-white/5 flex flex-col">
        
        {/* SECTION 1 - INTRO */}
-       <div className="mobile-gutter relative w-full max-lg:py-10 lg:py-0 lg:h-[80vh] flex items-center lg:px-16 overflow-hidden">
-          <div className="absolute left-5 lg:left-16 top-1/4 bottom-0 w-[1px] bg-accent/20" />
+       <div className="robot-title portfolio-frame relative">
           <div className="relative z-10">
              <div className="font-mono text-xs text-text-muted tracking-widest uppercase mb-6 flex flex-wrap gap-x-4 gap-y-2">
                 <span>06 / ThriveForce</span>
                 <span className="text-accent">Combat Robotics</span>
              </div>
-             <h2 className="font-display text-[clamp(2.7rem,10vw,5.5rem)] lg:text-[clamp(64px,8vw,130px)] leading-[0.85] tracking-tighter uppercase text-[#f5ede3] mb-8">
+             <h2 className="robot-chapter-name font-display uppercase text-[#f5ede3] mb-5">
                 Designed<br/>For Impact.
              </h2>
              <div className="font-mono text-[10px] tracking-widest uppercase text-[#e0e0e0]">
@@ -114,16 +116,16 @@ export const ThriveForceEntry = () => {
        </div>
 
        {/* SECTION 2 - MACHINE & WEAPON FLOW */}
-       <div className="robot-story mobile-gutter relative w-full flex flex-col lg:flex-row lg:px-16">
+       <div className="robot-story portfolio-frame relative flex flex-col lg:flex-row">
           
           {/* Left Column - Scrolling Text */}
-          <div className="robot-story-text w-full lg:w-1/3 flex flex-col lg:gap-0 lg:pt-24 lg:pb-32">
+          <div className="robot-story-text w-full lg:w-1/3 flex flex-col">
              
              {/* Velociraptor Specs */}
-             <div className="robot-story-intro lg:min-h-screen flex flex-col justify-center">
+             <div className="robot-story-intro flex flex-col justify-center">
                  <h3 className="font-display text-[clamp(30px,3.5vw,52px)] uppercase tracking-tighter text-[#f5ede3] mb-2">Velociraptor</h3>
-                 <p className="font-mono text-xs tracking-widest text-accent uppercase mb-6 lg:mb-12">3 LB / 1.36 KG &bull; Horizontal Undercutter</p>
-                 <div className="grid grid-cols-2 gap-3 lg:flex lg:flex-col lg:gap-8">
+                 <p className="font-mono text-xs tracking-widest text-accent uppercase mb-6">3 LB / 1.36 KG &bull; Horizontal Undercutter</p>
+                 <div className="grid grid-cols-2 gap-3 lg:flex lg:flex-col lg:gap-5">
                      {["Low Center of Mass", "Belt-Driven Weapon", "Symmetrical Drivetrain", "Modular Internal Layout"].map((text, i) => (
                         <div key={i} className="flex items-center gap-4">
                            <div className="w-4 shrink-0 lg:w-12 h-[1px] bg-accent/40" />
@@ -134,8 +136,7 @@ export const ThriveForceEntry = () => {
              </div>
 
              {/* Weapon Specs (Trigger for Transition) */}
-             <div ref={transitionRef} className="robot-story-specs lg:min-h-screen flex flex-col justify-center text-left relative">
-                 <div className="absolute -left-6 lg:-left-16 top-0 bottom-0 w-[1px] bg-accent/20 origin-top" />
+             <div ref={transitionRef} className="robot-story-specs flex flex-col justify-center text-left relative">
                  
                  <div className="mb-6 lg:mb-16">
                      <h3 className="font-display text-[clamp(38px,4.5vw,68px)] leading-none tracking-tighter text-[#f5ede3] mb-4">
@@ -165,11 +166,11 @@ export const ThriveForceEntry = () => {
 
           {/* Right Column - Sticky Visual */}
           <div className="robot-story-visual w-full lg:w-2/3 relative">
-              <div className="lg:sticky top-0 lg:h-screen w-full flex flex-col justify-center lg:p-8">
+              <div className="robot-sticky w-full flex flex-col">
                   
                   <div 
                      ref={robotRef}
-                     className="relative w-full h-[clamp(15rem,65vw,29rem)] lg:h-[80%] border border-white/5 rounded-sm overflow-hidden bg-[#020202] flex flex-col items-center justify-center pointer-events-auto"
+                     className="robot-cad relative w-full overflow-hidden flex flex-col items-center justify-center pointer-events-auto"
                      onPointerMove={handlePointerMove}
                      onPointerEnter={handlePointerEnter}
                      onPointerLeave={handlePointerLeave}
@@ -201,12 +202,12 @@ export const ThriveForceEntry = () => {
                           
                           {/* Wireframe (Base Layer, revealed when solid fades) */}
                           <div className="robot-wireframe absolute inset-0 w-full h-full opacity-0" style={{ filter: 'url(#red-wireframe)' }}>
-                              <Image src={velociraptorAssets.renders.hero34} alt="Velociraptor Wireframe" fill className="object-contain object-center drop-shadow-[0_0_8px_rgba(204,51,51,0.4)]" />
+                              <Image src={velociraptorAssets.renders.hero34} alt="" fill sizes="(width < 64rem) 85vw, 54vw" className="object-contain object-center drop-shadow-[0_0_8px_rgba(204,51,51,0.4)]" />
                           </div>
 
                           {/* Solid Render */}
                           <div className="robot-solid absolute inset-0 w-full h-full">
-                              <Image src={velociraptorAssets.renders.hero34} alt="Velociraptor" fill className="object-contain object-center" priority />
+                              <Image src={velociraptorAssets.renders.hero34} alt="Velociraptor" fill sizes="(width < 64rem) 85vw, 54vw" className="object-contain object-center" />
                           </div>
 
                           {/* X-Ray Mask Layer */}
@@ -219,7 +220,7 @@ export const ThriveForceEntry = () => {
                              }}
                           >
                               <div className="absolute inset-0" style={{ filter: 'url(#red-wireframe)' }}>
-                                  <Image src={velociraptorAssets.renders.hero34} alt="X-ray wireframe" fill className="object-contain object-center" />
+                                  <Image src={velociraptorAssets.renders.hero34} alt="" fill sizes="(width < 64rem) 85vw, 54vw" className="object-contain object-center" />
                               </div>
                               <div className="absolute inset-0 bg-accent/5 mix-blend-screen" />
                           </div>
@@ -227,7 +228,7 @@ export const ThriveForceEntry = () => {
 
                       {/* Impact FX overlay (positioned over weapon) */}
                       <div className="impact-fx absolute inset-0 w-full h-full pointer-events-none opacity-0 z-20">
-                          <div className="impact-flash absolute left-[30%] top-[70%] w-32 h-32 bg-white rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2 mix-blend-screen" />
+                          <div className="impact-flash absolute left-[30%] top-[70%] size-32 rounded-full bg-[radial-gradient(circle,#bd5f5d60,transparent_68%)] -translate-x-1/2 -translate-y-1/2" />
                           <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 800 800">
                               <line className="impact-streak" x1="50" y1="700" x2="250" y2="560" stroke="#cc3333" strokeWidth="2" strokeDasharray="100" strokeDashoffset="100" />
                               {sparks.map((spark) => (
@@ -254,7 +255,7 @@ export const ThriveForceEntry = () => {
                       </div>
                   </div>
                   <button type="button" aria-pressed={inspecting} onClick={() => setInspecting(!inspecting)}
-                      className="mt-3 inline-flex min-h-11 w-fit items-center border border-border px-4 font-mono text-xs tracking-wider text-text-primary lg:hidden">
+                      className="portfolio-control mt-3 inline-flex min-h-11 w-fit items-center px-4 font-mono text-xs tracking-wider lg:hidden">
                     {inspecting ? "Close wireframe inspection" : "Inspect wireframe"}
                   </button>
               </div>
