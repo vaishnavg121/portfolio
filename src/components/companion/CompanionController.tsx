@@ -404,8 +404,7 @@ export const CompanionController = () => {
     <>
       <div 
         ref={containerRef}
-        className="fixed top-0 left-0 flex items-center justify-center mix-blend-difference pointer-events-none"
-        style={{ willChange: "transform", zIndex: "var(--z-familiar)", width: "32px", height: "32px", marginLeft: "-16px", marginTop: "-16px" }}
+        className="companion-position absolute -left-4 -top-4 flex size-8 items-center justify-center will-change-transform"
       >
         <CompanionRenderer state={state} direction={direction} intensity={0} />
       </div>

@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { CompanionRendererProps } from "./companion.types";
+import { CompanionRendererProps, CompanionState } from "./companion.types";
 import { MASCOT_ASSETS, THEME_ASSETS } from "@/lib/assets";
 import { CompanionPlaceholder } from "./CompanionPlaceholder";
 
 type PoseConfig = { scale: number; yOffset: string };
+type Pose = { source: string; state: CompanionState };
+const poseSizes = "(max-width: 640px) 44px, (max-width: 768px) 58px, (max-width: 1024px) 72px, 90px";
 
 const NORMALIZATION: Record<string, PoseConfig> = {
   "IDLE": { scale: 1, yOffset: "0%" },
@@ -22,14 +24,14 @@ const NORMALIZATION: Record<string, PoseConfig> = {
 };
 
 export const IllustratedCompanionRenderer = (props: CompanionRendererProps) => {
-  const { state, direction } = props;
+  const { state: requestedState, direction } = props;
   const shouldReduceMotion = useReducedMotion();
   const [failedAssets, setFailedAssets] = useState<Set<string>>(new Set());
-  const [idleFailed, setIdleFailed] = useState(false);
+  const [readyPose, setReadyPose] = useState<Pose | null>(null);
 
   // Map state to image path
   const getStateImage = () => {
-    switch (state) {
+    switch (requestedState) {
       case "WALK": return MASCOT_ASSETS.poses.walk;
       case "RUN": return MASCOT_ASSETS.poses.run;
       case "SLEEP": return MASCOT_ASSETS.poses.sleep;
@@ -44,24 +46,18 @@ export const IllustratedCompanionRenderer = (props: CompanionRendererProps) => {
   };
 
   const originalImage = getStateImage();
-  const isCurrentFailed = failedAssets.has(originalImage);
-  const currentImage = isCurrentFailed ? MASCOT_ASSETS.poses.idle : originalImage;
-  const norm = NORMALIZATION[isCurrentFailed ? "IDLE" : state] || NORMALIZATION.IDLE;
+  const requestedPose: Pose = failedAssets.has(originalImage)
+    ? { source: MASCOT_ASSETS.poses.idle, state: "IDLE" }
+    : { source: originalImage, state: requestedState };
+  const { source: currentImage, state } = readyPose && !failedAssets.has(readyPose.source) ? readyPose : requestedPose;
+  const norm = NORMALIZATION[state] || NORMALIZATION.IDLE;
 
-  if (idleFailed) {
+  if (failedAssets.has(requestedPose.source)) {
     return <CompanionPlaceholder {...props} />;
   }
 
-  const handleImageError = () => {
-    if (currentImage === MASCOT_ASSETS.poses.idle) {
-      setIdleFailed(true);
-    } else {
-      setFailedAssets((prev) => {
-        const next = new Set(prev);
-        next.add(originalImage);
-        return next;
-      });
-    }
+  const handleImageError = (source: string) => {
+    setFailedAssets((prev) => new Set(prev).add(source));
   };
 
   // Motion variants for state
@@ -166,13 +162,27 @@ export const IllustratedCompanionRenderer = (props: CompanionRendererProps) => {
         )}
       </AnimatePresence>
 
-      <AnimatePresence mode="wait">
+      {requestedPose.source !== currentImage && (
+        <Image
+          key={requestedPose.source}
+          src={requestedPose.source}
+          alt=""
+          fill
+          sizes={poseSizes}
+          loading="eager"
+          className="invisible"
+          onLoad={() => setReadyPose(requestedPose)}
+          onError={() => handleImageError(requestedPose.source)}
+        />
+      )}
+
+      <AnimatePresence initial={false}>
         <motion.div
           key={currentImage}
           initial={{ opacity: 0, scale: 0.97 * norm.scale, y: norm.yOffset }}
           animate={{ opacity: 1, scale: norm.scale, y: norm.yOffset }}
           exit={{ opacity: 0, scale: 0.97 * norm.scale, y: norm.yOffset }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.18 }}
           className="absolute inset-0 origin-bottom z-10"
         >
           <motion.div
@@ -184,10 +194,13 @@ export const IllustratedCompanionRenderer = (props: CompanionRendererProps) => {
                 src={currentImage}
                 alt=""
                 fill
-                sizes="(max-width: 640px) 44px, (max-width: 768px) 58px, (max-width: 1024px) 72px, 90px"
+                sizes={poseSizes}
                 className="object-contain"
                 priority
-                onError={handleImageError}
+                onLoad={() => {
+                  if (currentImage === requestedPose.source) setReadyPose(requestedPose);
+                }}
+                onError={() => handleImageError(currentImage)}
              />
           </motion.div>
         </motion.div>

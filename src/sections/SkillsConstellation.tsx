@@ -657,7 +657,7 @@ export const SkillsConstellation = () => {
       gsap.to(svgWrapperRef.current, { rotateX: -ny * 4, rotateY: nx * 4, duration: 1, ease: "power2.out" });
     }
 
-    if (!isPanning.current && svgRef.current && worldRef.current) {
+    if (!isCompact() && !isPanning.current && svgRef.current && worldRef.current) {
         const pt = svgRef.current.createSVGPoint();
         pt.x = e.clientX; pt.y = e.clientY;
         const svgP = pt.matrixTransform(worldRef.current!.getScreenCTM()!.inverse());
@@ -666,7 +666,7 @@ export const SkillsConstellation = () => {
             cursorMaskRef.current.setAttribute('cx', svgP.x.toString());
             cursorMaskRef.current.setAttribute('cy', svgP.y.toString());
             gsap.killTweensOf(cursorMaskRef.current);
-            cursorMaskRef.current.style.opacity = '1';
+            cursorMaskRef.current.style.opacity = '0.42';
         }
     }
 
@@ -751,16 +751,7 @@ export const SkillsConstellation = () => {
     setHoveredNode(null);
     setPinnedNode(pinnedNode === id ? null : id);
     if (pinnedNode === id) focusedSkill.current = null;
-    if (pinnedNode !== id) {
-      focusOnNode(id);
-      const position = nodesProj.find((node) => node.id === id)?.proj;
-      const highlight = cursorMaskRef.current;
-      if (position && highlight && isCompact() && !reduceMotion) {
-        highlight.setAttribute("cx", String(position.x));
-        highlight.setAttribute("cy", String(position.y));
-        gsap.fromTo(highlight, { opacity: 0.7 }, { opacity: 0, delay: 0.45, duration: 0.45, overwrite: true });
-      }
-    }
+    if (pinnedNode !== id) focusOnNode(id);
   };
 
   const closeSkill = () => {
@@ -1036,17 +1027,8 @@ export const SkillsConstellation = () => {
        (firstOrder.has(a) && firstOrder.has(b))
     );
     
-    let opacity = 0.04;
-    let stroke = "var(--border)";
-    
-    if (activeNode) {
-      if (isDirectActive) {
-        // Handled below
-      } else if (isSecondActive) {
-        opacity = 0.35;
-        stroke = "var(--text-muted)";
-      }
-    }
+    const opacity = isDirectActive ? 0.84 : isSecondActive ? 0.38 : 0.12;
+    const stroke = isDirectActive ? "#bb6567" : isSecondActive ? "#7b7270" : "#494040";
     
     let fullPathD = "";
     pts.forEach((p, idx) => {
@@ -1055,33 +1037,19 @@ export const SkillsConstellation = () => {
     
     const midY = (pts[0].originalY + pts[pts.length - 1].originalY) / 2;
 
-    if (isDirectActive) {
-       renderQueue.push({
-         yDepth: midY,
-         element: (
-           <g key={`edge-${edgeIdx}`} className="pointer-events-none transition-opacity duration-300">
-              <path d={fullPathD} fill="none" stroke="#000" strokeWidth="4" />
-              <path d={fullPathD} fill="none" stroke="rgba(220,38,38,0.5)" strokeWidth="2.5" />
-              <path d={fullPathD} fill="none" stroke="var(--text-primary)" strokeWidth="1.2" />
-           </g>
-         )
-       });
-    } else {
-       renderQueue.push({
-         yDepth: midY,
-         element: (
-           <path 
-             key={`edge-${edgeIdx}`}
-             d={fullPathD}
-             fill="none"
-             stroke={stroke}
-             strokeWidth="1.5"
-             opacity={opacity}
-             className="constellation-line transition-opacity duration-500 pointer-events-none"
-           />
-         )
-       });
-    }
+    renderQueue.push({
+      yDepth: midY,
+      element: (
+        <path
+          key={`edge-${edgeIdx}`}
+          d={fullPathD}
+          fill="none"
+          strokeWidth="1.5"
+          style={{ stroke, opacity }}
+          className="constellation-line pointer-events-none"
+        />
+      ),
+    });
   });
 
   nodesProj.forEach((node, i) => {
@@ -1115,7 +1083,7 @@ export const SkillsConstellation = () => {
       element: (
         <g
           key={`node-${i}`}
-          className={`constellation-node transition-all duration-300 no-pan ${isRich ? 'is-rich' : ''} ${opacity === 0 ? 'pointer-events-none' : 'cursor-pointer'}`}
+          className={`constellation-node transition-opacity duration-300 no-pan cursor-pointer ${isRich ? 'is-rich' : ''}`}
           transform={`translate(${node.proj.x}, ${node.proj.y})`}
           opacity={opacity}
           data-skill-node={node.id}
@@ -1137,6 +1105,15 @@ export const SkillsConstellation = () => {
           }}
         >
           <circle r="20" fill="transparent" className="lg:hidden" />
+          <circle
+            r={radius + 9}
+            fill="none"
+            stroke="#cb696b"
+            strokeWidth="1.25"
+            vectorEffect="non-scaling-stroke"
+            opacity={pinnedNode === node.id ? 0.82 : 0}
+            className="constellation-focus pointer-events-none transition-opacity duration-200"
+          />
           {isHub && <line x1="0" y1="0" x2="0" y2="15" stroke="var(--text-muted)" strokeWidth="1" opacity={isHovered ? 1 : 0.4} />}
           
           {layout.hasLeader && (
@@ -1156,8 +1133,8 @@ export const SkillsConstellation = () => {
 
           <circle
             r={radius}
-            fill={isHovered ? "var(--text-primary)" : (isRich ? "#e5e5e5" : "#0a0a0a")}
-            stroke={isHovered ? "var(--accent)" : isFirstOrder ? "var(--text-primary)" : (isRich ? "var(--accent)" : "var(--text-muted)")}
+            fill={isHovered ? "#d9a39a" : (isRich ? "#d5c6bd" : "#0a0a0a")}
+            stroke={isHovered || isRich ? "var(--accent)" : isFirstOrder ? "#bd8b85" : "var(--text-muted)"}
             strokeWidth={isHovered ? 2 : 1.5}
             className="transition-colors duration-300"
           />
@@ -1333,12 +1310,12 @@ export const SkillsConstellation = () => {
                   <stop offset="100%" stopColor="black" stopOpacity="0" />
                 </radialGradient>
                 <mask id="cursor-mask" maskUnits="userSpaceOnUse" x="-4000" y="-3000" width="8000" height="6000">
-                  <circle ref={cursorMaskRef} cx="-5000" cy="-5000" r="600" fill="url(#cursor-gradient)" style={{ opacity: 0 }} />
+                  <circle ref={cursorMaskRef} cx="-5000" cy="-5000" r="460" fill="url(#cursor-gradient)" style={{ opacity: 0 }} />
                 </mask>
               </defs>
               <g ref={worldRef}>
                 {/* Base Wireframe Mesh Queue */}
-                {renderQueue.map((item, i) => React.cloneElement(item.element as React.ReactElement, { key: `depth-${i}` }))}
+                {renderQueue.map(({ element }) => element)}
               </g>
             </svg>
           </div>

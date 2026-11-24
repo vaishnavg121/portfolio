@@ -17,7 +17,7 @@
   --mascot-cream: #F5EDE3;
   --mascot-crimson: #B22234;
   --mascot-mist: #6B6B6B;
-  --z-familiar: 2147482000;
+  --z-familiar: 1;
 }
 
 @theme inline {
@@ -50,6 +50,25 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.portfolio-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  isolation: isolate;
+}
+
+#familiar-root {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-familiar);
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.companion-position {
+  transform: translate3d(-200px, -200px, 0);
 }
 
 @media (width < 64rem) {
@@ -149,6 +168,10 @@ body {
 
 [data-knowledge-canvas] { touch-action: pan-y pinch-zoom; }
 [data-knowledge-canvas][data-exploring] { touch-action: none; }
+[data-knowledge-canvas] svg { -webkit-tap-highlight-color: transparent; }
+.constellation-line { transition: stroke 220ms ease-out, opacity 220ms ease-out; }
+.constellation-node:focus-visible { outline: none; }
+.constellation-node:focus-visible .constellation-focus { opacity: 1; }
 
 @media (width < 64rem) and (orientation: landscape) and (width >= 38rem) {
   .knowledge-layout { min-height: 19rem; }

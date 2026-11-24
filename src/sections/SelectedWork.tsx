@@ -32,11 +32,7 @@ const PROJECTS = profileProjects.map((p) => ({
   assets: PROJECT_ASSETS[p.slug as keyof typeof PROJECT_ASSETS],
 }));
 
-function ProjectDetails({ project, onOpen, mobile = false }: {
-  project: typeof PROJECTS[number];
-  onOpen: (event: React.MouseEvent<HTMLAnchorElement>) => void;
-  mobile?: boolean;
-}) {
+function ProjectDetails({ project }: { project: typeof PROJECTS[number] }) {
   return (
     <>
     <motion.div
@@ -44,9 +40,9 @@ function ProjectDetails({ project, onOpen, mobile = false }: {
         hidden: { opacity: 0, y: 12 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
       }}
-      className="flex items-baseline gap-4 mb-4"
+      className="flex items-baseline gap-3 mb-2 lg:mb-4 lg:gap-4"
     >
-      <span className="font-mono text-4xl text-border opacity-50 tracking-tighter">{project.id}</span>
+      <span className="font-mono text-sm lg:text-4xl text-text-muted lg:text-border lg:opacity-50 tracking-tighter">{project.id}</span>
       <div className="font-mono text-accent text-xs tracking-widest uppercase">{project.category}</div>
     </motion.div>
 
@@ -55,7 +51,7 @@ function ProjectDetails({ project, onOpen, mobile = false }: {
         hidden: { opacity: 0, y: 12 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
       }}
-      className="mobile-card-title lg:text-6xl font-display font-medium mb-4 lg:mb-6 uppercase tracking-tight leading-none"
+      className="mobile-card-title lg:text-6xl font-display font-medium mb-3 lg:mb-6 uppercase tracking-tight leading-none"
     >
       {project.title}
     </motion.h3>
@@ -75,28 +71,36 @@ function ProjectDetails({ project, onOpen, mobile = false }: {
         hidden: { opacity: 0, y: 12 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
       }}
-      className="flex flex-wrap gap-2 mb-4 lg:mb-10"
+      className="flex flex-wrap gap-2 lg:mb-10"
     >
       {project.tags.map(tag => (
-        <span key={tag} className="text-[10px] font-mono border border-[#333] px-2 py-1 text-text-muted uppercase tracking-wider">
+        <span key={tag} className="inline-flex min-h-6 items-center text-[10px] font-mono border border-[#333] px-2 py-1 text-text-muted uppercase tracking-wider">
           {tag}
         </span>
       ))}
     </motion.div>
+    </>
+  );
+}
 
+function ProjectAction({ project, onOpen }: {
+  project: typeof PROJECTS[number];
+  onOpen: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+}) {
+  return (
     <motion.div
       variants={{
         hidden: { opacity: 0, y: 12 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
       }}
-      className="relative z-40 max-lg:mt-auto"
+      className="relative z-20"
     >
       <MagneticEffect intensity={0.3}>
         <Link
           href={`/work/${project.slug}`}
           onClick={(e) => onOpen(e)}
           data-cursor="VIEW"
-          aria-label={mobile ? "View project: " + project.title : undefined}
+          aria-label={"View project: " + project.title}
           className="flex min-h-11 lg:min-h-0 items-center gap-3 text-xs font-mono uppercase tracking-widest text-text-primary hover:text-accent transition-colors group"
           tabIndex={0}
         >
@@ -108,7 +112,6 @@ function ProjectDetails({ project, onOpen, mobile = false }: {
         </Link>
       </MagneticEffect>
     </motion.div>
-    </>
   );
 }
 
@@ -298,7 +301,8 @@ export const SelectedWork = () => {
                   }}
                   className="flex flex-col w-full"
                 >
-                  <ProjectDetails project={PROJECTS[activeIndex]} onOpen={(event) => handleProjectClick(PROJECTS[activeIndex].slug, event)} />
+                  <ProjectDetails project={PROJECTS[activeIndex]} />
+                  <ProjectAction project={PROJECTS[activeIndex]} onOpen={(event) => handleProjectClick(PROJECTS[activeIndex].slug, event)} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -311,7 +315,10 @@ export const SelectedWork = () => {
               if (stride) setSlide(Math.round(scrollLeft / stride));
             }}>
             {PROJECTS.map((project, i) => (
-              <article key={project.id} className="project-card project-slide min-w-0 max-lg:flex max-lg:basis-full max-lg:shrink-0 max-lg:snap-start max-lg:flex-col max-lg:border max-lg:border-border max-lg:bg-surface" data-project={project.slug}>
+              <article key={project.id} className="project-card project-slide isolate min-w-0 max-lg:flex max-lg:basis-full max-lg:shrink-0 max-lg:snap-start max-lg:flex-col max-lg:border max-lg:border-border max-lg:bg-surface" data-project={project.slug}>
+              <div className="project-details mobile-card-pad relative z-20 lg:hidden" data-familiar-avoid>
+                <ProjectDetails project={project} />
+              </div>
               <div className="project-scene relative flex min-h-[16rem] items-center justify-center p-4 lg:min-h-[500px] lg:p-8 border-b lg:border border-border overflow-hidden group bg-[#0a0a0a]" data-cursor="VIEW">
 
                 <div
@@ -415,8 +422,8 @@ export const SelectedWork = () => {
                   )}
                 </div>
               </div>
-              <div className="mobile-card-pad flex flex-1 flex-col lg:hidden" data-familiar-avoid>
-                <ProjectDetails mobile project={project} onOpen={(event) => handleProjectClick(project.slug, event)} />
+              <div className="mobile-card-pad mt-auto max-lg:py-1 lg:hidden">
+                <ProjectAction project={project} onOpen={(event) => handleProjectClick(project.slug, event)} />
               </div>
               </article>
             ))}

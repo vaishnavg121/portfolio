@@ -49,17 +49,19 @@ export default function RootLayout({
       className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${caveat.variable} antialiased`}
     >
       <body className="min-h-full bg-background text-text-primary flex flex-col selection:bg-accent-soft selection:text-accent">
-        <PointerProvider>
-          <CustomCursor />
-          <SystemRail />
-          <MobileNavigation />
-          {children}
-          <CommandPalette />
-          <CompanionTester />
-          <div id="familiar-root">
-             <Companion />
-          </div>
-        </PointerProvider>
+        <div className="portfolio-content">
+          <PointerProvider>
+            <CustomCursor />
+            <SystemRail />
+            <MobileNavigation />
+            {children}
+            <CommandPalette />
+            <CompanionTester />
+          </PointerProvider>
+        </div>
+        <div id="familiar-root" aria-hidden="true">
+          <Companion />
+        </div>
       </body>
     </html>
   );
