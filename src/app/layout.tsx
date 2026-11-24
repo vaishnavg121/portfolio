@@ -4,7 +4,6 @@ import "./globals.css";
 import React from "react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { CommandPalette } from "@/components/CommandPalette";
-import { CustomCursor } from "@/components/CustomCursor";
 import { CompanionTester } from "@/components/companion/CompanionTester";
 import { PointerProvider, SystemRail } from "@/components/effects";
 import { Companion } from "@/components/companion";
@@ -51,7 +50,6 @@ export default function RootLayout({
       <body className="min-h-full bg-background text-text-primary flex flex-col selection:bg-accent-soft selection:text-accent">
         <div className="portfolio-content">
           <PointerProvider>
-            <CustomCursor />
             <SystemRail />
             <MobileNavigation />
             {children}

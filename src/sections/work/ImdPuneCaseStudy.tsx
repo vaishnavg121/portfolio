@@ -12,7 +12,7 @@ const SectionHeader = ({ number, title }: { number: string, title: string }) => 
       <span>{number}</span>
       <div className="w-12 h-[1px] bg-accent/50" />
     </div>
-    <h2 className="chapter-heading uppercase">{title}</h2>
+    <h2 className="chapter-heading">{title}</h2>
   </div>
 );
 
@@ -44,7 +44,7 @@ export const ImdPuneCaseStudy = () => {
               <span>IMD PUNE</span>
             </div>
             
-            <h1 className="hero-elem case-title font-display lg:text-5xl uppercase tracking-tighter leading-tight mb-4 lg:mb-8 text-white/90">
+            <h1 className="hero-elem case-title mb-4 lg:mb-8 text-white/90">
               Forecasting airport visibility
             </h1>
             
@@ -62,7 +62,7 @@ export const ImdPuneCaseStudy = () => {
             </div>
             
             <div className="hero-elem mt-4 lg:mt-16 font-mono text-xs text-text-muted tracking-widest uppercase flex items-center gap-3">
-              <span className="w-4 h-[1px] bg-text-muted" /> SCROLL TO EXPLORE
+              <span className="w-4 h-[1px] bg-text-muted" /> Read the case study
             </div>
           </div>
           

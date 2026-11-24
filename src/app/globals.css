@@ -424,13 +424,6 @@ body:has(.case-image-dialog[open]) { overflow: hidden; }
 .contact-link a { height: 100%; min-height: 5rem; }
 .contact-link a > span { width: 100%; min-width: 0; overflow-wrap: anywhere; }
 
-@media (width >= 64rem) and (prefers-reduced-motion: no-preference) {
-  @keyframes atmosphere-breathe { 50% { opacity: 0.56; } }
-  @keyframes ink-drift { 50% { transform: translateY(4px); } }
-  .anim-atmosphere { animation: atmosphere-breathe 9s ease-in-out infinite paused; }
-  .anim-ink-drift { animation: ink-drift 13s ease-in-out infinite paused; }
-  [data-atmosphere-active] :is(.anim-atmosphere, .anim-ink-drift) { animation-play-state: running; }
-}
 
 @media (width < 64rem) {
   .project-slide { border: 1px solid var(--border); background: var(--surface); }

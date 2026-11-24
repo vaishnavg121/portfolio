@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import Image from "next/image";
 import { MoveLeft } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -8,6 +9,12 @@ import { ImdPuneCaseStudy } from "@/sections/work/ImdPuneCaseStudy";
 import { SwaNeetiCaseStudy } from "@/sections/work/SwaNeetiCaseStudy";
 import { WindyCaseStudy } from "@/sections/work/WindyCaseStudy";
 import { SpenzaCaseStudy } from "@/sections/work/SpenzaCaseStudy";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const project = projects.find((entry) => entry.slug === slug);
+  return project ? { title: `${project.title} — Vaishnav Gadamsetty`, description: project.description } : {};
+}
 
 export default async function ProjectDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

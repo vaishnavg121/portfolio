@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { InkReveal, PaperNoise } from "@/components/effects";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -12,14 +13,17 @@ if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 const RULES = [
   {
     num: "Weather data",
+    project: "/work/imdpune",
     text: "At IMD Pune, gaps and inconsistent timestamps took as much attention as the forecast models."
   },
   {
     num: "Legal research",
+    project: "/work/swaneeti",
     text: "In Swa.Neeti, I keep evidence about what happened separate from the sources that establish the law."
   },
   {
     num: "Money",
+    project: "/work/spenza",
     text: "In Spenza, I store money in minor units so that splitting an expense keeps every last paisa accounted for."
   }
 ];
@@ -94,7 +98,7 @@ export const EngineeringNotes = () => {
                   }}
                 >
                   <div className="text-accent font-mono text-xs tracking-widest mb-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                    {rule.num}
+                    <Link href={rule.project} className="inline-flex min-h-11 items-center gap-2 hover:text-text-primary">{rule.num} <span aria-hidden="true">↗</span></Link>
                   </div>
                   <div className="text-xl md:text-3xl text-text-primary font-light leading-relaxed font-hand relative inline-block">
                     {rule.text}

@@ -30,9 +30,9 @@ export const ChatbotLauncher = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               onClick={() => setIsOpen(true)}
-              className="flex min-h-11 lg:min-h-0 items-center gap-2 px-3 lg:px-4 py-2 bg-surface-elevated border border-border text-xs font-mono text-text-primary uppercase tracking-widest hover:border-text-muted transition-colors"
+              className="flex min-h-11 lg:min-h-0 items-center gap-2 px-3 lg:px-4 py-2 bg-surface-elevated border border-border text-xs font-medium text-text-primary hover:border-text-muted transition-colors"
             >
-              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-accent" />
               <span className="lg:hidden">Ask</span>
               <span className="hidden lg:inline">Ask Vaishnav</span>
             </motion.button>
