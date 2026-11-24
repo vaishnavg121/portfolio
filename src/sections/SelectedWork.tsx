@@ -22,10 +22,18 @@ const effects: Record<string, React.ElementType> = {
   thriveforce: BlueprintEffect,
 };
 
+const projectFigures: Record<string, { src: string; caption: string }> = {
+  imdpune: { src: "/assets/projects/imd-pune/imd-classical-ml-results.png", caption: "Forecast model comparison" },
+  swaneeti: { src: "/assets/projects/swa-neeti/swa-legal-research-loop.png", caption: "The legal research loop" },
+  windy: { src: "/assets/projects/windy/windy-analytics-decision-insights.png", caption: "Weather analysis and evidence" },
+  spenza: { src: "/assets/projects/spenza/spenza-spending-analysis-flow.png", caption: "From expenses to spending insights" },
+};
+
 const PROJECTS = profileProjects.map((project) => ({
   ...project,
   Effect: effects[project.slug],
   assets: PROJECT_ASSETS[project.slug],
+  figure: projectFigures[project.slug],
 }));
 
 type Project = (typeof PROJECTS)[number];
@@ -37,7 +45,7 @@ function ProjectDetails({ project }: { project: Project }) {
         <span className="project-index text-text-muted">{project.id}</span>
         <span className="text-accent">{project.category}</span>
       </div>
-      <h3 className="project-title mb-3 font-display font-medium uppercase lg:mb-5">{project.title}</h3>
+      <h3 className="project-title mb-3 lg:mb-5">{project.title}</h3>
       <p className="project-description mb-4 max-w-[44ch] text-[0.9375rem] leading-relaxed text-text-muted lg:mb-6 lg:text-base">{project.description}</p>
       <div className="flex flex-wrap gap-1.5 lg:mb-6">
         {project.tags.map((tag) => (
@@ -194,7 +202,16 @@ export const SelectedWork = () => {
                       {visible && project.Effect && <project.Effect />}
                     </div>
                     <div className="project-scene-theme font-mono text-[9px] tracking-wide">{project.year} · {project.status}</div>
-                    <div className="project-pipeline relative z-10 w-full max-w-sm">
+                    <div className="project-showcase relative z-10">
+                    {project.figure && (
+                      <figure className="project-figure">
+                        <div className="project-figure-image">
+                          <Image src={project.figure.src} alt={project.figure.caption} fill sizes="(width >= 80rem) 27vw, (width >= 64rem) 50vw, 85vw" className="object-contain" />
+                        </div>
+                        <figcaption>{project.figure.caption}</figcaption>
+                      </figure>
+                    )}
+                    <div className="project-pipeline w-full">
                       {project.assets?.diagram ? (
                         <div className="relative aspect-square w-full">
                           <Image src={project.assets.diagram} alt={project.title + " architecture"} fill sizes="(width < 64rem) 90vw, 24rem" className="object-contain" />
@@ -225,6 +242,7 @@ export const SelectedWork = () => {
                           </div>
                         </>
                       )}
+                    </div>
                     </div>
                   </div>
                   <div className="project-card-action mobile-card-pad lg:hidden">

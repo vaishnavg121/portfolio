@@ -164,16 +164,8 @@ export const SkillsConstellation = () => {
         const depthRatio = i / (BANDS - 1);
         const baseAlpha = 0.02 + depthRatio * 0.28;
         
-        // Emulate previous hover highlight properties statically for mask layering
-        const terrainWeight = 0.5 + (baseAlpha * 3.0);
-        const peakInfluence = 1.0 * terrainWeight;
-        const finalAlpha = Math.min(0.85, baseAlpha + peakInfluence * 0.3);
-        
-        const r = Math.round(245 + peakInfluence * 8);
-        const g = Math.round(237 + peakInfluence * 5);
-        const b = Math.round(227 - peakInfluence * 8);
-        
-        return { baseAlpha, peakAlpha: finalAlpha, color: `${r}, ${g}, ${b}`, d: "" };
+        const peakAlpha = 0.16 + depthRatio * 0.35;
+        return { baseAlpha, peakAlpha, d: "" };
     });
 
     const step = 50;
@@ -670,7 +662,7 @@ export const SkillsConstellation = () => {
             cursorMaskRef.current.setAttribute('cx', svgP.x.toString());
             cursorMaskRef.current.setAttribute('cy', svgP.y.toString());
             gsap.killTweensOf(cursorMaskRef.current);
-            cursorMaskRef.current.style.opacity = '0.42';
+            cursorMaskRef.current.style.opacity = '0.27';
         }
     }
 
@@ -751,6 +743,13 @@ export const SkillsConstellation = () => {
   const closeSkill = () => {
     focusedSkill.current = null;
     setPinnedNode(null);
+  };
+
+  const selectSearchResult = (id: string) => {
+    setPinnedNode(id);
+    focusOnNode(id);
+    setSearchQuery("");
+    setSearchResults([]);
   };
 
   const endTouch = (e: React.PointerEvent, canceled = false) => {
@@ -921,7 +920,7 @@ export const SkillsConstellation = () => {
           key={`terrain-base-${i}`}
           d={b.d}
           fill="none"
-          stroke={`rgba(245, 237, 227, ${b.baseAlpha})`}
+          stroke={`rgba(176, 181, 176, ${b.baseAlpha})`}
           strokeWidth="0.8"
           className="topo-terrain"
         />
@@ -936,7 +935,7 @@ export const SkillsConstellation = () => {
           key={`terrain-highlight-${i}`}
           d={b.d}
           fill="none"
-          stroke={`rgba(${b.color}, ${b.peakAlpha})`}
+          stroke={`rgba(198, 195, 183, ${b.peakAlpha})`}
           strokeWidth="1.2"
           mask="url(#cursor-mask)"
           className="topo-terrain topo-highlight"
@@ -953,11 +952,11 @@ export const SkillsConstellation = () => {
           key={`domain-${i}`}
           x={d.proj.x}
           y={d.proj.y}
-          fontSize="48"
+          fontSize="39"
           fill="var(--text-muted)"
-          opacity="0.3"
+          opacity="0.53"
           textAnchor="middle"
-          className="font-display tracking-[0.2em] pointer-events-none uppercase no-pan domain-label font-bold max-lg:hidden"
+          className="font-display tracking-[0.12em] pointer-events-none uppercase no-pan domain-label font-semibold max-lg:hidden"
         >
           {d.label.split('// ')[1]}
         </text>
@@ -994,8 +993,8 @@ export const SkillsConstellation = () => {
        (firstOrder.has(a) && firstOrder.has(b))
     );
     
-    const opacity = isDirectActive ? 0.84 : isSecondActive ? 0.38 : 0.12;
-    const stroke = isDirectActive ? "#bb6567" : isSecondActive ? "#7b7270" : "#494040";
+    const opacity = isDirectActive ? 0.9 : isSecondActive ? 0.46 : 0.24;
+    const stroke = isDirectActive ? "var(--accent)" : isSecondActive ? "#959991" : "#747c77";
     
     renderQueue.push({
       yDepth: depth,
@@ -1068,7 +1067,7 @@ export const SkillsConstellation = () => {
           <circle
             r={radius + 9}
             fill="none"
-            stroke="#cb696b"
+            stroke="var(--accent)"
             strokeWidth="1.25"
             vectorEffect="non-scaling-stroke"
             opacity={pinnedNode === node.id ? 0.82 : 0}
@@ -1084,17 +1083,17 @@ export const SkillsConstellation = () => {
              <circle 
                r={radius + (isHovered ? 6 : 3)} 
                fill="none" 
-               stroke="rgba(220,38,38,0.5)" 
+               stroke="var(--accent)"
                strokeWidth="1" 
-               opacity={isHovered ? 1 : 0.3} 
+               opacity={isHovered ? 0.85 : 0.27}
                className="transition-all duration-300 pointer-events-none" 
              />
           )}
 
           <circle
             r={radius}
-            fill={isHovered ? "#d9a39a" : (isRich ? "#d5c6bd" : "#0a0a0a")}
-            stroke={isHovered || isRich ? "var(--accent)" : isFirstOrder ? "#bd8b85" : "var(--text-muted)"}
+            fill={isHovered ? "#d6b4a7" : (isRich ? "#d2cec2" : "#141718")}
+            stroke={isHovered || isRich ? "var(--accent)" : isFirstOrder ? "#c3c6be" : "var(--text-muted)"}
             strokeWidth={isHovered ? 2 : 1.5}
             className="transition-colors duration-300"
           />
@@ -1144,6 +1143,12 @@ export const SkillsConstellation = () => {
                   aria-label="Search skills"
                   placeholder="Search skills"
                   value={searchQuery}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && searchResults.length) {
+                      event.preventDefault();
+                      selectSearchResult(searchResults[0].id);
+                    }
+                  }}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
                     if (e.target.value.length > 1) {
@@ -1158,15 +1163,7 @@ export const SkillsConstellation = () => {
                   {searchResults.map(res => (
                     <button
                       key={res.id}
-                      onClick={() => {
-                        const n = nodesProj.find(node => node.id === res.id);
-                        if (n) {
-                           setPinnedNode(res.id);
-                           focusOnNode(res.id);
-                           setSearchQuery("");
-                           setSearchResults([]);
-                        }
-                      }}
+                      onClick={() => selectSearchResult(res.id)}
                       className="text-left px-4 min-h-11 py-3 font-mono text-xs lg:text-[10px] tracking-widest text-text-muted hover:text-text-primary hover:bg-white/5 uppercase transition-colors border-b border-border/50 last:border-b-0"
                     >
                       {res.label}
