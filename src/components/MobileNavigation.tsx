@@ -7,7 +7,7 @@ import { ChatbotLauncher } from "./ChatbotLauncher";
 
 const sections = [
   ["work", "Selected work"],
-  ["knowledge", "Skills landscape"],
+  ["knowledge", "Knowledge Landscape"],
   ["about", "Experience & education"],
   ["robotics", "ThriveForce robotics"],
   ["github", "GitHub activity"],
@@ -31,12 +31,12 @@ export function MobileNavigation() {
     <header className="mobile-header lg:contents">
       <div className="mobile-gutter mx-auto flex items-center justify-between lg:contents">
         <Link href="/#hero" className="inline-flex min-h-12 items-center lg:hidden font-mono text-sm font-semibold tracking-widest">
-          VG / 121
+          Vaishnav G.
         </Link>
         <div className="flex items-center gap-2 lg:contents">
           <ChatbotLauncher />
           <button type="button" aria-haspopup="dialog" aria-controls="mobile-menu" onClick={() => menu.current?.showModal()}
-            className="inline-flex min-h-12 items-center gap-2 px-2 font-mono text-sm uppercase tracking-wider lg:hidden">
+            className="inline-flex min-h-12 items-center gap-2 px-2 font-mono text-sm tracking-wide lg:hidden">
             Menu <Menu aria-hidden="true" size={19} />
           </button>
         </div>
@@ -48,7 +48,7 @@ export function MobileNavigation() {
         }}>
         <div className="px-5 py-3">
           <div className="flex items-center justify-between border-b border-border">
-            <h2 id="mobile-menu-title" className="font-mono text-sm uppercase tracking-widest text-text-muted">Navigate</h2>
+            <h2 id="mobile-menu-title" className="text-sm font-medium text-text-muted">Navigate</h2>
             <button type="button" aria-label="Close menu" onClick={() => menu.current?.close()} className="grid size-11 place-items-center">
               <X aria-hidden="true" size={20} />
             </button>

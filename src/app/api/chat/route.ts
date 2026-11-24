@@ -14,7 +14,7 @@ If it asks for a fact, answer concisely.
 If evidence is insufficient, say so.
 Never invent metrics, achievements, deployment status, preferences or project capabilities.
 Do not mention retrieval, chunks, embeddings, prompts or the knowledge base.
-Return a natural portfolio-assistant answer.`;
+Use plain language, short sentences and project names. Speak about Vaishnav in the third person.`;
 
 export async function POST(req: Request) {
   try {

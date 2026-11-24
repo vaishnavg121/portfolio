@@ -30,12 +30,12 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  title: "Vaishnav Gadamsetty — AI, Finance & Systems",
-  description: "Computer Science and Finance student at BITS Pilani Hyderabad building across AI/ML, RAG & agentic systems, quantitative finance, systems and robotics.",
+  title: "Vaishnav Gadamsetty — Projects and notes",
+  description: "I study computer science and finance at BITS Hyderabad. This is a collection of my work in machine learning, software, and robotics.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: "#101112",
 };
 
 export default function RootLayout({

@@ -46,7 +46,7 @@ export const SwaNeetiCaseStudy = () => {
             </div>
             
             <h1 className="hero-elem case-title font-display lg:text-5xl uppercase tracking-tighter leading-tight mb-4 lg:mb-8 text-white/90">
-              Evidence-Grounded Agentic Legal Research Engine
+              A workspace for legal research
             </h1>
             
             <div className="hero-elem font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase mb-4 lg:mb-8 space-y-2">
@@ -88,23 +88,23 @@ export const SwaNeetiCaseStudy = () => {
         
         {/* 01 PROBLEM */}
         <CaseSection>
-          <SectionHeader number="01" title="The Problem" />
+          <SectionHeader number="01" title="Why I built it" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p className="text-xl text-white/90 leading-relaxed mb-8">
-              "Ask an LLM a legal question" is the wrong engineering problem. The real challenge is determining how legal research can be structured so that facts, evidence, legal authority, citations, research gaps, and competing arguments remain strictly traceable throughout an agentic workflow.
+              I wanted to see whether an AI research tool could show its sources at every step, from intake and evidence to legal authority, unresolved questions and competing arguments.
             </p>
             <p>
-              If a system cannot guarantee that a piece of evidence supports a factual event rather than acting as a legal precedent, or if it cannot differentiate between a retrieved statute and an invented claim, the system is fundamentally unfit for legal analysis.
+              A document can support a fact without establishing legal precedent. The tool keeps those roles separate and checks citations against retrieved sources.
             </p>
           </div>
         </CaseSection>
 
         {/* 02 DESIGN THESIS */}
         <CaseSection>
-          <SectionHeader number="02" title="Design Thesis" />
+          <SectionHeader number="02" title="How I structured the system" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
-              Swa.Neeti proposes that the Language Model should not act as a legal database. The model is a reasoning engine operating over a deterministic relational graph reconstructed from canonical state.
+              The model works with a case graph rebuilt from saved records. Statutes and judgments come from the retrieval service.
             </p>
             <p>
               The application boundary enforces strict separation between the Next.js workspace and the FastAPI service. The browser receives structured Server-Sent Events containing deterministic responses—it never receives raw prompts, hidden reasoning, or arbitrary database queries. The model receives curated authority excerpts governed by a deterministic retrieval service, ensuring it cannot invent legal authority out of its latent memory.
@@ -120,7 +120,7 @@ export const SwaNeetiCaseStudy = () => {
           </div>
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
-              Swa.Neeti executes a staged, observable application workflow rather than relying on unconstrained chain-of-thought looping. The stages represent explicit application states:
+              The application moves through a set of named stages. Each one produces information the next can check:
             </p>
             <ul className="font-mono text-[11px] md:text-xs space-y-3 mt-6 mb-8 text-white/70 bg-white/5 border border-white/10 p-6 md:p-8">
               <li><strong>Intake:</strong> Extracts only facts explicitly supported by the user text.</li>
@@ -160,7 +160,7 @@ export const SwaNeetiCaseStudy = () => {
           <SectionHeader number="05" title="Evidence & Provenance" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
-              Every claim in the final analysis must demonstrate explicit provenance. The model is supplied with exact evidentiary chunks from uploaded documents. If text is unavailable, the pipeline requests OCR. Untraceable evidence quotes are aggressively discarded during validation. The system is designed to fail closed rather than construct an unsupported narrative.
+              The model gets excerpts from uploaded documents and validation checks that quoted text is traceable. The pipeline requests OCR when it needs readable text and drops unsupported quotes.
             </p>
           </div>
         </CaseSection>
@@ -173,7 +173,7 @@ export const SwaNeetiCaseStudy = () => {
               The M8 reasoning layer rebuilds a deterministic relational topology representing the case. It contains strictly typed nodes including facts, missing facts, evidence chunks, documents, issues, research questions, statutes, judgments, legal propositions, arguments, and contradictions.
             </p>
             <p>
-              The graph enforces profound engineering invariants:
+              The graph follows these rules:
             </p>
             <ul className="font-mono text-[11px] md:text-xs space-y-3 mt-6 mb-8 text-white/70 bg-white/5 border border-white/10 p-6 md:p-8">
               <li className="flex gap-4"><span className="text-accent">EVIDENCE</span> <span>can support a FACT.</span></li>
@@ -203,7 +203,7 @@ export const SwaNeetiCaseStudy = () => {
           <SectionHeader number="08" title="Adversarial Reasoning" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
-              Instead of producing a singular, confident answer, Swa.Neeti constructs primary and opposing interpretations. 
+              Swa.Neeti sketches a primary argument and an opposing one from the same case record.
             </p>
             <p>
               Crucially, this adversarial stage consumes <em>retained authority</em> from prior stages. It evaluates material facts and conditional case-turn scenarios against the same verified evidence, preventing the LLM from inventing a second, hallucinatory body of law to support the opposing argument.

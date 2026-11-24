@@ -45,7 +45,7 @@ export const ImdPuneCaseStudy = () => {
             </div>
             
             <h1 className="hero-elem case-title font-display lg:text-5xl uppercase tracking-tighter leading-tight mb-4 lg:mb-8 text-white/90">
-              Using AI/ML To Predict Vertical Visibility In Airports
+              Forecasting airport visibility
             </h1>
             
             <div className="hero-elem font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase mb-4 lg:mb-8 space-y-2">
@@ -78,13 +78,13 @@ export const ImdPuneCaseStudy = () => {
         
         {/* 02 THE PROBLEM */}
         <CaseSection>
-          <SectionHeader number="02" title="The Problem" />
+          <SectionHeader number="02" title="What we were trying to predict" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p className="text-xl text-white/90 leading-relaxed mb-8">
-              Visibility is one of the most critical meteorological parameters in aviation. Reduced visibility from fog, haze, mist, precipitation, or low cloud severely affects aircraft take-off, landing, and taxiing operations, directly impacting operational capacity, diversions, delays, and aviation safety.
+              Fog, haze, rain and low cloud make it harder for aircraft to take off, land and taxi. A useful forecast can give airport teams more time to plan for those conditions.
             </p>
             <p>
-              While horizontal visibility is widely monitored, vertical visibility and cloud ceiling become equally critical in dense fog, low-cloud, and obscured-sky conditions. The engineering problem presented by the India Meteorological Department was twofold: build a unified data system capable of aligning chaotic heterogeneous sensor streams, and then build a prediction system evaluating both classical and sequential machine learning architectures for vertical visibility and Meteorological Optical Range (MOR).
+              At IMD Pune, we brought weather readings from several instruments onto one timeline and compared classical models and sequence models for vertical visibility and Meteorological Optical Range (MOR).
             </p>
           </div>
         </CaseSection>
@@ -114,13 +114,13 @@ export const ImdPuneCaseStudy = () => {
 
         {/* 04 DATA WAS THE HARD PART */}
         <CaseSection>
-          <SectionHeader number="04" title="Data Was The Hard Part" />
+          <SectionHeader number="04" title="Aligning the observations" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
               Integrating the network created systematic temporal gaps. PTU sensors generally supplied 1-minute observations, while visibility, wind, cloud, and rain commonly operated at 15-second cadences. 
             </p>
             <p>
-              Resolving these differing temporal resolutions was only the first barrier. We consistently encountered missing records, duplicated records, inconsistent timestamps, sensor outages, and substantial formatting differences between airports like Hyderabad, Jaipur, and Lucknow. Preprocessing was not a minor step; it was a major engineering component of the project.
+              We also found duplicate readings, inconsistent timestamps, outages and different formats across Hyderabad, Jaipur and Lucknow. Preparing the data took a large share of the project.
             </p>
           </div>
         </CaseSection>
@@ -202,7 +202,7 @@ export const ImdPuneCaseStudy = () => {
           </div>
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
-              Temporal analysis exposed repeated high-visibility plateaus interrupted by intermittent, sharp reduced-visibility intervals. This temporal variability demonstrates recurring low-visibility episodes rather than smooth continuous seasonal transitions, highlighting the highly dynamic nature of the prediction target.
+              The time series showed long stretches of good visibility broken by sharp drops. Those short episodes were especially important to the forecast.
             </p>
           </div>
         </CaseSection>
@@ -279,7 +279,7 @@ export const ImdPuneCaseStudy = () => {
 
         {/* 17 WHAT WAS DELIVERED */}
         <CaseSection>
-          <SectionHeader number="16" title="What The Project Delivered" />
+          <SectionHeader number="16" title="What we delivered" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-mono text-xs text-text-muted mb-8" data-familiar-protect data-familiar-reaction="read">
             <div className="border border-white/5 p-5 bg-[#050505] hover:border-accent/40 transition-colors">Multi-source meteorological preprocessing</div>
             <div className="border border-white/5 p-5 bg-[#050505] hover:border-accent/40 transition-colors">Quality-control framework & temporal alignment</div>
@@ -309,10 +309,10 @@ export const ImdPuneCaseStudy = () => {
               <SectionHeader number="18" title="What I Learned" />
               <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light" data-familiar-protect data-familiar-reaction="read">
                 <p>
-                  Real-world machine learning starts with data engineering. Missing data cannot simply be imputed aggressively when the domain forbids it, making temporal alignment critical.
+                  I learned to spend time on the measurements first. A gap in the record can be more informative than a number filled in by interpolation.
                 </p>
                 <p>
-                  I learned that model accuracy alone is insufficient; interpretability, training cost, and strict adherence to domain constraints matter just as much. Domain knowledge and ML must work together to produce usable insights.
+                  I also learned to compare how long a model takes to train, how easily I can explain it, and how much it improves the forecast.
                 </p>
               </div>
             </div>

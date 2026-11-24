@@ -46,7 +46,7 @@ export const WindyCaseStudy = () => {
             </div>
             
             <h1 className="hero-elem case-title font-display lg:text-5xl uppercase tracking-tighter leading-tight mb-4 lg:mb-8 text-white/90">
-              Agentic Aviation Weather Intelligence
+              Ask questions about airport weather
             </h1>
             
             <div className="hero-elem font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase mb-4 lg:mb-8 space-y-2">
@@ -88,13 +88,13 @@ export const WindyCaseStudy = () => {
         
         {/* 01 PROBLEM */}
         <CaseSection>
-          <SectionHeader number="01" title="The Problem" />
+          <SectionHeader number="01" title="Why I built it" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p className="text-xl text-white/90 leading-relaxed mb-8">
-              Large heterogeneous meteorological datasets are difficult to investigate through natural language while keeping numerical results completely deterministic and explanations strictly grounded.
+              I wanted to ask ordinary questions about several airports at once and still be able to check the numbers against the original observations.
             </p>
             <p>
-              Typical LLMs hallucinate calculations when presented with raw tabular data in-context, and fail to respect strict filtering parameters. The LLM does not, and cannot, calculate numerical weather truth. It needs an architecture that strictly separates numerical computation from semantic synthesis.
+              Windy sends calculation requests to DuckDB, where it can apply explicit filters and count the rows used. The language model helps route the question and explain the result.
             </p>
           </div>
         </CaseSection>
@@ -120,7 +120,7 @@ export const WindyCaseStudy = () => {
           </div>
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
-              Windy is an agentic aviation-weather intelligence system. It routes natural-language questions through a strict pipeline:
+              Windy sends each question through these steps:
             </p>
             <ul className="font-mono text-[11px] md:text-xs space-y-3 mt-6 mb-8 text-white/70 bg-white/5 border border-white/10 p-6 md:p-8">
               <li><strong>Intent Classification:</strong> Identifies if the user needs pattern discovery, aggregation, multi-airport comparison, or domain knowledge.</li>
@@ -137,7 +137,7 @@ export const WindyCaseStudy = () => {
           <SectionHeader number="04" title="Deterministic Analytics" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
-              LLMs are not calculators. In Windy, the typed analytics tools entirely own:
+              The typed analytics tools handle:
             </p>
             <ul className="space-y-2 mt-4 mb-6 list-disc list-inside">
               <li>Timeframe and airport filtering</li>
@@ -156,7 +156,7 @@ export const WindyCaseStudy = () => {
           <SectionHeader number="05" title="Numerical Data vs RAG Boundary" />
           <div className="bg-accent/5 border-l-2 border-accent p-6 md:p-10 mb-8">
             <p className="font-light text-lg leading-relaxed text-white/90">
-              The 15 million structured sensor observations are NEVER placed in the vector database. RAG indexes text documentation only.
+              DuckDB holds the 15 million structured observations. The vector index holds reference documents.
             </p>
           </div>
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
@@ -180,14 +180,14 @@ export const WindyCaseStudy = () => {
               To maintain responsive API times, the ML pipeline intentionally samples at most <strong>5,000</strong> eligible observations. The API explicitly reports both <code>rows_used</code> and <code>total_eligible</code> to the UI.
             </p>
             <p className="text-sm mt-4 text-white/60">
-              These clusters are descriptive mathematical patterns. They are not certified weather labels or forecasting models.
+              The clusters describe patterns in the sampled observations. They are exploratory and have no forecasting role.
             </p>
           </div>
         </CaseSection>
 
         {/* 07 ANALYTICS & INSIGHTS */}
         <CaseSection>
-          <SectionHeader number="07" title="Analytics & Decision Insights" />
+          <SectionHeader number="07" title="Showing the evidence" />
           <div className="w-full h-auto aspect-[16/10] md:aspect-[16/9] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
             <VisualSlot src="/assets/projects/windy/windy-analytics-decision-insights.png" alt="Analytics and decision insights showing grounded synthesis and deterministic evidence bounds." className="h-full w-full" objectFit="contain" />
           </div>
@@ -200,13 +200,13 @@ export const WindyCaseStudy = () => {
 
         {/* 08 AGENT ACTIVITY */}
         <CaseSection>
-          <SectionHeader number="08" title="Agent Activity / SSE" />
+          <SectionHeader number="08" title="Streaming progress" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
               The Next.js UI connects to the FastAPI backend via Server-Sent Events (SSE). The activity stream broadcasts application telemetry: intent classification, tool execution, retrieval, analysis, and synthesis phases.
             </p>
             <p>
-              Crucially, this is application telemetry, not raw LLM thought. The site does not expose prompts, scratchpads, or provider traces, ensuring the user interface remains focused on meteorological insights rather than raw model debugging.
+              The stream tells users which stage is running and which tools were called. The interface keeps attention on the observations and sources.
             </p>
           </div>
         </CaseSection>
@@ -240,7 +240,7 @@ export const WindyCaseStudy = () => {
           <h3 className="font-mono text-xs tracking-widest text-white/70 uppercase mb-4">Windy</h3>
           <p className="font-mono text-[10px] text-accent mb-8">METEOROLOGICAL ANALYTICS &middot; 2026</p>
           <h2 className="text-xl md:text-2xl font-display uppercase tracking-tight text-white/90 mb-16 max-w-2xl">
-            Agentic Aviation Weather Intelligence
+            Ask questions about airport weather
           </h2>
           
           <div className="flex flex-col sm:flex-row gap-8 items-center">

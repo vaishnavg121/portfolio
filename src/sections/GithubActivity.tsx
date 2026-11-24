@@ -134,13 +134,13 @@ export const GithubActivity = () => {
               <div>
                 <div className="flex flex-wrap items-center gap-2 lg:gap-3 mb-3">
                   <h2 className="chapter-heading">
-                    Development Activity
+                    GitHub activity
                   </h2>
                   <div className="hidden h-[1px] w-12 bg-white/10 lg:block"></div>
-                  <span className="text-[10px] font-mono text-text-muted opacity-50 uppercase tracking-widest">Activity_Matrix // {calendarData?.currentYear || new Date().getFullYear()}</span>
+                  <span className="text-[10px] font-mono text-text-muted opacity-50 uppercase tracking-widest">{calendarData?.currentYear || new Date().getFullYear()}</span>
                 </div>
                 <h3 className="font-mono text-xs uppercase tracking-widest text-text-muted">
-                  System Commits
+                  Contribution calendar
                 </h3>
               </div>
               <div className="text-xs font-mono mt-6 md:mt-0 flex flex-col items-start md:items-end border-l md:border-l-0 md:border-r border-[#cc3333]/20 pl-4 md:pl-0 md:pr-4">
@@ -165,11 +165,11 @@ export const GithubActivity = () => {
             <div ref={calendarViewport} className="w-full overflow-x-auto pb-4 lg:pb-8 pt-3 lg:pt-4 custom-scrollbar relative md:[&::-webkit-scrollbar]:hidden" tabIndex={0} role="region" aria-label="Contribution calendar, scroll horizontally for more dates" data-anchor="github-calendar-center">
               {isLoading ? (
                 <div className="h-[150px] flex items-center justify-center font-mono text-xs text-text-muted tracking-widest">
-                  [ FETCHING_DATA ]
+                  Loading contributions…
                 </div>
               ) : !calendarData || calendarData.grid.length === 0 ? (
                 <div className="h-[150px] flex items-center justify-center font-mono text-xs text-text-muted tracking-widest">
-                  [ DATA_UNAVAILABLE // PENDING_TOKEN ]
+                  The contribution calendar is unavailable right now.
                 </div>
               ) : (
                 <div className="min-w-max flex flex-col">
@@ -257,7 +257,7 @@ export const GithubActivity = () => {
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.04] pt-8 mt-2 relative z-20">
               <div className="text-[9px] font-mono text-text-muted/40 uppercase tracking-widest flex items-center gap-2">
-                365D TRACE <span className="opacity-30">{"///"}</span> <span className="text-text-muted/20">CODE {"//"} BUILD {"//"} ITERATE</span>
+                Past year <span className="opacity-30">{"///"}</span> <span className="text-text-muted/20"></span>
               </div>
               <div className="flex items-center gap-2 text-[9px] font-mono text-text-muted">
                 <span className="opacity-40">LESS</span>

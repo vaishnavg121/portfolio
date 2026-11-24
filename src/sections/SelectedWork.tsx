@@ -53,7 +53,7 @@ function ProjectAction({ project }: { project: Project }) {
     <MagneticEffect intensity={0.24}>
       <Link href={`/work/${project.slug}`} data-cursor="VIEW" aria-label={"View project: " + project.title}
         className="project-action portfolio-control group inline-flex min-h-11 items-center gap-3 px-3.5 font-mono text-xs uppercase tracking-wide">
-        View Project <MoveRight className="size-4 text-accent transition-transform group-hover:translate-x-1" />
+        Read case study <MoveRight className="size-4 text-accent transition-transform group-hover:translate-x-1" />
       </Link>
     </MagneticEffect>
   );
@@ -193,7 +193,7 @@ export const SelectedWork = () => {
                     <div className="pointer-events-none absolute inset-0" aria-hidden="true">
                       {visible && project.Effect && <project.Effect />}
                     </div>
-                    <div className="project-scene-theme font-mono text-[9px] uppercase tracking-wide">{project.theme}</div>
+                    <div className="project-scene-theme font-mono text-[9px] tracking-wide">{project.year} · {project.status}</div>
                     <div className="project-pipeline relative z-10 w-full max-w-sm">
                       {project.assets?.diagram ? (
                         <div className="relative aspect-square w-full">
@@ -202,7 +202,7 @@ export const SelectedWork = () => {
                       ) : (
                         <>
                           <p className="mb-3 flex items-center gap-2.5 font-mono text-[10px] uppercase tracking-widest text-text-muted">
-                            <span className="size-1.5 bg-accent" /> System Pipeline
+                            <span className="size-1.5 bg-accent" /> How it works
                           </p>
                           <div className="flex flex-col">
                             {project.architecture.map((node, index) => {

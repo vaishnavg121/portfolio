@@ -175,7 +175,7 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
         <div className="chat-heading flex shrink-0 items-center justify-between px-4 lg:p-4 border-b border-border bg-surface">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-accent" />
-            <h3 id="chat-title" className="font-mono text-xs uppercase tracking-widest text-text-primary">ASK / VAISHNAV</h3>
+            <h3 id="chat-title" className="font-mono text-xs uppercase tracking-widest text-text-primary">Ask Vaishnav</h3>
           </div>
           <button type="button" aria-label="Close chat" onClick={onClose} className="grid size-11 lg:size-auto place-items-center text-text-muted hover:text-text-primary transition-colors">
             <X className="w-4 h-4" />
@@ -186,7 +186,7 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
         <div ref={messagesRef} className="min-h-0 flex-1 overscroll-contain overflow-y-auto p-4 flex flex-col gap-6 custom-scrollbar text-sm font-sans pb-4">
           {messages.length === 0 ? (
             <div className="flex flex-col gap-6 pt-2 text-text-muted">
-              <p className="leading-relaxed text-sm">Ask about projects, engineering, AI/ML, finance, robotics or Vaishnav.</p>
+              <p className="leading-relaxed text-sm">Ask about my projects, coursework, or work with ThriveForce.</p>
               <div className="flex flex-col gap-2">
                 {suggestions.map((s, i) => (
                   <button

@@ -11,16 +11,16 @@ if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
 const RULES = [
   {
-    num: "RULE 01",
-    text: "Never trust an unvalidated model output."
+    num: "Weather data",
+    text: "At IMD Pune, gaps and inconsistent timestamps took as much attention as the forecast models."
   },
   {
-    num: "RULE 02",
-    text: "If the evidence doesn't exist, don't invent it."
+    num: "Legal research",
+    text: "In Swa.Neeti, I keep evidence about what happened separate from the sources that establish the law."
   },
   {
-    num: "RULE 03",
-    text: "Fail closed when the cost of being wrong is high."
+    num: "Money",
+    text: "In Spenza, I store money in minor units so that splitting an expense keeps every last paisa accounted for."
   }
 ];
 
@@ -109,8 +109,7 @@ export const EngineeringNotes = () => {
             </div>
 
             <div className="mt-9 pt-5 lg:mt-16 lg:pt-8 border-t border-[#333] flex justify-between items-center opacity-40">
-              <div className="font-mono text-xs">CLASSIFIED / PERSONAL</div>
-              <div className="font-mono text-xs text-accent">VG-121</div>
+              <div className="font-mono text-xs">Notes from the projects</div>
             </div>
           </div>
         </motion.div>

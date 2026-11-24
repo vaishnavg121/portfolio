@@ -49,9 +49,7 @@ export const Hero = () => {
             transition={{ duration: reduceMotion ? 0 : 0.4, ease: entranceEase }}
             className="hero-signature mb-4 flex items-center gap-3 font-mono text-[10px] uppercase tracking-wider text-text-muted sm:mb-6 sm:text-xs"
           >
-            <span>SYS_INIT</span>
-            <span className="h-px w-6 shrink-0 bg-accent lg:w-12" />
-            <span>{profile.positioning.split(" interested in ")[0]}</span>
+            <span>{profile.positioning}</span>
           </motion.div>
           <h1 className="hero-name font-display font-medium uppercase">
             <span><motion.span
@@ -77,8 +75,7 @@ export const Hero = () => {
             data-familiar-avoid
           >
             <h2 className="hero-positioning text-lg leading-snug text-text-primary sm:text-xl lg:text-2xl">
-              Building at the intersection of <br />
-              <span className="italic font-serif">INTELLIGENCE, MARKETS & MACHINES.</span>
+              Hi, I’m Vaishnav.
             </h2>
             <p className="hero-introduction whitespace-pre-line text-[0.9375rem] leading-relaxed text-text-muted">{profile.about}</p>
 
@@ -86,13 +83,12 @@ export const Hero = () => {
               <MagneticEffect intensity={0.24}>
                 <button type="button" onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: reduceMotion ? "instant" : "smooth" })}
                   className="portfolio-control group flex min-h-11 items-center gap-2 px-3.5" data-cursor="VIEW">
-                  Explore Work <MoveRight className="size-4 text-accent transition-transform group-hover:translate-x-1" />
+                  View projects <MoveRight className="size-4 text-accent transition-transform group-hover:translate-x-1" />
                 </button>
               </MagneticEffect>
               <a href={socials.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub Profile" className="inline-flex min-h-11 items-center text-text-muted transition-colors hover:text-text-primary" data-cursor="VIEW">GitHub ↗</a>
               <a href={socials.linkedin} target="_blank" rel="noopener noreferrer" data-familiar-reaction="wave" aria-label="LinkedIn Profile" className="inline-flex min-h-11 items-center text-text-muted transition-colors hover:text-text-primary" data-cursor="VIEW">LinkedIn ↗</a>
             </div>
-            <p className="hero-annotation mt-3 inline-block font-hand text-xl text-accent md:text-2xl">{`// curiosity usually gets out of hand`}</p>
           </motion.div>
 
           <div className="hero-card-grid min-w-0" data-familiar-avoid>

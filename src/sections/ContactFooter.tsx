@@ -37,7 +37,7 @@ export const ContactFooter = () => {
             className="contact-label text-text-muted font-mono text-sm tracking-widest uppercase relative z-10 mb-5 lg:mb-8"
             data-familiar-avoid
           >
-            Initiate communication sequence
+            Contact
           </p>
 
           <h2 className="text-[clamp(1.9rem,8vw,3.5rem)] lg:text-7xl font-display font-medium mb-6 tracking-tight relative">
@@ -45,14 +45,14 @@ export const ContactFooter = () => {
               className="contact-build inline-block relative z-10"
               data-familiar-avoid
             >
-              LET&apos;S BUILD SOMETHING <br className="hidden md:block" />
+              Have a project in mind? <br className="hidden md:block" />
             </span>
 
             <span
               className="contact-interesting text-accent italic font-serif inline-block relative z-10"
               data-familiar-avoid
             >
-              INTERESTING.
+              I’d like to hear about it.
             </span>
           </h2>
 
@@ -84,7 +84,7 @@ export const ContactFooter = () => {
 
         <div className="w-full border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between font-mono text-xs text-text-muted tracking-widest uppercase">
           <div>{profile.displayName}</div>
-          <div className="mt-4 md:mt-0">2026 // ALL SYSTEMS NOMINAL</div>
+          <div className="mt-4 md:mt-0">Portfolio · 2026</div>
         </div>
       </div>
     </footer>

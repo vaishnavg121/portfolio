@@ -34,7 +34,7 @@ export const ChatbotLauncher = () => {
             >
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
               <span className="lg:hidden">Ask</span>
-              <span className="hidden lg:inline">ASK / VAISHNAV</span>
+              <span className="hidden lg:inline">Ask Vaishnav</span>
             </motion.button>
           )}
         </AnimatePresence>
