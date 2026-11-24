@@ -1,59 +1,27 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { MagneticEffect } from "@/components/effects";
-import { useSectionVisibility } from "@/lib/visibility";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
 import { profile, socials } from "@/lib/profile";
 
 export const ContactFooter = () => {
   const containerRef = useRef<HTMLElement>(null);
-  const [mounted, setMounted] = useState(false);
-  const { ref: visibilityRef, isVisible } = useSectionVisibility("200px");
-  useEffect(() => {
-    setMounted(true);
-  }, []);
   useGSAP(() => {
-    if (!mounted || !isVisible || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: containerRef.current,
-          start: "top 70%",
-        }
-      });
-
-      tl.fromTo('.contact-label',
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }
-      )
-      .fromTo('.contact-build',
-        { opacity: 0, y: 40 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-        "-=0.4"
-      )
-      .fromTo('.contact-interesting',
-        { opacity: 0, x: -40, skewX: 10 },
-        { opacity: 1, x: 0, skewX: 0, duration: 0.8, ease: "power2.out" },
-        "-=0.6"
-      )
-      .fromTo('.contact-line',
-        { scaleX: 0 },
-        { scaleX: 1, duration: 0.8, ease: "power2.out" },
-        "-=0.4"
-      )
-      .fromTo('.contact-link',
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, stagger: 0.1, duration: 0.5, ease: "power2.out" },
-        "-=0.4"
-      );
+    const media = gsap.matchMedia();
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      const tl = gsap.timeline({ scrollTrigger: { trigger: containerRef.current, start: "top 82%", once: true } });
+      tl.from(".contact-label, .contact-build, .contact-interesting, .contact-link", {
+        opacity: 0.62, y: 12, duration: 0.46, stagger: 0.075, ease: "power3.out", clearProps: "transform,opacity",
+      }).from(".contact-line", { scaleX: 0, duration: 0.55, ease: "power2.out" }, 0.12);
     }, containerRef);
-
-    return () => ctx.revert();
-  }, { scope: containerRef, dependencies: [mounted, isVisible] });
+    return () => media.revert();
+  }, { scope: containerRef });
 
   const LINKS = [
     { name: "GitHub", display: "github.com/vaishnavg121", url: socials.github },
@@ -61,12 +29,12 @@ export const ContactFooter = () => {
   ];
 
   return (
-    <footer className="contact-section mobile-section lg:py-32 bg-surface relative overflow-hidden" id="contact" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
-      <div className="mobile-gutter container mx-auto lg:px-12 relative z-10 flex flex-col items-center text-center">
+    <footer className="contact-section portfolio-chapter chapter-divider relative overflow-hidden" id="contact" ref={containerRef}>
+      <div className="portfolio-frame relative z-10 flex flex-col items-center text-center">
 
         <div className="mb-8 lg:mb-16 relative">
           <p
-            className="contact-label text-text-muted font-mono text-sm tracking-widest uppercase relative z-10 mb-5 lg:mb-8 opacity-0 motion-reduce:opacity-100"
+            className="contact-label text-text-muted font-mono text-sm tracking-widest uppercase relative z-10 mb-5 lg:mb-8"
             data-familiar-avoid
           >
             Initiate communication sequence
@@ -74,14 +42,14 @@ export const ContactFooter = () => {
 
           <h2 className="text-[clamp(1.9rem,8vw,3.5rem)] lg:text-7xl font-display font-medium mb-6 tracking-tight relative">
             <span
-              className="contact-build inline-block relative z-10 opacity-0 motion-reduce:opacity-100"
+              className="contact-build inline-block relative z-10"
               data-familiar-avoid
             >
               LET&apos;S BUILD SOMETHING <br className="hidden md:block" />
             </span>
 
             <span
-              className="contact-interesting text-accent italic font-serif inline-block relative z-10 opacity-0 motion-reduce:opacity-100"
+              className="contact-interesting text-accent italic font-serif inline-block relative z-10"
               data-familiar-avoid
             >
               INTERESTING.
@@ -91,18 +59,18 @@ export const ContactFooter = () => {
           <div data-familiar-anchor className="absolute top-1/2 -right-32 w-4 h-4 pointer-events-none" />
         </div>
 
-        <div className="contact-line w-24 h-[1px] bg-border mb-7 lg:mb-16 origin-center scale-x-0 motion-reduce:scale-x-100" />
+        <div className="contact-line w-24 h-[1px] bg-border mb-7 lg:mb-16 origin-center" />
 
-        <div className="contact-actions flex flex-wrap justify-center gap-3 lg:gap-16 mb-8 lg:mb-32" data-familiar-avoid>
+        <div className="contact-actions flex flex-wrap justify-center gap-3 mb-10 lg:mb-16" data-familiar-avoid>
           {LINKS.map((link) => (
-            <div key={link.name} className="contact-link opacity-0 motion-reduce:opacity-100">
+            <div key={link.name} className="contact-link">
               <MagneticEffect intensity={0.4}>
                 <a
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer" data-familiar-reaction="wave"
                   aria-label={`${link.name} Profile`}
-                  className="text-text-primary hover:text-accent text-sm md:text-base font-mono tracking-wider transition-colors relative group block py-2 px-4 flex flex-col items-center gap-2"
+                  className="portfolio-control relative group flex flex-col items-center gap-2 px-4 py-3.5 font-mono tracking-wide"
                   data-cursor="VIEW"
                 >
                   <span className="font-bold text-lg">{link.name} ↗</span>

@@ -3,7 +3,9 @@
 import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { useSectionVisibility } from "@/lib/visibility";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
 import { education, experience, extracurricular } from "@/lib/profile";
 
@@ -36,106 +38,38 @@ const CHAPTERS = [
 
 export const ExperienceTimeline = () => {
   const containerRef = useRef<HTMLElement>(null);
-  const { ref: visibilityRef, isVisible } = useSectionVisibility("300px");
-
   useGSAP(() => {
-    if (!isVisible) return;
-
     const media = gsap.matchMedia();
-    media.add("(width < 64rem) and (prefers-reduced-motion: no-preference)", () => {
-      gsap.utils.toArray<HTMLElement>(".chapter-block").forEach((chapter) => {
-        gsap.fromTo(chapter.querySelector(".chap-content"), { opacity: 0.78, y: 10 }, {
-          opacity: 1, y: 0, duration: 0.45, ease: "power2.out",
-          scrollTrigger: { trigger: chapter, start: "top 87%", once: true },
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      for (const chapter of gsap.utils.toArray<HTMLElement>(".chapter-block")) {
+        gsap.from(chapter.querySelector(".chap-content"), {
+          opacity: 0.64, y: 12, duration: 0.5, ease: "power3.out", clearProps: "transform,opacity",
+          scrollTrigger: { trigger: chapter, start: "top 88%", once: true },
         });
-      });
+      }
       gsap.fromTo(".exp-timeline-rail-active", { scaleY: 0 }, {
         scaleY: 1, ease: "none",
-        scrollTrigger: { trigger: ".exp-timeline-container", start: "top 75%", end: "bottom 40%", scrub: true },
+        scrollTrigger: { trigger: ".exp-timeline-container", start: "top 72%", end: "bottom 56%", scrub: 0.45 },
       });
     }, containerRef);
-    media.add("(min-width: 64rem) and (prefers-reduced-motion: no-preference)", () => {
-      const chapters = gsap.utils.toArray('.chapter-block') as HTMLElement[];
-
-      chapters.forEach((chap) => {
-        const bgNum = chap.querySelector('.bg-num');
-        const content = chap.querySelector('.chap-content');
-
-        if (bgNum) {
-          gsap.fromTo(bgNum, { y: 150, opacity: 0 }, {
-            y: -100,
-            opacity: 0.1,
-            ease: "none",
-            scrollTrigger: {
-              trigger: chap,
-              start: "top bottom",
-              end: "bottom top",
-              scrub: 1.5,
-            }
-          });
-        }
-
-        if (content) {
-          gsap.fromTo(content,
-            { opacity: 0.2 },
-            {
-              opacity: 1,
-              ease: "power2.out",
-              scrollTrigger: {
-                trigger: chap,
-                start: "top 80%",
-                end: "top 30%",
-                scrub: true,
-              }
-            }
-          );
-
-          gsap.to(content, {
-            opacity: 0.45,
-            ease: "power2.in",
-            scrollTrigger: {
-              trigger: chap,
-              start: "bottom 50%",
-              end: "bottom 20%",
-              scrub: true,
-            }
-          });
-        }
-      });
-
-      gsap.fromTo('.exp-timeline-rail-active',
-        { scaleY: 0 },
-        {
-          scaleY: 1,
-          ease: "none",
-          scrollTrigger: {
-            trigger: '.exp-timeline-container',
-            start: "top 60%",
-            end: "bottom 80%",
-            scrub: true,
-          }
-        }
-      );
-    });
-
     return () => media.revert();
-  }, { scope: containerRef, dependencies: [isVisible] });
+  }, { scope: containerRef });
 
   return (
-    <section className="mobile-section lg:py-32 bg-background border-t border-border overflow-hidden relative" id="about" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
-      <div className="mobile-gutter container mx-auto lg:px-12 max-w-5xl relative z-10">
-        <h2 className="mobile-section-title lg:text-sm font-mono text-text-muted mb-8 lg:mb-24 tracking-widest uppercase border-b border-border pb-4 relative z-20">
+    <section className="portfolio-chapter chapter-divider experience-section overflow-hidden relative" id="about" ref={containerRef}>
+      <div className="portfolio-frame relative z-10">
+        <h2 className="chapter-heading mb-8 border-b border-border pb-4 relative z-20 lg:mb-16">
           Experience / Chapters
         </h2>
 
-        <div className="exp-timeline-container flex flex-col gap-8 max-lg:pl-5 lg:gap-40 relative">
+        <div className="exp-timeline-container flex flex-col gap-8 max-lg:pl-5 lg:gap-14 relative">
 
           <div className="absolute left-1 lg:left-[50%] top-0 bottom-0 w-[1px] bg-border/30 z-0" />
           <div className="exp-timeline-rail-active absolute left-1 lg:left-[50%] top-0 bottom-0 w-[1px] bg-accent z-0 origin-top" />
 
           {CHAPTERS.map((chapter, i) => (
-            <div key={chapter.num} className="relative group chapter-block max-lg:border-b max-lg:border-border max-lg:pb-6 max-lg:last:border-b-0 max-lg:last:pb-0">
-              <div className="bg-num absolute -top-3 right-0 lg:right-auto lg:-top-24 lg:-left-20 text-[56px] lg:text-[220px] font-display font-bold text-surface-elevated z-0 leading-none select-none transition-transform duration-700 group-hover:-translate-y-4">
+            <div key={chapter.num} className="relative chapter-block border-b border-border pb-6 last:border-b-0 last:pb-0 lg:pb-9">
+              <div className="bg-num absolute -top-3 right-0 lg:right-auto lg:-top-8 lg:-left-3 text-[56px] lg:text-[8.4rem] font-display font-bold text-surface-elevated z-0 leading-none select-none opacity-55">
                 0{i + 1}
               </div>
 

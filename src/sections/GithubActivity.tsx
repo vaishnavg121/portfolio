@@ -3,10 +3,13 @@
 import { useEffect, useState, useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { fetchGithubContributions, GithubCalendarData, GithubContribution } from "@/lib/actions/github";
 import { socials } from "@/lib/profile";
 import { THEME_ASSETS } from "@/lib/assets";
 import { useSectionVisibility } from "@/lib/visibility";
+
+if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
 export const GithubActivity = () => {
   const [calendarData, setCalendarData] = useState<GithubCalendarData | null>(null);
@@ -14,11 +17,9 @@ export const GithubActivity = () => {
   const [isLoading, setIsLoading] = useState(true);
   const calendarViewport = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLElement>(null);
-  const [mounted, setMounted] = useState(false);
   const { ref: visibilityRef, isVisible } = useSectionVisibility("300px");
 
   useEffect(() => {
-    setMounted(true);
     async function loadData() {
       try {
         const data = await fetchGithubContributions("vaishnavg121");
@@ -33,25 +34,15 @@ export const GithubActivity = () => {
   }, []);
 
   useGSAP(() => {
-    if (!mounted || !isVisible) return;
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const compact = window.matchMedia("(width < 64rem)").matches;
-    const ctx = gsap.context(() => {
-      gsap.fromTo('.gh-bg-text',
-        { y: 150, opacity: 0 },
-        { y: -50, opacity: 0.05, ease: "none", scrollTrigger: { trigger: containerRef.current, start: "top bottom", end: "bottom top", scrub: 1 } }
-      );
-
-      gsap.fromTo('.gh-panel',
-        compact ? { y: 14, opacity: 0.72 } : { y: 50, clipPath: "inset(10% 10% 10% 10%)", opacity: 0 },
-        { y: 0, ...(compact ? {} : { clipPath: "inset(0% 0% 0% 0%)" }), opacity: 1, duration: compact ? 0.52 : 1.2, ease: "power3.out", scrollTrigger: { trigger: containerRef.current, start: "top 75%" } }
-      );
+    const media = gsap.matchMedia();
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      gsap.from(".gh-panel", {
+        opacity: 0.7, y: 16, duration: 0.58, ease: "power3.out", clearProps: "transform,opacity",
+        scrollTrigger: { trigger: containerRef.current, start: "top 84%", once: true },
+      });
     }, containerRef);
-
-    return () => ctx.revert();
-  }, { scope: containerRef, dependencies: [mounted, isVisible] });
+    return () => media.revert();
+  }, { scope: containerRef });
 
   const getColor = (level: number) => {
     if (level === 0) return "bg-[#1a1a1a]";
@@ -62,28 +53,10 @@ export const GithubActivity = () => {
   };
 
   return (
-    <section className="mobile-section lg:py-32 bg-[#050505] relative overflow-hidden group/section border-y border-white/[0.02]" id="github" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
-      <div className="gh-bg-text absolute top-10 left-0 right-0 text-[10vw] font-display font-bold text-white whitespace-nowrap opacity-0 pointer-events-none select-none z-0">
-        DEVELOPMENT ACTIVITY
-      </div>
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes atmosphere-breathe {
-          0%, 100% { opacity: 0.6; }
-          50% { opacity: 1; }
-        }
-        @keyframes ink-drift {
-          0%, 100% { transform: translate3d(0, 0, 0); }
-          50% { transform: translate3d(0, 3px, 0); }
-        }
-        .anim-atmosphere { animation: atmosphere-breathe 8s ease-in-out infinite; }
-        .anim-ink-drift { animation: ink-drift 12s ease-in-out infinite; }
-        @media (prefers-reduced-motion: reduce) {
-          .anim-atmosphere, .anim-ink-drift { animation: none !important; }
-        }
-      `}} />
-      <div className="mobile-gutter container mx-auto md:px-8 max-w-[1100px]">
+    <section className="portfolio-chapter chapter-divider relative overflow-hidden group/section" id="github" data-atmosphere-active={isVisible || undefined} ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
+      <div className="portfolio-frame">
 
-        <div className="gh-panel relative rounded-[16px] md:rounded-[24px] overflow-hidden border border-white/[0.05] bg-[#0c0d0e] shadow-[0_32px_100px_rgba(0,0,0,0.5)]">
+        <div className="gh-panel relative overflow-hidden border border-border bg-[#110d0e]">
 
           <div className="absolute inset-0 pointer-events-none opacity-10 mix-blend-overlay" style={{ backgroundImage: `url(${THEME_ASSETS.github.grain})`, backgroundSize: '250px' }} />
 
@@ -160,13 +133,13 @@ export const GithubActivity = () => {
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 lg:mb-16">
               <div>
                 <div className="flex flex-wrap items-center gap-2 lg:gap-3 mb-3">
-                  <h2 className="text-sm font-mono text-text-muted tracking-widest uppercase">
+                  <h2 className="chapter-heading">
                     Development Activity
                   </h2>
                   <div className="hidden h-[1px] w-12 bg-white/10 lg:block"></div>
                   <span className="text-[10px] font-mono text-text-muted opacity-50 uppercase tracking-widest">Activity_Matrix // {calendarData?.currentYear || new Date().getFullYear()}</span>
                 </div>
-                <h3 className="text-3xl font-display font-medium text-text-primary">
+                <h3 className="font-mono text-xs uppercase tracking-widest text-text-muted">
                   System Commits
                 </h3>
               </div>
@@ -279,7 +252,7 @@ export const GithubActivity = () => {
               <button type="button" onClick={() => {
                 const track = calendarViewport.current;
                 if (track) track.scrollTo({ left: track.scrollWidth, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
-              }} className="min-h-11 shrink-0 border border-border px-3 font-mono text-xs text-text-primary">Latest</button>
+              }} className="portfolio-control min-h-11 shrink-0 px-3 font-mono text-xs">Latest</button>
               </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.04] pt-8 mt-2 relative z-20">

@@ -5,13 +5,7 @@ import React, { useRef } from 'react';
 import { VisualSlot } from './VisualSlot';
 import Link from 'next/link';
 import { MoveLeft, ExternalLink } from 'lucide-react';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger, useGSAP);
-}
+import { useCaseMotion } from "./useCaseMotion";
 
 const SectionHeader = ({ number, title }: { number: string, title: string }) => (
   <div className="mb-5 lg:mb-14 case-section-header">
@@ -19,7 +13,7 @@ const SectionHeader = ({ number, title }: { number: string, title: string }) => 
       <span>{number}</span>
       <div className="w-12 h-[1px] bg-accent/50" />
     </div>
-    <h2 className="text-xl md:text-2xl font-display uppercase tracking-wider text-white/90">{title}</h2>
+    <h2 className="chapter-heading uppercase">{title}</h2>
   </div>
 );
 
@@ -32,47 +26,19 @@ const CaseSection = ({ children, className = "" }: { children: React.ReactNode, 
 export const SpenzaCaseStudy = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useGSAP(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const compact = window.matchMedia("(width < 64rem)").matches;
-    const ctx = gsap.context(() => {
-      gsap.from('.hero-elem', {
-        y: compact ? 12 : 40,
-        opacity: compact ? 0.58 : 0,
-        duration: compact ? 0.55 : 1.2,
-        stagger: 0.1,
-        ease: "power3.out",
-        delay: 0.2
-      });
-
-      (gsap.utils.toArray('.case-section') as HTMLElement[]).forEach((section) => {
-        gsap.from(section, {
-          y: compact ? 12 : 40,
-          opacity: compact ? 0.72 : 0,
-          duration: compact ? 0.46 : 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: section,
-            start: "top 85%",
-          }
-        });
-      });
-    }, containerRef);
-    return () => ctx.revert();
-  }, { scope: containerRef });
+  useCaseMotion(containerRef);
 
   return (
-    <main className="case-page bg-[#020202] min-h-screen text-[#e5e5e5] selection:bg-accent-soft selection:text-accent font-sans" ref={containerRef}>
+    <main className="case-page min-h-screen text-[#e5e5e5] selection:bg-accent-soft selection:text-accent font-sans" ref={containerRef}>
       
       {/* 01 HERO */}
-      <section className="case-cover mobile-gutter lg:pt-48 lg:pb-32 lg:px-12 max-w-7xl mx-auto border-b border-white/5 relative">
-        <Link href="/#work" className="hero-elem inline-flex min-h-11 lg:min-h-0 items-center gap-2 text-text-muted hover:text-white font-mono text-xs tracking-widest uppercase mb-4 lg:mb-20 group transition-colors" data-familiar-reaction="wave">
+      <section className="case-cover portfolio-frame relative">
+        <Link href="/#work" className="hero-elem inline-flex min-h-11 lg:min-h-0 items-center gap-2 text-text-muted hover:text-white font-mono text-xs tracking-widest uppercase mb-4 lg:mb-10 group transition-colors" data-familiar-reaction="wave">
           <MoveLeft className="w-4 h-4 group-hover:-translate-x-2 transition-transform" />
           Back to Work
         </Link>
 
-        <div className="flex flex-col lg:flex-row gap-5 lg:gap-24">
+        <div className="case-cover-layout flex flex-col lg:flex-row">
           <div className="lg:w-1/3 flex flex-col justify-center">
             <div className="hero-elem font-mono text-accent text-xs tracking-widest mb-6 uppercase flex items-center gap-4">
               <div className="w-8 h-[1px] bg-accent/50" />
@@ -118,7 +84,7 @@ export const SpenzaCaseStudy = () => {
         </div>
       </section>
 
-      <div className="case-body mobile-gutter max-w-4xl mx-auto lg:px-12 lg:py-32 lg:space-y-40">
+      <div className="case-body portfolio-frame">
         
         {/* 01 PROBLEM */}
         <CaseSection>

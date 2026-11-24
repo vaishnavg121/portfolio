@@ -4,8 +4,10 @@ import { motion } from "framer-motion";
 import { InkReveal, PaperNoise } from "@/components/effects";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { useRef, useState, useEffect } from "react";
-import { useSectionVisibility } from "@/lib/visibility";
+import { useRef } from "react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
 const RULES = [
   {
@@ -24,48 +26,23 @@ const RULES = [
 
 export const EngineeringNotes = () => {
   const containerRef = useRef<HTMLElement>(null);
-  const [mounted, setMounted] = useState(false);
-  const { ref: visibilityRef, isVisible } = useSectionVisibility("300px");
-  useEffect(() => {
-    setMounted(true);
-  }, []);
   useGSAP(() => {
-    if (!mounted || !isVisible || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo('.notes-bg-text',
-        { x: -100, opacity: 0 },
-        { x: 50, opacity: 0.03, ease: "none", scrollTrigger: { trigger: containerRef.current, start: "top bottom", end: "bottom top", scrub: 1 } }
-      );
-
-      gsap.fromTo('.notes-divider-rail',
-        { scaleY: 0 },
-        { scaleY: 1, duration: 1.5, ease: "power2.out", scrollTrigger: { trigger: containerRef.current, start: "top 70%" } }
-      );
-
-      const rules = gsap.utils.toArray('.rule-item') as HTMLElement[];
-      gsap.fromTo(rules,
-        { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, stagger: 0.2, duration: 0.8, ease: "power2.out", scrollTrigger: { trigger: containerRef.current, start: "top 60%" } }
-      );
-
-      const lines = gsap.utils.toArray('.rule-underline') as HTMLElement[];
-      gsap.fromTo(lines,
-        { width: 0 },
-        { width: "100%", stagger: 0.2, delay: 0.4, duration: 0.6, ease: "power3.out", scrollTrigger: { trigger: containerRef.current, start: "top 60%" } }
-      );
-
-      gsap.to('.rule-item:not(:last-child)', {
-        opacity: 0.2,
-        scrollTrigger: { trigger: containerRef.current, start: "bottom 80%", end: "bottom 50%", scrub: true }
+    const media = gsap.matchMedia();
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      const timing = { trigger: containerRef.current, start: "top 79%", once: true };
+      gsap.from(".rule-item", {
+        opacity: 0.58, y: 10, stagger: 0.13, duration: 0.56, ease: "power2.out",
+        clearProps: "transform,opacity", scrollTrigger: timing,
+      });
+      gsap.fromTo(".rule-underline", { scaleX: 0 }, {
+        scaleX: 1, stagger: 0.13, delay: 0.18, duration: 0.58, ease: "power3.out", scrollTrigger: timing,
       });
     }, containerRef);
-
-    return () => ctx.revert();
-  }, { scope: containerRef, dependencies: [mounted, isVisible] });
+    return () => media.revert();
+  }, { scope: containerRef });
 
   return (
-    <section id="notes" className="notes-section mobile-section lg:py-32 bg-background relative flex justify-center overflow-hidden" ref={(el) => { containerRef.current = el; visibilityRef(el); }}>
+    <section id="notes" className="notes-section portfolio-chapter chapter-divider relative flex justify-center overflow-hidden" ref={containerRef}>
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at center, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
 
       <div className="notes-bg-text absolute top-20 left-0 text-[12vw] font-display font-bold text-white whitespace-nowrap opacity-0 pointer-events-none select-none z-0">
@@ -76,11 +53,11 @@ export const EngineeringNotes = () => {
 
       <InkReveal>
         <motion.div
-          initial={{ opacity: 0, rotate: -2, y: 50 }}
-          whileInView={{ opacity: 1, rotate: 0, y: 0 }}
+          initial={{ opacity: 0.78, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-          className="notes-page lg:w-[90%] max-w-2xl bg-[#0a0a0a] border border-[#333] shadow-2xl relative mobile-card-pad lg:p-16 overflow-hidden"
+          transition={{ duration: 0.54, ease: "easeOut" }}
+          className="notes-page lg:w-[90%] max-w-2xl border shadow-2xl relative mobile-card-pad lg:p-16 overflow-hidden"
           style={{
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255,255,255,0.05) inset"
           }}
@@ -109,7 +86,7 @@ export const EngineeringNotes = () => {
               {RULES.map((rule, idx) => (
                 <div
                   key={idx}
-                  className="rule-item relative group cursor-default opacity-0 motion-reduce:opacity-100"
+                  className="rule-item relative group cursor-default"
                   onMouseEnter={(e) => {
                     window.dispatchEvent(new CustomEvent("companionInteract", {
                       detail: { type: "anchor-hover", target: e.currentTarget }
@@ -119,9 +96,9 @@ export const EngineeringNotes = () => {
                   <div className="text-accent font-mono text-xs tracking-widest mb-2 opacity-80 group-hover:opacity-100 transition-opacity">
                     {rule.num}
                   </div>
-                  <div className="text-lg md:text-2xl text-text-muted font-light leading-relaxed font-hand relative inline-block">
+                  <div className="text-xl md:text-3xl text-text-primary font-light leading-relaxed font-hand relative inline-block">
                     {rule.text}
-                    <span className="rule-underline absolute -bottom-1 left-0 w-0 h-[1px] bg-accent/40 transition-all duration-500 ease-out" />
+                    <span className="rule-underline absolute -bottom-1 left-0 w-full h-px origin-left bg-accent/35" />
                   </div>
                   <div className="absolute -left-12 top-2 text-[#222] font-mono text-sm opacity-50 hidden md:block">
                     {(idx * 13).toString().padStart(3, '0')}
