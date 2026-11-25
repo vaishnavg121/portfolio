@@ -132,7 +132,24 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
       })
       .catch(() => {
         if (!loading.signal.aborted) showFallback();
+      })
+      .finally(() => {
+        if (request === loading) request = undefined;
       });
+  }
+
+  function onPageHide() {
+    pause();
+    request?.abort();
+    if (!renderer) requested = "";
+  }
+
+  function onPageShow(event: PageTransitionEvent) {
+    if (!event.persisted) return;
+    const { top, right, bottom, left } = root.getBoundingClientRect();
+    visible = top < window.innerHeight && right > 0 && bottom > 0 && left < window.innerWidth;
+    if (!renderer) requested = "";
+    reconcile();
   }
 
   function at(event: PointerEvent, strength: number): Disturbance {
@@ -225,6 +242,8 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
   root.addEventListener("pointercancel", onCancel, passive);
   root.addEventListener("lostpointercapture", onCancel, passive);
   document.addEventListener("visibilitychange", reconcile, { signal });
+  window.addEventListener("pagehide", onPageHide, { signal });
+  window.addEventListener("pageshow", onPageShow, { signal });
   window.addEventListener("resize", sizeCanvas, passive);
   reduced.addEventListener("change", reconcile, { signal });
   wide.addEventListener("change", reconcile, { signal });

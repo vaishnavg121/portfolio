@@ -56,21 +56,49 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
   const styles = [...buckets.values()];
   const reach = columns * 0.134;
   const reachSquared = reach * reach;
+  let scaleX = 1;
+  let scaleY = 1;
+  let redrawAll = true;
+  let dirtyLeft = Infinity;
+  let dirtyTop = Infinity;
+  let dirtyRight = -Infinity;
+  let dirtyBottom = -Infinity;
   x.set(homeX);
   y.set(homeY);
 
   function paint() {
-    if (!context) return;
-    context.clearRect(0, 0, columns, rows);
+    if (!context || (!redrawAll && dirtyLeft === Infinity)) return;
+
+    // Pad for the dot radius and align the clip to the actual backing pixels.
+    const left = redrawAll ? 0 : Math.floor((dirtyLeft - 1) * scaleX) / scaleX;
+    const top = redrawAll ? 0 : Math.floor((dirtyTop - 1) * scaleY) / scaleY;
+    const right = redrawAll ? columns : Math.ceil((dirtyRight + 1) * scaleX) / scaleX;
+    const bottom = redrawAll ? rows : Math.ceil((dirtyBottom + 1) * scaleY) / scaleY;
+    if (!redrawAll) {
+      context.save();
+      context.beginPath();
+      context.rect(left, top, right - left, bottom - top);
+      context.clip();
+    }
+    context.clearRect(left, top, right - left, bottom - top);
+
     for (const { indices, radius, ink } of styles) {
       context.beginPath();
       for (const index of indices) {
-        context.moveTo(x[index] + radius, y[index]);
-        context.arc(x[index], y[index], radius, 0, Math.PI * 2);
+        const px = x[index];
+        const py = y[index];
+        if (px + radius >= left && px - radius <= right && py + radius >= top && py - radius <= bottom) {
+          context.moveTo(px + radius, py);
+          context.arc(px, py, radius, 0, Math.PI * 2);
+        }
       }
       context.fillStyle = ink;
       context.fill();
     }
+    if (!redrawAll) context.restore();
+    redrawAll = false;
+    dirtyLeft = dirtyTop = Infinity;
+    dirtyRight = dirtyBottom = -Infinity;
   }
 
   return {
@@ -80,7 +108,10 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
       const pixelHeight = Math.max(1, Math.round(height * density));
       if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
       if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
-      context.setTransform(pixelWidth / columns, 0, 0, pixelHeight / rows, 0, 0);
+      scaleX = pixelWidth / columns;
+      scaleY = pixelHeight / rows;
+      context.setTransform(scaleX, 0, 0, scaleY, 0, 0);
+      redrawAll = true;
     },
     paint,
     scatter() {
@@ -90,12 +121,14 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
         x[index] = homeX[index] + (homeX[index] - columns * 0.55) * distance * 0.085;
         y[index] = homeY[index] + (homeY[index] - rows * 0.44) * distance * 0.085;
       }
+      redrawAll = true;
     },
     reset() {
       x.set(homeX);
       y.set(homeY);
       vx.fill(0);
       vy.fill(0);
+      redrawAll = true;
     },
     advance(step: number, disturbance: Disturbance | null) {
       const drag = DRAG ** step;
@@ -119,23 +152,33 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
           targetY += distance > 0.001 ? dy / distance * push : 0;
         }
 
-        const gapX = targetX - x[index];
-        const gapY = targetY - y[index];
+        const previousX = x[index];
+        const previousY = y[index];
+        const gapX = targetX - previousX;
+        const gapY = targetY - previousY;
         if (Math.abs(gapX) + Math.abs(gapY) + Math.abs(vx[index]) + Math.abs(vy[index]) < QUIET) {
           x[index] = targetX;
           y[index] = targetY;
           vx[index] = 0;
           vy[index] = 0;
-          continue;
+        } else {
+          vx[index] = (vx[index] + gapX * SPRING * step) * drag;
+          vy[index] = (vy[index] + gapY * SPRING * step) * drag;
+          x[index] += vx[index] * step;
+          y[index] += vy[index] * step;
+          moving = true;
         }
 
-        vx[index] = (vx[index] + gapX * SPRING * step) * drag;
-        vy[index] = (vy[index] + gapY * SPRING * step) * drag;
-        x[index] += vx[index] * step;
-        y[index] += vy[index] * step;
-        moving = true;
+        if (!redrawAll && (previousX !== x[index] || previousY !== y[index])) {
+          dirtyLeft = Math.min(dirtyLeft, previousX, x[index]);
+          dirtyTop = Math.min(dirtyTop, previousY, y[index]);
+          dirtyRight = Math.max(dirtyRight, previousX, x[index]);
+          dirtyBottom = Math.max(dirtyBottom, previousY, y[index]);
+        }
       }
 
+      // One complete resting frame restores every backing pixel after partial repaints.
+      if (!moving && !disturbance) redrawAll = true;
       return moving;
     },
   };

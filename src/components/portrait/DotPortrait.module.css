@@ -27,12 +27,12 @@
 .portrait[data-dot-ready] .picture { opacity: 0; }
 .portrait[data-dot-ready] .surface { visibility: visible; }
 
-@media (48rem <= width < 64rem) and (height <= 30rem) {
+@media (35rem <= width < 48rem) and (height <= 30rem), (48rem <= width < 64rem) {
   .portrait {
     position: absolute;
     inset-block-start: 49%;
     inset-inline-end: 0;
-    width: 20vw;
+    width: clamp(7.5rem, 20vw, 13rem);
     margin: 0;
     transform: translateY(-50%);
   }
