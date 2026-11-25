@@ -10,6 +10,7 @@ import { profile, socials } from "@/lib/profile";
 import { usePointer, MagneticEffect } from "@/components/effects";
 import { THEME_ASSETS } from "@/lib/assets";
 import { HeroBackground } from "@/components/HeroBackground";
+import { DotPortrait } from "@/components/portrait/DotPortrait";
 import { HeroCards } from "./HeroCards";
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
@@ -42,7 +43,7 @@ export const Hero = () => {
       <HeroBackground bgX={bgX} bgY={bgY} shouldReduceMotion={reduceMotion} />
 
       <div className="portfolio-frame hero-frame relative z-10">
-        <div className="hero-title-block min-w-0" data-familiar-avoid>
+        <div className="hero-title-block relative min-w-0" data-familiar-avoid>
           <motion.div
             initial={reduceMotion ? false : { opacity: 0.65, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
@@ -66,6 +67,7 @@ export const Hero = () => {
               transition={{ duration: reduceMotion ? 0 : 0.72, delay: reduceMotion ? 0 : 0.08, ease: entranceEase }}
             >{profile.name.split(" ")[2]}</motion.span></span>
           </h1>
+          <DotPortrait />
         </div>
 
         <div className="hero-lower">
