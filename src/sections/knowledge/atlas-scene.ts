@@ -354,8 +354,11 @@ export function createAtlasScene(
     // On short landscape screens, flatten the projection enough to use the width without clipping the atlas.
     stretch = height < 330 && width / height > 1.55 ? .81 : width < 575 ? 1.40 : 1;
     world = { width, height: height / stretch, scale: 1 };
-    defaultView = fitCamera(OVERVIEW_BOUNDS, world);
-    if(width<575)defaultView=cameraAt({x:-defaultView.x/defaultView.z,y:-defaultView.y/defaultView.z},defaultView.z*1.14);
+    const fittedOverview = fitCamera(OVERVIEW_BOUNDS, world);
+    const phone = width < 575;
+    const center = { x: -fittedOverview.x / fittedOverview.z, y: -fittedOverview.y / fittedOverview.z };
+    const scale = phone ? (width < 365 ? 1.13 : 1.20) : 1.12;
+    defaultView = cameraAt({ x: center.x - 14, y: center.y + (phone ? 23 : 26) }, fittedOverview.z * scale);
     if (fitted || wasUnmeasured) camera = fit();
     else {
       const [min,max] = zoomLimits();
