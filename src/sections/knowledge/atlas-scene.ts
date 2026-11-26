@@ -47,6 +47,7 @@ export function createAtlasScene(
   let lastImpulse = -Infinity;
   let nextImpulse = 0;
   let currentLens = PERSPECTIVE;
+  let lensAim = PERSPECTIVE;
   const impulseData = new Float32Array(16);
   const impulseTimes = new Float64Array(4).fill(-Infinity);
   const expansion = new Float32Array(ATLAS_TERRITORIES.length);
@@ -202,6 +203,11 @@ export function createAtlasScene(
       disturbed ||= age < 1.18;
     }
     const range=now-lastRender;
+    if(animated) {
+      const following=1-Math.exp(-Math.min(Math.max(range,12),60)/190);
+      currentLens += (lensAim-currentLens)*following;
+      if(Math.abs(lensAim-currentLens)<.6)currentLens=lensAim;
+    } else currentLens=PERSPECTIVE;
     const isActive=Boolean(motion||expanding||disturbed||progress<1);
     if(animated&&isActive&&lastRender>0&&range<160){
       slowFrames=range>27?slowFrames+1:Math.max(0,slowFrames-1);
@@ -237,7 +243,7 @@ export function createAtlasScene(
     stage.toggleAttribute("data-atlas-signal", signalling);
     stage.toggleAttribute("data-atlas-reacting",disturbed);
     stage.toggleAttribute("data-atlas-expanding",expanding);
-    if (animated && (motion || progress<1 || signalling || disturbed || expanding || pointer || now-hoverChange<680)) schedule();
+    if (animated && (motion || progress<1 || signalling || disturbed || expanding || pointer || now-hoverChange<680 || Math.abs(currentLens-lensAim)>1)) schedule();
     else if(animated) ambientTimer=window.setTimeout(schedule,48);
   }
 
@@ -307,9 +313,9 @@ export function createAtlasScene(
     height = h;
     // On short landscape screens, flatten the projection enough to use the width without clipping the atlas.
     stretch = height < 330 && width / height > 1.55 ? .81 : width < 575 ? 1.40 : 1;
-    currentLens = PERSPECTIVE;
     world = { width, height: height / stretch, scale: 1 };
     defaultView = fitCamera(OVERVIEW_BOUNDS, world);
+    if(width<575)defaultView=cameraAt({x:-defaultView.x/defaultView.z,y:-defaultView.y/defaultView.z},defaultView.z*1.14);
     if (fitted || wasUnmeasured) camera = fit();
     else {
       const [min,max] = zoomLimits();
@@ -341,6 +347,8 @@ export function createAtlasScene(
       window.cancelAnimationFrame(frameId);
       frameId = 0;
       clearGesture();
+      lensAim=PERSPECTIVE;
+      pointer=null;
       if (formationStart >= 0) formationStart = -Infinity;
       leaveMap();
     }
@@ -444,7 +452,7 @@ export function createAtlasScene(
     },
     track(point:Point|null) {
       pointer=point;
-      if(!point)previousPointer=null;
+      if(!point){previousPointer=null;lensAim=PERSPECTIVE;}
       schedule();
     },
     impulse(point:Point) { force(point,1.43); },
@@ -463,6 +471,7 @@ export function createAtlasScene(
         // Deform the surface as the visitor moves, without sending pointer frames through React.
         trackPointer(pointer);
       }
+      if(pointer.pointerType==="mouse"&&!touches.size&&!selection)lensAim=PERSPECTIVE+clamp(local(pointer).x/width,-.5,.5)*169;
       if (!touches.has(pointer.pointerId) || !inputStart) return;
       const position = local(pointer);
       touches.set(pointer.pointerId, position);

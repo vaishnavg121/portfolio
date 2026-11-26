@@ -183,8 +183,8 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
           if(traced<=0)return;
           const segments=bridge?67:41,trace=traced*traced*(3-2*traced);
           for(let j=0;j<=segments*trace;j++){
-            const t=j/segments,span=bridge&&j%7>4?.34:1;
-            emit(routePoint(p,q,t,bridge),(frame.selection ? .45 : .25)*span*(outgoing?trace:1),bridge?1.6:1.7,t);
+            const t=j/segments,span=bridge&&j%7>4?.40:1;
+            emit(routePoint(p,q,t,bridge),(frame.selection ? .61 : .28)*span*(outgoing?trace:1),bridge?1.85:1.9,t);
           }
           if(outgoing||!frame.selection||!frame.motion)return;
           const beat=(frame.signal-.18-i*.032)*1.32;

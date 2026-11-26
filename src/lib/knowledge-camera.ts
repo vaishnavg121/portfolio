@@ -3,6 +3,28 @@ export type Camera = Point & { z: number };
 export type Frame = { width: number; height: number; scale: number };
 export type Bounds = { left: number; right: number; top: number; bottom: number };
 export type GestureSample = { center: Point; span: number };
+export type ReliefPoint = Point & { z: number };
+
+export function reliefLens(pitch: number, yaw: number) {
+  const COS = Math.cos(pitch), SIN = Math.sin(pitch);
+  const CY = Math.cos(yaw), SY = Math.sin(yaw);
+  return {
+    COS, SIN, CY, SY,
+    project({ x, y, z }: ReliefPoint, focalDistance: number): Point {
+      const u = x * CY - y * SY;
+      const v = x * SY + y * CY;
+      const depth = v * COS + z * SIN;
+      const magnification = focalDistance / (focalDistance - depth);
+      return { x: u * magnification, y: (v * SIN - z * COS) * magnification };
+    },
+    rayPoint(point: Point, depth: number, focalDistance: number): ReliefPoint {
+      const scale = 1 - depth / focalDistance;
+      const u = point.x * scale, vertical = point.y * scale;
+      const v = depth * COS + vertical * SIN;
+      return { x: u * CY + v * SY, y: v * CY - u * SY, z: depth * SIN - vertical * COS };
+    },
+  };
+}
 
 const clamp = (value: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, value));
 

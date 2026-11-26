@@ -1,12 +1,8 @@
 import { ATLAS_LINKS, ATLAS_TERRITORIES, SKILLS_BY_ID, TERRITORIES_BY_ID, type AtlasPosition, type AtlasSkill, type Selection } from "./atlas-model";
-import type { Camera, Point } from "@/lib/knowledge-camera";
+import { reliefLens, type Camera, type Point } from "@/lib/knowledge-camera";
 
 export const PERSPECTIVE = 1450;
-const PITCH = .62;
-const YAW = -.17;
-const COS = Math.cos(PITCH), SIN = Math.sin(PITCH);
-const CY = Math.cos(YAW), SY = Math.sin(YAW);
-export const lens = { COS, SIN, CY, SY };
+export const lens = reliefLens(.62, -.17);
 export const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 export const clamp = (n: number, a = 0, b = 1) => Math.max(a, Math.min(b, n));
 const seed = (n: number) => {
@@ -14,10 +10,7 @@ const seed = (n: number) => {
   return a - Math.floor(a);
 };
 export function projection(p: AtlasPosition, perspective = PERSPECTIVE): Point {
-  const u = p.x * CY - p.y * SY;
-  const v = p.x * SY + p.y * CY;
-  const k = perspective / (perspective - v * COS - p.z * SIN);
-  return { x: u * k, y: (v * SIN - p.z * COS) * k };
+  return lens.project(p,perspective);
 }
 
 export const atlasPeaks = ATLAS_TERRITORIES.map((r, index) => ({
@@ -161,34 +154,23 @@ export function makeTerrainParticles(high: boolean) {
   return { field: new Float32Array(field.flat()), markers: new Float32Array(markers.flat()) };
 }
 
-const surfaceSamples = Array.from({length:35},(_,j)=>
-  Array.from({length:47},(_,i)=>{
-    const x=-575+i*25,y=-410+j*25;
-    return {x,y,...heightField(x,y)};
-  })).flat().filter(p=>p.outline>-.025);
-
-// Sample the forward projection of the interaction surface to pick the frontmost plausible ray hit.
-// Refinement shrinks the sampling footprint to ~2 scene units and respects the current lens and zoom.
+// Undo perspective along a camera ray, then find its first intersection with the heightfield.
 export function pickSurface(point: Point, perspective: number): AtlasPosition | null {
-  let best: AtlasPosition | null = null;
-  let error = 30 ** 2;
-  for (const p of surfaceSamples) {
-    const q=projection(p,perspective);
-    const d=(q.x-point.x)**2 + (q.y-point.y)**2;
-    if (d < error) { error=d; best=p; }
-  }
-  if (!best) return null;
-  for (const step of [11,5,2]) {
-    const center: AtlasPosition = best;
-    for (let j=-1;j<=1;j++) for (let i=-1;i<=1;i++) {
-      const x=center.x+i*step,y=center.y+j*step;
-      const h=heightField(x,y);
-      if(h.outline<-.085) continue;
-      const p={x,y,z:h.z};
-      const q=projection(p,perspective);
-      const d=(q.x-point.x)**2+(q.y-point.y)**2;
-      if(d<error) {error=d;best=p;}
+  const at = (depth:number) => lens.rayPoint(point,depth,perspective);
+  for(let d=590;d>=-530;d-=12) {
+    const p=at(d);
+    if(p.z>175||p.z< -16)continue;
+    const sample=heightField(p.x,p.y);
+    if(sample.outline<-.075||p.z>sample.z)continue;
+    let near=d+12,far=d;
+    for(let i=0;i<5;i++) {
+      const middle=(near+far)*.5;
+      const candidate=at(middle);
+      if(candidate.z>heightField(candidate.x,candidate.y).z)near=middle;
+      else far=middle;
     }
+    const hit=at(far);
+    if(Math.abs(hit.z-heightField(hit.x,hit.y).z)<8)return hit;
   }
-  return best;
+  return null;
 }

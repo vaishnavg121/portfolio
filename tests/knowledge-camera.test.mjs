@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { cameraAt, constrainPan, fitCamera, moveCamera, resizeCamera, sampleGesture } from "../src/lib/knowledge-camera.ts";
+import { cameraAt, constrainPan, fitCamera, moveCamera, reliefLens, resizeCamera, sampleGesture } from "../src/lib/knowledge-camera.ts";
 
 const bounds = { left: -650, right: 700, top: -680, bottom: 135 };
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, String(actual));
@@ -51,4 +51,28 @@ test("panning at the limit keeps a map edge in the usable frame", () => {
   const result = constrainPan({ x: 4000, y: -4000, z: 2 }, bounds, frame);
   assert.ok(Math.abs((bounds.left * result.z + result.x) * frame.scale) < frame.width / 2);
   assert.ok(Math.abs((bounds.bottom * result.z + result.y) * frame.scale) < frame.height / 2);
+});
+
+test("a perspective pick ray projects to the same pixel across scene depths", () => {
+  const lens = reliefLens(.62, -.17);
+  const screen = { x: 245, y: -83 };
+  for (const focalDistance of [1370,1450,1530]) {
+    for (const depth of [-440,-30,0,240,560]) {
+      const point = lens.rayPoint(screen,depth,focalDistance);
+      const pixel = lens.project(point,focalDistance);
+      near(pixel.x,screen.x);
+      near(pixel.y,screen.y);
+    }
+  }
+});
+
+test("the near layer appears larger in perspective", () => {
+  const lens = reliefLens(.62, -.17);
+  const f = 1450;
+  const projectedWidth = depth => {
+    const center = lens.rayPoint({ x: 0, y: 0 }, depth, f);
+    const edge = { ...center, x: center.x + 60 * lens.CY, y: center.y - 60 * lens.SY };
+    return lens.project(edge,f).x;
+  };
+  assert.ok(projectedWidth(320) > projectedWidth(-320));
 });
