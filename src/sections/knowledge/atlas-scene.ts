@@ -51,6 +51,7 @@ export function createAtlasScene(
   const impulseTimes = new Float64Array(4).fill(-Infinity);
   const expansion = new Float32Array(ATLAS_TERRITORIES.length);
   const fromExpansion = new Float32Array(expansion.length);
+  const popupExpansion = new Float32Array(expansion.length);
   let expandStart = -Infinity;
   let lastRender = 0;
   let ambientTimer = 0;
@@ -145,7 +146,11 @@ export function createAtlasScene(
     const shown = new Set<string>();
     if (popupWidth && window.innerWidth >= 864 && selection) {
       const focus = selection.type === "skill" ? SKILLS_BY_ID.get(selection.id) : null;
-      const anchor = screenPoint(focus ? skillPose(focus,amount) : landmarkPositions[regionIndex],state);
+      // Reserve panel space around the destination while the camera is still moving.
+      const placementFrame = motion ? { ...state, camera: motion.to, expansion: popupExpansion } : state;
+      popupExpansion.fill(0);
+      popupExpansion[regionIndex] = 1;
+      const anchor = screenPoint(focus ? skillPose(focus,motion ? 1 : amount) : landmarkPositions[regionIndex],placementFrame);
       const inset = Math.max(12,width*.027);
       const left=clamp(anchor.x-popupWidth-69,inset,width-inset-popupWidth);
       const right=clamp(anchor.x+69,inset,width-inset-popupWidth);
@@ -157,14 +162,15 @@ export function createAtlasScene(
         {x:inset,y:middle},{x:width-inset-popupWidth,y:middle},
       ];
       const linkSamples=connectionsFor(selection).filter(link=>link.weight>.4).flatMap(link=>{
-        const a=connectionEndpoint(link.a,state),b=connectionEndpoint(link.b,state);
+        const a=connectionEndpoint(link.a,placementFrame),b=connectionEndpoint(link.b,placementFrame);
         const curve=routeCurve(a,b,link.bridge);
-        return [.2,.4,.6,.8].map(t=>screenPoint(curve(t),state));
+        return [.2,.4,.6,.8].map(t=>screenPoint(curve(t),placementFrame));
       });
+      const labelPoints = candidates.map(item => screenPoint(item.position, placementFrame));
       const score=({x,y}:Point)=>{
         const contains=(p:Point,margin:number)=>p.x>x-margin&&p.x<x+popupWidth+margin&&p.y>y-margin&&p.y<y+popupHeight+margin;
         return (contains(anchor,36)?32:0)
-          + candidates.reduce((sum,item)=>sum+(contains(screenPoint(item.position,state),25)?item.pinned?18:2:0),0)
+          + candidates.reduce((sum,item,index)=>sum+(contains(labelPoints[index],25)?item.pinned?18:2:0),0)
           + linkSamples.filter(p=>contains(p,4)).length*.65
           + Math.abs(y-middle)*.012
           + Math.min(Math.abs(x-left),Math.abs(x-right))*.009;
@@ -229,8 +235,8 @@ export function createAtlasScene(
     const expanding = animated && now - expandStart < 440;
     const morph = expanding ? ease(clamp((now-expandStart)/440)) : 1;
     for(let i=0;i<expansion.length;i++) expansion[i]=fromExpansion[i]+((i===selectionRegion?1:0)-fromExpansion[i])*morph;
-    if (pointer && animated && now-lastImpulse>47) {
-      force(pointer,previousPointer ? clamp(Math.hypot(pointer.x-previousPointer.x,pointer.y-previousPointer.y)/28,.40,1.05) : .74,now);
+    if (pointer && animated && now-lastImpulse>51) {
+      force(pointer,previousPointer ? clamp(Math.hypot(pointer.x-previousPointer.x,pointer.y-previousPointer.y)/35,.38,.90) : .66,now);
       previousPointer=pointer;
       pointer=null;
     }

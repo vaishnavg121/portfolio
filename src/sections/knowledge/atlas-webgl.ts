@@ -44,8 +44,10 @@ void main() {
     aura+=response*(expand*.16+(hovered?.19*uHover:0.0));
     if(uMotion.z>=0.0) ink*=.70+.30*expand;
     if(time>=0.0) {
-      tonal=sin(p.x*.013+p.y*.017-time*.81)*.064;
-      p.z+=sin(p.x*.012+p.y*.017-time*.79)*.96+sin(p.y*.022+time*.53)*.54;
+      float drift=sin(p.x*.013+p.y*.017-time*.64);
+      float sheen=smoothstep(.28,.98,sin(p.x*.009-p.y*.020-time*.57));
+      tonal=drift*.043+sheen*.054*clamp(-kind,0.0,1.0);
+      p.z+=sin(p.x*.012+p.y*.017-time*.71)*.78+sin(p.y*.022+time*.48)*.47;
       for(int k=0;k<4;k++) {
         vec4 impulse=uImpulses[k];
         if(impulse.w<.006||impulse.z>=.86) continue;
@@ -56,10 +58,10 @@ void main() {
         float radius=sqrt(distanceSquared);
         float ring=(radius-t*102.0)/24.0, local=exp(-distanceSquared/3300.0), wave=exp(-ring*ring);
         float envelope=smoothstep(0.0,.065,t)*(1.0-smoothstep(.52,.86,t));
-        float force=impulse.w*exp(-3.0*t)*envelope;
-        p.z+=force*(local*(-4.6)+wave*2.7);
-        p.xy+=d/max(radius,9.0)*local*force*1.6;
-        aura+=(local*.17+wave*.23)*force;
+        float force=impulse.w*exp(-2.8*t)*envelope;
+        p.z+=force*(local*(-3.5)+wave*2.25);
+        p.xy+=d/max(radius,9.0)*local*force*1.25;
+        aura+=(local*.14+wave*.30)*force;
       }
     }
     ink*=mix(.54,1.0,smoothstep(0.0,1.0,uMotion.y));
