@@ -2,6 +2,7 @@
 
 import { useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { MoveRight } from 'lucide-react';
+import Link from 'next/link';
 
 // --- CUSTOM SYMBOLS (25-38% of card area, animated via CSS) ---
 
@@ -196,7 +197,7 @@ export const HeroCards = () => {
             aria-pressed={compactActive === index}
             onClick={() => selectCard(index)}
           />
-          <a
+          <Link
             className="hero-card-open"
             href={`#${card.id}`}
             aria-label={`Go to ${card.title}`}
@@ -212,7 +213,7 @@ export const HeroCards = () => {
             }}
           >
             <MoveRight size={16} aria-hidden="true" />
-          </a>
+          </Link>
         </div>
       ))}
     </nav>

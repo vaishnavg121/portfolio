@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { MoveLeft } from "lucide-react";
+import { ArrowUpRight, MoveLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { PROJECT_ASSETS } from "@/lib/assets";
 import { projects } from "@/lib/profile";
@@ -54,8 +54,8 @@ export default async function ProjectDetail({ params }: { params: Promise<{ slug
           </p>
           <div className="flex flex-wrap gap-4 font-mono text-sm">
             {project.github ? (
-              <a href={project.github} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 border border-border px-4 py-2 hover:bg-surface-elevated transition-colors">
-                 [GITHUB] View Source ↗
+              <a href={project.github} target="_blank" rel="noopener noreferrer" className="portfolio-text-link">
+                <span className="portfolio-link-label">[GITHUB] View Source</span><ArrowUpRight className="portfolio-link-arrow" aria-hidden="true" />
               </a>
             ) : null}
           </div>

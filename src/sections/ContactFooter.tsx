@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { MagneticEffect } from "@/components/effects";
+import { ArrowUpRight } from "lucide-react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
@@ -61,24 +61,22 @@ export const ContactFooter = () => {
 
         <div className="contact-line w-24 h-[1px] bg-border mb-7 lg:mb-16 origin-center" />
 
-        <div className="contact-actions flex flex-wrap justify-center gap-3 mb-10 lg:mb-16" data-familiar-avoid>
+        <div className="contact-actions mb-10 lg:mb-16" data-familiar-avoid>
           {LINKS.map((link) => (
-            <div key={link.name} className="contact-link">
-              <MagneticEffect intensity={0.4}>
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer" data-familiar-reaction="wave"
-                  aria-label={`${link.name} Profile`}
-                  className="portfolio-control relative group flex flex-col items-center gap-2 px-4 py-3.5 font-mono tracking-wide"
-                  data-cursor="VIEW"
-                >
-                  <span className="font-bold text-lg">{link.name} ↗</span>
-                  <span className="text-xs text-text-muted break-words">{link.display}</span>
-                  <span className="absolute -bottom-0 left-0 w-full h-[1px] bg-accent scale-x-0 origin-left group-hover:scale-x-100 transition-transform" />
-                </a>
-              </MagneticEffect>
-            </div>
+            <a
+              key={link.name}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer" data-familiar-reaction="wave"
+              aria-label={`${link.name} Profile`}
+              className="contact-link portfolio-text-link contact-profile-link font-mono tracking-wide"
+              data-cursor="VIEW"
+            >
+              <span className="inline-flex items-center gap-2 text-base font-medium">
+                <span className="portfolio-link-label">{link.name}</span><ArrowUpRight className="portfolio-link-arrow" aria-hidden="true" />
+              </span>
+              <span className="break-words text-xs text-text-muted">{link.display}</span>
+            </a>
           ))}
         </div>
 

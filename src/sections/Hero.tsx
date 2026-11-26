@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, useReducedMotion, useTransform } from "framer-motion";
-import { MoveRight } from "lucide-react";
+import { ArrowUpRight, MoveRight } from "lucide-react";
+import Link from "next/link";
 import { profile, socials } from "@/lib/profile";
 import { usePointer, MagneticEffect } from "@/components/effects";
 import { HeroBackground } from "@/components/HeroBackground";
@@ -61,14 +62,18 @@ export const Hero = () => {
 
           <div className="hero-actions">
             <div className="hero-links flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-wide">
-              <MagneticEffect intensity={0.24}>
-                <button type="button" onClick={() => document.getElementById("work")?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" })}
-                  className="portfolio-control group flex min-h-11 items-center gap-2 px-3.5" data-cursor="VIEW">
-                  Explore Work <MoveRight className="size-4 text-accent transition-transform group-hover:translate-x-1" />
-                </button>
+              <MagneticEffect intensity={0.08}>
+                <Link href="#work" className="portfolio-text-link font-medium text-text-primary" data-cursor="VIEW">
+                  <span className="portfolio-link-label">Explore Work</span>
+                  <MoveRight className="portfolio-link-arrow" aria-hidden="true" />
+                </Link>
               </MagneticEffect>
-              <a href={socials.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub Profile" className="inline-flex min-h-11 items-center text-text-muted transition-colors hover:text-text-primary" data-cursor="VIEW">GitHub ↗</a>
-              <a href={socials.linkedin} target="_blank" rel="noopener noreferrer" data-familiar-reaction="wave" aria-label="LinkedIn Profile" className="inline-flex min-h-11 items-center text-text-muted transition-colors hover:text-text-primary" data-cursor="VIEW">LinkedIn ↗</a>
+              <a href={socials.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub Profile" className="portfolio-text-link text-text-muted" data-cursor="VIEW">
+                <span className="portfolio-link-label">GitHub</span><ArrowUpRight className="portfolio-link-arrow" aria-hidden="true" />
+              </a>
+              <a href={socials.linkedin} target="_blank" rel="noopener noreferrer" data-familiar-reaction="wave" aria-label="LinkedIn Profile" className="portfolio-text-link text-text-muted" data-cursor="VIEW">
+                <span className="portfolio-link-label">LinkedIn</span><ArrowUpRight className="portfolio-link-arrow" aria-hidden="true" />
+              </a>
             </div>
             <p className="hero-annotation font-hand text-xl text-accent md:text-2xl">{"// curiosity usually gets out of hand"}</p>
           </div>
