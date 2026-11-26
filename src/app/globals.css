@@ -163,6 +163,7 @@ body {
   min-height: calc(var(--deck-card-height) + 3 * var(--deck-step) + 0.7rem);
   margin-inline: auto;
   max-width: 32rem;
+  touch-action: pan-y pinch-zoom;
 }
 
 @media (width < 43rem) {
@@ -248,6 +249,7 @@ body {
   cursor: pointer;
 }
 .hero-card-select { inset-inline: 0 2.75rem; }
+.hero-card-select:active { background: rgb(255 255 255 / 0.035); }
 .hero-card-open {
   inset-inline-end: 0;
   display: grid;
@@ -264,7 +266,7 @@ body {
   .hero-deck {
     --deck-card-height: clamp(7.65rem, 11vw, 9.4rem);
     max-width: none;
-    min-height: calc(var(--deck-card-height) + 2rem);
+    min-height: calc(var(--deck-card-height) + 2.35rem);
     margin-inline: 0.8rem;
   }
   .hero-card {
@@ -273,6 +275,7 @@ body {
     --card-x: 0px;
     --card-y: var(--deck-settle);
     --card-roll: var(--deck-turn);
+    inset-block-start: 0.8rem;
     inset-inline: calc((100% - var(--deck-card-width)) * var(--deck-progress)) auto;
     width: var(--deck-card-width);
     transition-delay: calc(var(--deck-order) * 11ms);
