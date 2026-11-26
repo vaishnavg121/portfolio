@@ -79,7 +79,7 @@ export const Hero = () => {
           </div>
         </motion.div>
 
-        <div className="hero-card-grid">
+        <div className="hero-deck-stage">
           <HeroCards />
         </div>
       </div>

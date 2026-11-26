@@ -210,7 +210,7 @@ body {
 .hero-positioning { border-inline-start: 2px solid var(--accent); padding-inline-start: 0.875rem; }
 .hero-introduction { display: grid; gap: 0.7rem; max-width: 61ch; margin-block: 0.82rem; line-height: 1.55; }
 .hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 1.35rem; }
-.hero-card-grid { grid-area: cards; padding-block-start: 0.9rem; border-block-start: 1px solid var(--border); }
+.hero-deck-stage { grid-area: cards; min-width: 0; padding-block-start: 0.35rem; }
 .hero-deck {
   --deck-card-height: 7rem;
   --deck-step: 2.92rem;
@@ -221,10 +221,6 @@ body {
   margin-inline: auto;
   max-width: 32rem;
   touch-action: pan-y pinch-zoom;
-}
-
-@media (width < 43rem) {
-  .hero-deck { overflow: clip; }
 }
 
 .hero-card {
@@ -296,6 +292,7 @@ body {
   inset-block-end: 0.4rem;
   inset-inline-end: 2.4rem;
   pointer-events: none;
+  transition: opacity 220ms ease, inset-inline-end 330ms var(--ease-reveal);
 }
 .hero-card-symbol svg { width: 4.65rem; height: auto; }
 
@@ -319,12 +316,23 @@ body {
 .hero-card:is([data-active], [data-compact-active]) .hero-card-open { color: var(--accent); }
 .hero-card :is(button, a):focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; border-radius: 0.2rem; }
 
+@media (width < 43rem) {
+  .hero-deck { overflow: clip; }
+  .hero-card {
+    transition: transform 430ms var(--deck-spring), height 430ms var(--deck-spring), border-color 200ms ease;
+  }
+  .hero-card:not([data-compact-active]) { height: calc(var(--deck-step) + 0.35rem); }
+  .hero-card:not([data-compact-active]) :is(.hero-card-symbol, .hero-card-subtitle) { opacity: 0; }
+  .hero-card-subtitle { transition: opacity 180ms ease; }
+}
+
 @media (width >= 43rem) {
   .hero-deck {
     --deck-card-height: clamp(7.65rem, 11vw, 9.4rem);
-    max-width: none;
+    width: calc(100% - 1.6rem);
+    max-width: 74rem;
     min-height: calc(var(--deck-card-height) + 2.35rem);
-    margin-inline: 0.8rem;
+    margin-inline: 0.8rem auto;
   }
   .hero-card {
     --deck-card-width: 30%;
@@ -356,15 +364,17 @@ body {
   .hero-card-number { margin-block-start: 0.85rem; }
   .hero-card-title { margin-block-start: 2.15rem; font-size: clamp(0.81rem, 1.3vw, 1.125rem); }
   .hero-card-subtitle::before { display: none; }
-  .hero-card-symbol { inset-block: 0.1rem auto; inset-inline-end: 13%; }
-  .hero-card-symbol svg { width: clamp(4.25rem, 7.5vw, 7.2rem); }
+  .hero-card-symbol { inset-block: 0.12rem auto; inset-inline-end: 25%; }
+  .hero-card:is([data-active], :last-child) .hero-card-symbol { inset-inline-end: 11%; }
+  .hero-card-symbol svg { width: clamp(3.8rem, 7.1vw, 6.75rem); }
   .hero-card:not([data-active]) .hero-card-open { inset-inline-end: 21%; }
 }
 
 @media (width >= 43rem) and (hover: hover) and (pointer: fine) {
   .hero-card-select { display: none; }
   .hero-card:not([data-active]) .hero-card-open { inset-inline-end: 0; color: var(--text-muted); }
-  .hero-card-open { position: static; justify-items: center; margin-inline-start: auto; }
+  .hero-card-open { position: static; justify-items: center; margin-inline-start: auto; transition: color 180ms ease, margin-inline-end 330ms var(--ease-reveal); }
+  .hero-card:not([data-active], :last-child) .hero-card-open { margin-inline-end: 23%; }
   .hero-card-open::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
   .hero-card-open:focus-visible { outline: none; }
   .hero-card-open:focus-visible::after { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -668,7 +678,6 @@ body:has(.case-image-dialog[open]) { overflow: hidden; }
     margin-block-start: -3rem;
     translate: -0.75rem 0;
   }
-  .hero-card-grid { padding-block-start: 1rem; }
   .project-editorial {
     display: grid;
     grid-template-columns: minmax(0, 0.74fr) minmax(0, 1.26fr);
