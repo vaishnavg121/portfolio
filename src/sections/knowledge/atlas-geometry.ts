@@ -32,27 +32,36 @@ const ridges = ATLAS_BRIDGES.map(({ from, to, count }) => {
   return { a, dx, dy, length, lift: clamp(7 + count * 5 - length * .014, 3, 29) };
 });
 
+const smooth = (start: number, end: number, value: number) => {
+  const t = clamp((value - start) / (end - start));
+  return t * t * (3 - 2 * t);
+};
+
 export function heightField(x: number, y: number) {
   const fold = x * .009 + y * .011, basin = y * .013 - x * .006, grain = x * .027 - y * .018;
   const folds = Math.sin(fold), basins = Math.cos(basin), texture = Math.sin(grain);
-  const plain = -13 + 10 * folds + 8 * basins + 2.6 * texture;
+  const plain = -17 + 10 * folds + 8 * basins + 2.6 * texture;
   let slope = .09 * Math.cos(fold) - .11 * Math.sin(basin) + .038 * Math.cos(grain);
   if (Math.abs(x) > 935 || Math.abs(y) > 820) return { z: plain, relief: 0, region: 0, tone: .31, shade: clamp(.54 - slope) };
   let peaks = 0, weight = 0, region = 0, warmth = .09, mass = .30, shoulder = 0;
   for (let i = 0; i < atlasPeaks.length; i++) {
     const p = atlasPeaks[i];
     const dx = x - p.x, dy = y - p.y;
-    const u = (p.cos * dx + p.sin * dy) / p.width;
-    const v = (p.cos * dy - p.sin * dx) / p.depth;
+    const aligned = (p.cos * dx + p.sin * dy) / p.width;
+    const cross = (p.cos * dy - p.sin * dx) / p.depth;
+    const u = aligned + cross * .16;
+    const v = cross + .23 * aligned * Math.sin(aligned * 1.55 + p.angle);
     const q = u * u + v * v;
     if (q > 14) continue;
-    const foothill = Math.exp(-q * .72);
-    const cap = Math.exp(-q * (1.27 - p.shelf + p.shelf * q));
-    const influence = cap * .76 + foothill * .24;
+    const foothill = Math.exp(-q * .76);
+    const cap = Math.exp(-(.96 + .17 * v) * q - .19 * q * q);
+    const table = .57 * (1 - smooth(.19 + p.shelf * .26, .65 + p.shelf * .28, q))
+      + .27 * (1 - smooth(.72, 1.24, q)) + .16 * foothill;
+    const influence = mix(cap * .86 + foothill * .14, table, .79 * p.shelf);
     if (influence > weight) { weight = influence; region = i; }
     peaks += p.height * influence;
     const gradient = 2 * (u * (p.cos * .62 + p.sin * .78) / p.width + v * (p.cos * .78 - p.sin * .62) / p.depth);
-    slope -= p.height * gradient * (cap * .76 * (1.27 - p.shelf + 2 * p.shelf * q) + foothill * .173);
+    slope -= p.height * gradient * (cap * (.84 + .31 * q) + foothill * .108);
     shoulder += foothill;
     warmth += p.rose * foothill;
     mass += foothill;
@@ -62,18 +71,28 @@ export function heightField(x: number, y: number) {
     const u = x - a.x, v = y - a.y;
     const along = (u * dx + v * dy) / (length * length);
     if (along <= 0 || along >= 1) continue;
-    const across = (u * dy - v * dx) / length - 17 * Math.sin(along * Math.PI);
+    const across = (u * dy - v * dx) / length - 30 * Math.sin(along * Math.PI * 1.14);
     const width = Math.abs(across);
     if (width > 170) continue;
-    saddle += lift * Math.sin(along * Math.PI) ** 2 * Math.exp(-across * across / 3650) * clamp((170 - width) / 28);
+    saddle += lift * Math.sin(along * Math.PI) ** 2 * Math.exp(-across * across / 2860) * clamp((170 - width) / 28);
   }
   const blend = clamp((935 - Math.abs(x)) / 230) * clamp((820 - Math.abs(y)) / 230);
   const extent = blend * blend * (3 - 2 * blend);
-  // Small folds are strongest on the shoulders, where they read as layers across a slope.
-  const terrace = (3.5 * Math.sin(fold * 2.3 + basins) + 1.7 * texture) * clamp(shoulder) * (1 - weight * .63);
-  const relief = clamp((peaks + saddle * .85) / 116) * extent;
+  const channel = -43 - y * .31 + 82 * Math.sin(y * .008 - 1.3);
+  const cut = (x - channel) / (62 + 13 * basins);
+  const valley = 39 * Math.exp(-cut * cut) * (1 - weight * .91);
+  // The foreground rolls out from the Finance and Robotics shoulders, opening around the valley.
+  const front = (y - 333 - .19 * x - 33 * Math.sin(x * .009)) / 76;
+  const flank = 1 - Math.exp(-cut * cut * .22);
+  const foot = front + .68;
+  const near = (52 * Math.exp(-front * front) + 19 * Math.exp(-foot * foot * 2.1))
+    * flank * Math.exp(-x * x / 413000);
+  const rear = (y + 406 + .13 * x + 30 * Math.sin(x * .009 + 1.3)) / 102;
+  const far = 37 * Math.exp(-rear * rear - x * x / 512000);
+  const terrace = (4.4 * Math.sin(fold * 2.3 + basins * 1.3) + 1.7 * texture) * clamp(shoulder) * (1 - weight * .73);
+  const relief = clamp((peaks + saddle * .8 + near + far - valley * .38) / 116) * extent;
   return {
-    z: plain + (peaks + saddle + terrace) * extent,
+    z: plain + (peaks + saddle + terrace + near + far - valley) * extent,
     relief, region, tone: mix(.31, warmth / mass, extent),
     shade: clamp(.55 - slope * .72),
   };
@@ -158,7 +177,7 @@ export function pickSurface(point: Point, perspective: number): AtlasPosition | 
   const end = Math.max(-2390, plane - 180);
   for(let d=start;d>=end;d-=14) {
     const p=at(d);
-    if(p.z>195||p.z< -44)continue;
+    if(p.z>224||p.z< -68)continue;
     if(p.z>heightField(p.x,p.y).z)continue;
     let near=d+14,far=d;
     for(let i=0;i<5;i++) {
