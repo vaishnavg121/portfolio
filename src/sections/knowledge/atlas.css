@@ -170,6 +170,11 @@
 @media (width < 22.5rem) {
   .atlas-toolbar:has(.atlas-back) .atlas-zoom button:not(:last-child) {display:none;}
 }
+@media (width < 23.5rem) {
+  .atlas-controls:has(.atlas-back) {gap:.25rem;}
+  .atlas-controls:has(.atlas-back) :is(.atlas-explore,.atlas-back) {padding-inline:.47rem;}
+  .atlas-controls .atlas-back svg {display:none;}
+}
 @media (width < 23rem) {
   .atlas-toolbar:not(:has(.atlas-back,.atlas-explore[aria-pressed="true"])) .atlas-search {width:45%;}
   .atlas-controls .atlas-explore {padding-inline:.56rem;}
