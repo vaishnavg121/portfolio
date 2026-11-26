@@ -195,7 +195,8 @@ export const SkillsConstellation = () => {
           <form role="search" className="atlas-search" onSubmit={event => {
             event.preventDefault();
             const match = atlasSearch(queryInput.current?.value ?? query)[0];
-            if (match) choose(match, true, queryInput.current ?? undefined);
+            // Keep typing focus in the search field when submitting it directly.
+            if (match) choose(match, false, queryInput.current ?? undefined);
           }}>
             <div className="atlas-search-field">
               <Search aria-hidden="true" size={16} />

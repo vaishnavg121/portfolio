@@ -57,6 +57,7 @@ export function createAtlasScene(
   let quality = 1;
   let slowFrames = 0;
   let healthyFrames = 0;
+  let setupTimer = 0;
   let popupSlot = 0;
   let popupWidth = 0;
   let popupHeight = 0;
@@ -220,7 +221,7 @@ export function createAtlasScene(
 
   function render(now: number) {
     frameId = 0;
-    if (!visible || document.hidden || disposed || width < 2 || rendererType === "pending") return;
+    if (!visible || document.hidden || disposed || width < 2) return;
     if (formationStart === -1) formationStart = now;
     const selectionRegion = territoryIndex(selection);
     const animated = rendererType === "webgl" && !reduced.matches;
@@ -265,8 +266,16 @@ export function createAtlasScene(
       camera,width,height,stretch,progress,selection,time:now/1000,perspective:PERSPECTIVE,hover,expansion,
       impulses:impulseData,activeSkill:skill?skillPose(skill,1):null,motion:animated,quality,hoverStrength,
     };
-    renderer?.draw(state);
     displayLabels(state);
+    if (rendererType === "pending") {
+      // Paint and expose the semantic anchors before compiling shaders or building terrain tiles.
+      if (!started && !setupTimer) setupTimer = window.setTimeout(() => {
+        setupTimer = 0;
+        if (visible && !document.hidden && !disposed) void setup();
+      }, 0);
+      return;
+    }
+    renderer?.draw(state);
     const magnification = relative.toFixed(1) + "×";
     if (scale.textContent !== magnification) scale.textContent = magnification;
     if (stage.dataset.atlasLevel !== String(level)) stage.dataset.atlasLevel = String(level);
@@ -370,7 +379,6 @@ export function createAtlasScene(
     visible = entry.isIntersecting;
     if (visible) {
       measure();
-      void setup();
       schedule();
     } else {
       window.clearTimeout(ambientTimer);
@@ -556,6 +564,7 @@ export function createAtlasScene(
       resize.disconnect();
       popupResize.disconnect();
       window.clearTimeout(ambientTimer);
+      window.clearTimeout(setupTimer);
       intersection.disconnect();
       reduced.removeEventListener("change", schedule);
       document.removeEventListener("visibilitychange", handleVisibility);
