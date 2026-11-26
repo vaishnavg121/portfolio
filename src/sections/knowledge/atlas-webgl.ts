@@ -13,7 +13,7 @@ uniform vec3 uCam;
 uniform vec4 uFrame, uMotion, uSkill, uLens;
 uniform float uHover;
 uniform vec2 uGround;
-uniform vec3 uShadow, uMuted, uLight, uAccent;
+uniform vec3 uShadow, uMuted, uLight, uAccent, uPetal, uStone;
 uniform vec4 uImpulses[4], uPeaks[8];
 varying mediump vec4 vColor;
 varying mediump float vKind;
@@ -78,13 +78,18 @@ void main() {
   gl_PointSize=max(1.0,size*uSkill.w*(kind<.5?clamp(magnification,.62,1.48)*zoomSize:1.0));
   vec3 color;
   if(kind<.5) {
-    float relief=smoothstep(-22.0,139.0,p.z);
-    float light=clamp(.51+relief*.28+phase*.16+tonal,0.0,1.0);
-    color=mix(uShadow,mix(uMuted,uLight,relief*.58+phase*.15),light);
-    color=mix(color,uAccent,clamp(.12+relief*.10+aura*.52,0.0,.60));
+    float relief=smoothstep(-27.0,133.0,aPosition.z);
+    float shade=clamp(-kind,0.0,1.0);
+    float light=clamp(.34+shade*.42+relief*.24+phase*.10+tonal,0.0,1.0);
+    vec3 mineral=mix(uStone,uPetal,smoothstep(.10,.84,fract(aStyle.x)));
+    vec3 surface=mix(uMuted,mineral,.66+relief*.19);
+    surface=mix(surface,uLight,relief*shade*.48+phase*.12);
+    color=mix(uShadow,surface,light);
+    color=mix(color,uPetal,aura*.43);
+    ink*=.70+.46*shade;
     ink+=aura*.29;
   } else {
-    color=mix(uAccent,uLight,kind>=2.5?phase*.78:phase*.79);
+    color=mix(uAccent,mix(uPetal,uLight,.78),phase*.94);
     ink+=aura*(kind<1.5?.46:.73);
   }
   vColor=vec4(color,clamp(ink*fog*edge*smoothstep(uCam.z*.20,uCam.z*.39,distanceToCamera),0.0,1.0));
@@ -206,7 +211,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   const streamAttrs=streamAttribs.map(([name,size,offset])=>({index:gl.getAttribLocation(streamProgram,name),size,offset}));
   const streamUniforms=["uSize","uAccent","uLight","uTime","uPointer"] as const;
   const stream=Object.fromEntries(streamUniforms.map(name=>[name,gl.getUniformLocation(streamProgram,name)]));
-  const names=["uCam","uFrame","uMotion","uSkill","uLens","uHover","uGround","uShadow","uMuted","uLight","uAccent","uImpulses[0]","uPeaks[0]"] as const;
+  const names=["uCam","uFrame","uMotion","uSkill","uLens","uHover","uGround","uShadow","uMuted","uLight","uAccent","uPetal","uStone","uImpulses[0]","uPeaks[0]"] as const;
   const u=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
   gl.uniform4f(u.uLens,lens.COS,lens.SIN,lens.CY,lens.SY);
   const peaks=new Float32Array(32);
@@ -214,6 +219,8 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   gl.uniform3fv(u.uMuted,palette.muted.rgb);
   gl.uniform3fv(u.uLight,palette.light.rgb);
   gl.uniform3fv(u.uAccent,palette.accent.rgb);
+  gl.uniform3fv(u.uPetal,palette.petal.rgb);
+  gl.uniform3fv(u.uStone,palette.stone.rgb);
   gl.useProgram(streamProgram);
   gl.uniform3fv(stream.uAccent,palette.accent.rgb);
   gl.uniform3fv(stream.uLight,palette.light.rgb);

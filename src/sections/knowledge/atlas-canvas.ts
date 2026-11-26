@@ -19,7 +19,6 @@ export function makeCanvasAtlas(canvas: HTMLCanvasElement): AtlasRenderer | null
       const region = territoryIndex(frame.selection);
       const center = terrainCenter(frame);
       const field = terrain(center.x, center.y);
-      ctx.fillStyle = palette.muted.css;
       for (let i=0; i<field.length; i+=40) {
         const x=field[i],y=field[i+1],z=field[i+2];
         const depth = (x*lens.SY+y*lens.CY)*lens.COS+z*lens.SIN;
@@ -29,7 +28,10 @@ export function makeCanvasAtlas(canvas: HTMLCanvasElement): AtlasRenderer | null
         const p = screenPoint({x,y,z},frame);
         const edge=clamp(Math.min(p.x/(frame.width*.15),p.y/(frame.height*.15),(frame.width-p.x)/(frame.width*.15),(frame.height-p.y)/(frame.height*.15)));
         if(edge<=0)continue;
-        ctx.globalAlpha=edge*fog*fog*(3-2*fog)*field[i+4]*(region<0||region===field[i+3]?1:.62);
+        const domain=Math.floor(field[i+3]);
+        const tone=field[i+3]-domain;
+        ctx.fillStyle=tone>.56?palette.petal.css:palette.stone.css;
+        ctx.globalAlpha=edge*fog*fog*(3-2*fog)*field[i+4]*(.66-.48*field[i+6])*(region<0||region===domain?1:.72);
         ctx.fillRect(p.x,p.y,1.45,1.45);
       }
       for(const {a,b,bridge,weight} of connectionsFor(frame.selection,frame.hover)){

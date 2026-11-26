@@ -51,11 +51,12 @@ export function createTerrainTiles(detailed: boolean) {
         if (n !== first && phase > detail * .82) continue;
         const px = x + (n % subdivisions + seed(hash + n * 3.17 + 4)) * step;
         const py = y + (Math.floor(n / subdivisions) + seed(hash + n * 2.63 + 7)) * step;
-        const { z, relief, region } = heightField(px, py);
-        const contour = .5 + .5 * Math.cos(z * .20 + Math.sin(px * .018 + py * .021) * .68);
-        const opacity = (.19 + relief * .43 + detail * .14) * (.62 + contour * .21 + phase * .38);
-        const size = .86 + .81 * phase + (1 - detail) * .82;
-        points.push(px, py, z, region, opacity, size, 0, phase);
+        const { z, relief, region, tone, shade } = heightField(px, py);
+        const contour = .5 + .5 * Math.cos(z * .255 + Math.sin(px * .014 + py * .021) * 1.18);
+        const opacity = (.21 + relief * .41 + detail * .14) * (.61 + contour * .17 + phase * .33);
+        const size = .88 + .83 * phase + (1 - detail) * .74;
+        // The fractional region index and negative point kind carry continuous tone and slope.
+        points.push(px, py, z, region + tone, opacity, size, -shade, phase);
       }
     }
     const values = new Float32Array(points);

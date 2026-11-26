@@ -9,12 +9,21 @@ export function projection(p: AtlasPosition, perspective = PERSPECTIVE): Point {
   return lens.project(p,perspective);
 }
 
-export const atlasPeaks = ATLAS_TERRITORIES.map((r, index) => ({
-  x: r.x, y: r.y,
-  z: [80,143,107,101,53,92,63,130][index],
-  rx: [142,154,145,139,130,147,132,153][index],
-  ry: [101,112,122,111,102,113,112,117][index],
-}));
+const profiles: Record<string, { height: number; width: number; depth: number; angle: number; shelf: number; rose: number }> = {
+  cs: { height: 80, width: 146, depth: 107, angle: -.26, shelf: .62, rose: .29 },
+  ai: { height: 133, width: 149, depth: 122, angle: .15, shelf: .32, rose: .76 },
+  data: { height: 98, width: 165, depth: 100, angle: .28, shelf: .84, rose: .41 },
+  agents: { height: 95, width: 132, depth: 113, angle: .74, shelf: .30, rose: .86 },
+  web: { height: 63, width: 158, depth: 103, angle: .99, shelf: .73, rose: .57 },
+  finance: { height: 85, width: 145, depth: 112, angle: -.19, shelf: .48, rose: .16 },
+  infra: { height: 64, width: 164, depth: 90, angle: -.43, shelf: .65, rose: .23 },
+  robotics: { height: 113, width: 154, depth: 115, angle: .52, shelf: .45, rose: .68 },
+};
+
+export const atlasPeaks = ATLAS_TERRITORIES.map(({ id, x, y }) => {
+  const profile = profiles[id];
+  return { x, y, ...profile, cos: Math.cos(profile.angle), sin: Math.sin(profile.angle) };
+});
 
 const ridges = ATLAS_BRIDGES.map(({ from, to, count }) => {
   const a = atlasPeaks[from], b = atlasPeaks[to];
@@ -24,31 +33,50 @@ const ridges = ATLAS_BRIDGES.map(({ from, to, count }) => {
 });
 
 export function heightField(x: number, y: number) {
-  // A low continuous plain underlies both the knowledge regions and the distant terrain.
-  const plain = -14 + Math.sin(x * .009 + y * .011) * 7
-    + Math.cos(y * .014 - x * .006) * 5 + Math.sin(x * .025 - y * .018) * 2;
-  if (Math.abs(x) > 910 || Math.abs(y) > 790) return { z: plain, relief: 0, region: 0 };
-  let peaks = 0, weight = 0, region = 0;
+  const fold = x * .009 + y * .011, basin = y * .013 - x * .006, grain = x * .027 - y * .018;
+  const folds = Math.sin(fold), basins = Math.cos(basin), texture = Math.sin(grain);
+  const plain = -13 + 10 * folds + 8 * basins + 2.6 * texture;
+  let slope = .09 * Math.cos(fold) - .11 * Math.sin(basin) + .038 * Math.cos(grain);
+  if (Math.abs(x) > 935 || Math.abs(y) > 820) return { z: plain, relief: 0, region: 0, tone: .31, shade: clamp(.54 - slope) };
+  let peaks = 0, weight = 0, region = 0, warmth = .09, mass = .30, shoulder = 0;
   for (let i = 0; i < atlasPeaks.length; i++) {
     const p = atlasPeaks[i];
-    const dx = (x - p.x) / p.rx, dy = (y - p.y) / p.ry;
-    const influence = Math.exp(-1.35 * (dx * dx + dy * dy));
+    const dx = x - p.x, dy = y - p.y;
+    const u = (p.cos * dx + p.sin * dy) / p.width;
+    const v = (p.cos * dy - p.sin * dx) / p.depth;
+    const q = u * u + v * v;
+    if (q > 14) continue;
+    const foothill = Math.exp(-q * .72);
+    const cap = Math.exp(-q * (1.27 - p.shelf + p.shelf * q));
+    const influence = cap * .76 + foothill * .24;
     if (influence > weight) { weight = influence; region = i; }
-    peaks += p.z * influence;
+    peaks += p.height * influence;
+    const gradient = 2 * (u * (p.cos * .62 + p.sin * .78) / p.width + v * (p.cos * .78 - p.sin * .62) / p.depth);
+    slope -= p.height * gradient * (cap * .76 * (1.27 - p.shelf + 2 * p.shelf * q) + foothill * .173);
+    shoulder += foothill;
+    warmth += p.rose * foothill;
+    mass += foothill;
   }
   let saddle = 0;
   for (const { a, dx, dy, length, lift } of ridges) {
     const u = x - a.x, v = y - a.y;
     const along = (u * dx + v * dy) / (length * length);
     if (along <= 0 || along >= 1) continue;
-    const across = (u * dy - v * dx) / length;
+    const across = (u * dy - v * dx) / length - 17 * Math.sin(along * Math.PI);
     const width = Math.abs(across);
     if (width > 170) continue;
     saddle += lift * Math.sin(along * Math.PI) ** 2 * Math.exp(-across * across / 3650) * clamp((170 - width) / 28);
   }
-  const extent = (1 - clamp((Math.abs(x) - 710) / 200)) * (1 - clamp((Math.abs(y) - 590) / 200));
-  const relief = clamp((peaks + saddle * .7) / 120) * extent;
-  return { z: plain + (peaks + saddle) * extent, relief, region };
+  const blend = clamp((935 - Math.abs(x)) / 230) * clamp((820 - Math.abs(y)) / 230);
+  const extent = blend * blend * (3 - 2 * blend);
+  // Small folds are strongest on the shoulders, where they read as layers across a slope.
+  const terrace = (3.5 * Math.sin(fold * 2.3 + basins) + 1.7 * texture) * clamp(shoulder) * (1 - weight * .63);
+  const relief = clamp((peaks + saddle * .85) / 116) * extent;
+  return {
+    z: plain + (peaks + saddle + terrace) * extent,
+    relief, region, tone: mix(.31, warmth / mass, extent),
+    shade: clamp(.55 - slope * .72),
+  };
 }
 
 export const landmarkPositions = atlasPeaks.map(({x,y}) => ({ x, y, z: heightField(x,y).z + 9 }));
