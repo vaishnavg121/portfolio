@@ -11,14 +11,14 @@ export function DotPortrait() {
   }, []);
 
   return (
-    <figure ref={root} className={styles.portrait} data-dot-portrait>
+    <figure ref={root} className={styles.portrait} data-dot-portrait data-familiar-reaction="inspect">
       <picture className={styles.picture}>
         <source media={WIDE_PORTRAIT} srcSet={`${PORTRAIT_ASSETS}/wide.webp`} />
         <img
           src={`${PORTRAIT_ASSETS}/compact.webp`}
           alt="Vaishnav Gadamsetty rendered in warm halftone dots"
-          width={390}
-          height={390}
+          width={312}
+          height={312}
           decoding="async"
           fetchPriority="low"
         />

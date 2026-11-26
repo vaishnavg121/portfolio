@@ -1,8 +1,8 @@
 .portrait {
   position: relative;
-  width: clamp(8.5rem, 43vw, 14rem);
+  width: 100%;
   aspect-ratio: 1;
-  margin: 0.15rem auto -0.55rem;
+  margin: 0;
   touch-action: pan-y pinch-zoom;
   user-select: none;
 }
@@ -26,25 +26,3 @@
 
 .portrait[data-dot-ready] .picture { opacity: 0; }
 .portrait[data-dot-ready] .surface { visibility: visible; }
-
-@media (35rem <= width < 48rem) and (height <= 30rem), (48rem <= width < 64rem) {
-  .portrait {
-    position: absolute;
-    inset-block-start: 49%;
-    inset-inline-end: 0;
-    width: clamp(7.5rem, 20vw, 13rem);
-    margin: 0;
-    transform: translateY(-50%);
-  }
-}
-
-@media (width >= 64rem) {
-  .portrait {
-    position: absolute;
-    inset-block-start: 43%;
-    inset-inline-end: clamp(0px, 1vw, 1rem);
-    width: clamp(11rem, 23vw, 21.875rem);
-    margin: 0;
-    transform: translateY(-50%);
-  }
-}

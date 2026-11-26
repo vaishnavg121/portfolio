@@ -24,7 +24,8 @@ void main() {
   gl_PointSize = radius * 2. + 1.45;
   vPoint = vec2(radius, gl_PointSize);
   vec3 warm = mix(vec3(162., 156., 150.), vec3(243., 234., 225.), tone) / 255.;
-  vInk = vec4(warm, aInk.y * clamp(.88 + .53 * z / size, .62, 1.));
+  float alpha = min(1., aInk.y * clamp(.88 + .53 * z / size, .62, 1.));
+  vInk = vec4(warm, alpha);
 }
 `;
 

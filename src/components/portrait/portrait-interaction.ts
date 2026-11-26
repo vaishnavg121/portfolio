@@ -16,7 +16,6 @@ type Contact = {
 export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElement) {
   if (!window.IntersectionObserver || !window.ResizeObserver) return;
 
-  const hero = root.closest("#hero");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   const wide = matchMedia(WIDE_PORTRAIT);
   const listeners = new AbortController();
@@ -34,7 +33,7 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
   let pointerSample: { x: number; y: number; time: number } | undefined;
   let tap: { point: Disturbance; until: number } | undefined;
 
-  const canPresent = () => visible && !document.hidden && !reduced.matches && !hero?.previousElementSibling;
+  const canPresent = () => visible && !document.hidden && !reduced.matches;
 
   function schedule() {
     if (!frame && renderer && presented) frame = requestAnimationFrame(update);
@@ -236,15 +235,6 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
   const size = new ResizeObserver(sizeCanvas);
   size.observe(root);
 
-  // The existing page entrance is a sibling of the hero and removes itself when it finishes.
-  const entrance = new MutationObserver(() => {
-    if (!hero?.previousElementSibling) {
-      entrance.disconnect();
-      reconcile();
-    }
-  });
-  if (hero?.previousElementSibling && hero.parentElement) entrance.observe(hero.parentElement, { childList: true });
-
   const passive = { signal, passive: true };
   root.addEventListener("pointerdown", onPress, passive);
   root.addEventListener("pointermove", onMove, passive);
@@ -273,7 +263,6 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     request?.abort();
     view.disconnect();
     size.disconnect();
-    entrance.disconnect();
     showFallback();
   };
 }

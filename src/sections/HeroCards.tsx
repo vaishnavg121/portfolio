@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { useReducedMotion } from 'framer-motion';
@@ -96,199 +96,45 @@ const CARDS = [
   { id: 'contact', title: 'CONTACT', subtitle: 'LET’S CONNECT', num: '04', Icon: IconContact }
 ];
 
-const desktopPositions = [
-  { y: 20, rotate: -2 },
-  { y: 3, rotate: 1 },
-  { y: 23, rotate: -1 },
-  { y: 10, rotate: 2 },
-];
-
 export const HeroCards = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const shouldReduceMotion = useReducedMotion();
+  const containerRef = useRef<HTMLElement>(null);
+  const reduced = useReducedMotion();
 
   useGSAP(() => {
-    if (shouldReduceMotion) return;
-    
-    const cards = gsap.utils.toArray('.hero-card') as HTMLElement[];
-    if (!cards.length) return;
-
-    const mm = gsap.matchMedia();
-
-    mm.add("(width < 64rem)", () => {
-      gsap.from(cards, { y: 12, opacity: 0.6, duration: 0.42, stagger: 0.055, ease: "power2.out", clearProps: "transform,opacity" });
-    }, containerRef);
-
-    mm.add(
-      "(min-width: 64rem)",
-      () => {
-
-        gsap.set(cards, { opacity: 0.6 });
-        cards.forEach((card, i) => {
-          gsap.to(card, {
-            opacity: 1,
-            x: 0,
-            y: desktopPositions[i].y,
-            rotate: desktopPositions[i].rotate,
-            duration: 0.72,
-            delay: 0.16 + i * 0.075,
-            ease: "power3.out",
-            overwrite: "auto",
-          });
-        });
-
-        const container = containerRef.current;
-        if (!container) return;
-
-        // Container enter/leave handlers
-        const onContainerEnter = () => {
-          cards.forEach((c, i) => {
-            gsap.to(c, {
-              x: i * 3,
-              y: desktopPositions[i].y + (i % 2 === 0 ? -5 : 5),
-              rotate: desktopPositions[i].rotate * 0.5,
-              duration: 0.6,
-              ease: "power2.out"
-            });
-          });
-        };
-
-        const onContainerLeave = () => {
-          cards.forEach((c, i) => {
-            gsap.to(c, {
-              x: 0,
-              y: desktopPositions[i].y,
-              rotate: desktopPositions[i].rotate,
-              scale: 1,
-              zIndex: CARDS.length - i,
-              borderColor: "var(--border)",
-              duration: 0.6,
-              ease: "power2.out"
-            });
-            
-            const arrow = c.querySelector('.card-arrow');
-            if (arrow) gsap.to(arrow, { opacity: 0.7, x: 0, duration: 0.2 });
-            
-            const highlight = c.querySelector('.card-highlight');
-            if (highlight) gsap.to(highlight, { opacity: 0, duration: 0.3 });
-          });
-        };
-
-        container.addEventListener('mouseenter', onContainerEnter);
-        container.addEventListener('mouseleave', onContainerLeave);
-
-        // Individual card handlers
-        const cardHandlers = cards.map((card, i) => {
-          const onEnter = () => {
-            gsap.to(card, {
-              y: desktopPositions[i].y - 12,
-              x: -4,
-              rotate: 0,
-              scale: 1.05,
-              zIndex: 20, 
-              borderColor: "var(--accent)",
-              duration: 0.4,
-              ease: "power3.out"
-            });
-            
-            const arrow = card.querySelector('.card-arrow');
-            if (arrow) gsap.to(arrow, { opacity: 1, x: 0, duration: 0.3 });
-            
-            const highlight = card.querySelector('.card-highlight');
-            if (highlight) gsap.to(highlight, { opacity: 1, duration: 0.3 });
-
-            cards.forEach((sibling, j) => {
-              if (i !== j) {
-                const distance = j - i;
-                gsap.to(sibling, {
-                  x: distance > 0 ? 9 : -5,
-                  y: desktopPositions[j].y + (distance > 0 ? 5 : -5),
-                  scale: 0.98,
-                  zIndex: CARDS.length - j,
-                  borderColor: "var(--border)",
-                  duration: 0.4,
-                  ease: "power2.out"
-                });
-              }
-            });
-          };
-
-          const onDown = () => gsap.to(card, { scale: 0.98, duration: 0.1 });
-          const onUp = () => gsap.to(card, { scale: 1.05, duration: 0.1 });
-
-          card.addEventListener('mouseenter', onEnter);
-          card.addEventListener('focus', onEnter);
-          card.addEventListener('blur', onContainerLeave);
-          card.addEventListener('mousedown', onDown);
-          card.addEventListener('mouseup', onUp);
-
-          return { card, onEnter, onDown, onUp };
-        });
-
-        // Cleanup event listeners for matchMedia
-        return () => {
-          container.removeEventListener('mouseenter', onContainerEnter);
-          container.removeEventListener('mouseleave', onContainerLeave);
-          cardHandlers.forEach(({ card, onEnter, onDown, onUp }) => {
-            card.removeEventListener('mouseenter', onEnter);
-            card.removeEventListener('focus', onEnter);
-            card.removeEventListener('blur', onContainerLeave);
-            card.removeEventListener('mousedown', onDown);
-            card.removeEventListener('mouseup', onUp);
-          });
-        };
-      },
-      containerRef
-    );
-
-    return () => mm.revert();
+    const media = gsap.matchMedia();
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      gsap.fromTo(".hero-card", { y: 7, opacity: 0.84 }, {
+        y: 0, opacity: 1, delay: 0.22, duration: 0.43, stagger: 0.055,
+        ease: "power3.out", clearProps: "transform,opacity",
+      });
+    });
+    return () => media.revert();
   }, { scope: containerRef });
 
   return (
-    <div 
-      ref={containerRef} 
-      className="hero-deck relative grid w-full grid-cols-2 gap-2.5 sm:grid-cols-4 lg:block perspective-1000"
-      aria-label="Quick Navigation"
-    >
-      {CARDS.map((card, i) => (
+    <nav ref={containerRef} className="hero-deck grid w-full grid-cols-2 gap-2.5 sm:grid-cols-4" aria-label="Quick Navigation">
+      {CARDS.map(card => (
         <button
           key={card.id}
-          className="hero-card relative h-[8.25rem] min-w-0 border rounded-sm p-3 lg:p-[clamp(0.75rem,1.15vw,1.25rem)] text-left flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent overflow-hidden group active:border-accent motion-safe:active:scale-[0.98]"
-          style={{ 
-            zIndex: CARDS.length - i,
-            "--deck-progress": i / (CARDS.length - 1),
-            "--resting-position": `translateY(${desktopPositions[i].y}px) rotate(${desktopPositions[i].rotate}deg)`
-          } as React.CSSProperties}
-          onClick={() => document.getElementById(card.id)?.scrollIntoView({ behavior: shouldReduceMotion ? "instant" : "smooth" })}
+          type="button"
+          className="hero-card group relative flex min-w-0 flex-col justify-between overflow-hidden rounded-sm border p-3 text-left focus-visible:outline-1 focus-visible:outline-accent active:border-accent sm:p-3.5 lg:p-4"
+          onClick={() => document.getElementById(card.id)?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" })}
           aria-label={`Scroll to ${card.title}`}
         >
-          {/* Highlight overlay */}
-          <div className="card-highlight absolute inset-0 bg-gradient-to-br from-white/[0.06] to-transparent opacity-0 max-lg:group-active:opacity-100 max-lg:group-focus-visible:opacity-100 pointer-events-none" />
-          
-          {/* Subtle line accent left */}
-          <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-accent/0 group-hover:bg-accent/60 transition-colors duration-500" />
-          
-          <div className="flex flex-col h-full relative z-10 w-full">
-            {/* Top Left: 01 */}
-            <span className="font-mono text-xs md:text-sm text-accent/80 tracking-widest leading-none mb-auto">{card.num}</span>
-            
-            {/* Top/Center: Large Symbol */}
-            <div className="absolute inset-x-0 top-2.5 flex items-center justify-center pointer-events-none [&>svg]:size-16 lg:inset-0 lg:mt-3 lg:[&>svg]:size-24 xl:[&>svg]:size-28">
-              <card.Icon />
-            </div>
-
-            {/* Bottom Content */}
-            <div className="mt-auto relative pt-4 -mx-1 px-1 -mb-1 pb-1 rounded-sm">
-              <div className="w-6 h-[1px] bg-white/20 mb-1.5 lg:mb-3 group-hover:w-12 group-hover:bg-accent/70 transition-all duration-500" />
-              <div className="font-display text-xs lg:text-[clamp(0.76rem,1.12vw,1.05rem)] text-white/90 tracking-wide uppercase mb-0.5 lg:mb-1.5">{card.title}</div>
-              <div className="flex items-center justify-between">
-                <div className="font-mono text-[9px] lg:text-[10px] text-text-muted tracking-widest uppercase">{card.subtitle}</div>
-                <span className="card-arrow font-mono text-[11px] md:text-xs text-accent lg:opacity-70 leading-none">&#x2192;</span>
-              </div>
+          <span className="font-mono text-[10px] tracking-widest text-accent/80">{card.num}</span>
+          <div className="hero-card-symbol pointer-events-none absolute" aria-hidden="true">
+            <card.Icon />
+          </div>
+          <div className="relative mt-auto">
+            <div className="mb-1.5 h-px w-5 bg-white/20 group-hover:bg-accent/70" />
+            <span className="block font-display text-xs tracking-wide text-text-primary lg:text-[0.935rem]">{card.title}</span>
+            <div className="mt-1 flex items-start justify-between gap-1">
+              <span className="font-mono text-[9px] leading-snug tracking-wide text-text-muted xl:text-[10px]">{card.subtitle}</span>
+              <span aria-hidden="true" className="font-mono text-xs leading-none text-accent">↗</span>
             </div>
           </div>
         </button>
       ))}
-    </div>
+    </nav>
   );
 };

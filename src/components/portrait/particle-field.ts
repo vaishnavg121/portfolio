@@ -32,6 +32,7 @@ export function createParticleField(data: ArrayBuffer) {
   const camera = new Float32Array(4);
   const centerY = size * 0.46;
   const focal = size * 1.64;
+  const compact = size < 100;
   let yaw = HOME_YAW;
   let pitch = HOME_PITCH;
   let yawVelocity = 0;
@@ -57,8 +58,8 @@ export function createParticleField(data: ArrayBuffer) {
     home[slot + 1] = y;
     home[slot + 2] = z;
     inks[slot] = tone;
-    inks[slot + 1] = (0.32 + 0.64 * tone) * opacity ** 0.75;
-    inks[slot + 2] = (0.16 + 0.255 * Math.sqrt(tone)) * (0.78 + 0.22 * opacity);
+    inks[slot + 1] = (0.32 + 0.64 * tone) * opacity ** 0.75 * (compact ? 1.10 : 1);
+    inks[slot + 2] = (0.16 + 0.255 * Math.sqrt(tone)) * (0.78 + 0.22 * opacity) * (compact ? 1.14 : 1);
 
     const rotatedX = x * camera[0] + z * camera[1];
     const rotatedZ = z * camera[0] - x * camera[1];

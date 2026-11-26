@@ -114,31 +114,79 @@ body {
 .portfolio-control:not(:disabled):active { scale: 0.975; }
 
 .hero-composition {
-  background: radial-gradient(ellipse at 86% 24%, #251719 0%, #100d0e 37%, transparent 65%), var(--background);
+  background: var(--background);
 }
 
-.hero-frame { padding-block: clamp(2.8rem, 7vh, 6rem) clamp(3rem, 5.5vw, 6rem); }
-.hero-title-block { margin-block-end: clamp(1.45rem, 3.5vw, 3.1rem); }
+.hero-ambient {
+  background: radial-gradient(ellipse 68% 56% at 65% 32%, #261a1c, #171213 54%, transparent 83%);
+}
+
+.hero-frame {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "name" "portrait" "intro" "cards";
+  gap: clamp(0.85rem, 2vw, 1.4rem);
+  padding-block: clamp(2rem, 5svh, 4rem) clamp(2.75rem, 5vw, 5rem);
+}
+
+.hero-title-block { grid-area: name; align-self: end; }
+.hero-signature {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-block-end: clamp(0.65rem, 1.5vw, 1.15rem);
+  font-size: clamp(0.6rem, 1.2vw, 0.69rem);
+  letter-spacing: 0.09em;
+}
+.hero-signature > span { width: 1.65rem; height: 1px; background: var(--accent); flex-shrink: 0; }
 .hero-name {
   font-size: clamp(2.25rem, 11.8vw, 6.3rem);
-  line-height: 0.86;
+  line-height: 0.88;
   letter-spacing: -0.065em;
 }
 
-.hero-name > span { display: block; padding: 0.07em 0.075em 0.1em 0; overflow: clip; }
+.hero-name > span { display: block; padding: 0.04em 0.065em 0.085em 0; overflow: clip; }
 .hero-name > span > span { display: block; }
 .hero-surname { color: #b8a8a3; }
-.hero-lower { display: grid; gap: clamp(1.15rem, 3vw, 2.5rem); }
+.hero-portrait-stage { grid-area: portrait; width: clamp(8.5rem, 46.5vw, 12.4rem); margin-block: -0.4rem; justify-self: center; }
+.hero-subtitle-block { grid-area: intro; align-self: start; }
 .hero-positioning { border-inline-start: 2px solid var(--accent); padding-inline-start: 0.875rem; }
-.hero-introduction { max-width: 48ch; margin-block: 0.85rem; }
-.hero-orbit { opacity: 0.5; }
+.hero-introduction { display: grid; gap: 0.7rem; max-width: 61ch; margin-block: 0.82rem; line-height: 1.55; }
+.hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem 1.35rem; }
+.hero-card-grid { grid-area: cards; padding-block-start: 0.9rem; border-block-start: 1px solid var(--border); }
+.hero-deck { gap: clamp(0.55rem, 1.1vw, 1rem); }
 .hero-card {
-  background: radial-gradient(ellipse at top right, #2b1b20aa, transparent 68%), #0e0c0d;
+  min-height: 6.8rem;
+  background: radial-gradient(ellipse at top right, #21171ab0, transparent 72%), #0e0c0d;
   border-color: var(--border);
-  box-shadow: 0 14px 32px #0005;
+  box-shadow: 0 9px 25px #0003;
+  transition: border-color 180ms var(--ease-reveal), translate 220ms var(--ease-reveal);
+}
+.hero-card-symbol { inset-block-start: 0.42rem; inset-inline-end: 0.5rem; }
+.hero-card-symbol svg { width: clamp(2.55rem, 7vw, 4.15rem); height: auto; }
+
+@media (hover: hover) and (pointer: fine) {
+  .hero-card:hover { border-color: var(--border-strong); }
 }
 
-.hero-card:focus-visible { z-index: 32 !important; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .hero-card:is(:hover, :focus-visible) { translate: 0 -3px; }
+}
+
+@media (pointer: coarse) and (prefers-reduced-motion: no-preference) {
+  .hero-card:active { translate: 0 1px; }
+}
+
+@media (width >= 43rem), (width >= 35rem) and (height <= 30rem) {
+  .hero-frame {
+    grid-template-columns: minmax(0, 1.42fr) minmax(0, 1fr);
+    grid-template-areas: "name portrait" "intro portrait" "cards cards";
+    column-gap: clamp(0.8rem, 3vw, 2.25rem);
+  }
+  .hero-name { font-size: clamp(2.8rem, 8vw, 6rem); }
+  .hero-portrait-stage { width: 100%; max-width: 22rem; margin-block: 0; align-self: start; }
+  .hero-ambient { background-position: 100% 0; }
+}
 
 .project-heading {
   position: relative;
@@ -401,23 +449,21 @@ body:has(.case-image-dialog[open]) { overflow: hidden; }
 }
 
 @media (width >= 64rem) {
-  .hero-composition { min-height: min(95svh, 62rem); display: grid; align-items: center; }
-  .hero-name { font-size: clamp(5.4rem, 8.8vw, 9.3rem); }
-  .hero-frame { padding-block: clamp(4rem, 8vh, 7rem) clamp(2.7rem, 5vh, 5rem); }
-  .hero-lower { grid-template-columns: minmax(0, 1.52fr) minmax(0, 1fr); align-items: start; gap: clamp(2rem, 4.5vw, 5.25rem); }
-  .hero-card-grid { grid-column: 1; grid-row: 1; padding-top: 0.45rem; }
-  .hero-subtitle-block { grid-column: 2; grid-row: 1; }
-  .hero-introduction { margin-block: 1rem; }
-  .hero-orbit { opacity: 0.82; }
-  .hero-deck { --hero-card-width: 25.1%; min-height: clamp(14.25rem, 19vw, 18rem); }
-  .hero-deck .hero-card {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline-start: calc((100% - var(--hero-card-width)) * var(--deck-progress));
-    width: var(--hero-card-width);
-    height: clamp(12.75rem, 17.2vw, 16.4rem);
-    transform: var(--resting-position);
+  .hero-composition { min-height: min(92svh, 59rem); display: grid; align-items: center; }
+  .hero-ambient {
+    background: radial-gradient(ellipse 51% 70% at 78% 42%, #2a1e20, #191314 51%, transparent 82%);
   }
+  .hero-frame {
+    grid-template-columns: minmax(0, 1.34fr) minmax(0, 1fr);
+    column-gap: clamp(1.75rem, 4.1vw, 4.25rem);
+    row-gap: clamp(1.25rem, 2.25vw, 2.3rem);
+    padding-block: clamp(3rem, 6.8svh, 5rem) clamp(2.75rem, 5vw, 5rem);
+  }
+  .hero-name { font-size: clamp(4.6rem, 7.8vw, 7.6rem); }
+  .hero-portrait-stage { width: min(100%, 32rem); max-width: none; align-self: center; margin-block-start: -1.75rem; }
+  .hero-card-grid { padding-block-start: 1rem; }
+  .hero-card { min-height: clamp(7.25rem, 9vw, 8.65rem); }
+  .hero-card-symbol { inset-block-start: 0.62rem; inset-inline-end: 0.9rem; }
   .project-editorial {
     display: grid;
     grid-template-columns: minmax(0, 0.74fr) minmax(0, 1.26fr);
