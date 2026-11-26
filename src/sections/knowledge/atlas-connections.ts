@@ -1,4 +1,4 @@
-import { atlasPeaks, clamp, heightField, landmarkPositions, skillPose, skillPositions, territoryIndex, type SceneFrame } from "./atlas-geometry";
+import { atlasPeaks, clamp, heightField, landmarkPositions, skillPose, skillPositions, terrainHeight, territoryIndex, type SceneFrame } from "./atlas-geometry";
 import { ATLAS_BRIDGES, ATLAS_LINKS, ATLAS_TERRITORIES, SKILLS, SKILLS_BY_ID, TERRITORIES_BY_ID, skillReferences, type AtlasPosition, type AtlasSkill, type Selection } from "./atlas-model";
 
 type Anchor = { region: number; skill?: AtlasSkill; fixed?: AtlasPosition };
@@ -63,9 +63,7 @@ export function connectionsFor(selection: Selection | null): Connection[] {
   const relationships = ATLAS_LINKS.flatMap(({ a, b, bridge }) => {
     const other = a.id === selection.id ? b : b.id === selection.id ? a : undefined;
     if (!other) return [];
-    const destination = skillAnchor(other);
-    if (bridge) destination.fixed = skillPositions.get(other.id);
-    return [{ a: focus, b: destination, weight: bridge ? .36 : .64, energy: bridge ? .37 : .68, bridge }];
+    return [{ a: focus, b: skillAnchor(other), weight: bridge ? .36 : .64, energy: bridge ? .37 : .68, bridge }];
   });
   return [
     { a: focus, b: { region }, weight: .30, energy: .25, bridge: false },
@@ -79,9 +77,6 @@ export function connectionsFor(selection: Selection | null): Connection[] {
 
 export function connectedSkillPose(skill: AtlasSkill, frame: SceneFrame): AtlasPosition {
   const region = TERRITORIES_BY_ID.get(skill.territoryId)!.index;
-  if (frame.selection?.type === "skill" && region !== territoryIndex(frame.selection)) {
-    return skillPositions.get(skill.id)!;
-  }
   return skillPose(skill, frame.expansion[region]);
 }
 
@@ -89,7 +84,7 @@ export function connectionEndpoint(anchor: Anchor, frame: SceneFrame) {
   return anchor.fixed ?? (anchor.skill ? skillPose(anchor.skill, frame.expansion[anchor.region]) : landmarkPositions[anchor.region]);
 }
 
-export function routeCurve(a: AtlasPosition, b: AtlasPosition, bridge: boolean) {
+export function routeCurve(a: AtlasPosition, b: AtlasPosition, bridge: boolean, expansion?: Float32Array) {
   const dx = b.x - a.x, dy = b.y - a.y;
   const distance = Math.hypot(dx, dy);
   const arch = clamp(distance * .091, 0, 41);
@@ -102,10 +97,11 @@ export function routeCurve(a: AtlasPosition, b: AtlasPosition, bridge: boolean) 
   };
   const clearance = (t: number) => {
     const point = profile(t);
-    return clamp((heightField(point.x, point.y).z + 10 - point.z) * 1.9, 0, 52);
+    const clearance = terrainHeight(point.x,point.y,expansion) + 8 - point.z;
+    return clamp(clearance / Math.max(.25,point.first+point.second),0,71);
   };
-  const nearLift = arch * 1.15 + clearance(.32) * .66;
-  const farLift = arch + clearance(.70) * .66;
+  const nearLift = Math.max(arch * 1.15,clearance(.22),clearance(.43));
+  const farLift = Math.max(arch,clearance(.61),clearance(.78));
   return (t: number): AtlasPosition => {
     const { x, y, z, first, second } = profile(t);
     return { x, y, z: z + nearLift * first + farLift * second };

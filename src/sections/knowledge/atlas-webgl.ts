@@ -1,8 +1,10 @@
 import { landmarkPositions, lens, screenPoint, TERRAIN_STRIDE, territoryIndex, visibleSkills, type AtlasRenderer } from "./atlas-geometry";
 import { connectedSkillPose, visibleProjects } from "./atlas-connections";
+import { TERRITORIES_BY_ID } from "./atlas-model";
 import { createAtlasStreams, STREAM_STRIDE } from "./atlas-streams";
 import { readAtlasPalette } from "./atlas-palette";
 import { makeAtlasSurface } from "./atlas-surface";
+import { terrainRippleGLSL } from "./atlas-motion";
 import { createTerrainTiles, FOG_FAR, FOG_NEAR, makeAtlasMarkers, terrainCenter } from "./atlas-terrain";
 
 const vertex = `
@@ -13,7 +15,7 @@ attribute float aPhase;
 attribute float aFormation;
 uniform vec3 uCam;
 uniform vec4 uFrame, uMotion, uSkill, uLens;
-uniform float uHover;
+uniform vec4 uInteraction;
 uniform float uSurfaceLayer;
 uniform vec4 uGrade;
 uniform vec2 uGround;
@@ -21,6 +23,7 @@ uniform vec3 uShadow, uMuted, uLight, uAccent, uPetal, uStone;
 uniform vec4 uImpulses[4], uPeaks[8];
 varying mediump vec4 vColor;
 varying mediump float vKind;
+${terrainRippleGLSL}
 void main() {
   vec3 p=aPosition;
   int id=int(max(0.0,aStyle.x));
@@ -44,32 +47,18 @@ void main() {
     vec2 around=p.xy-peak.xy;
     float response=exp(-dot(around,around)/18800.0);
     p.z+=lift*formationProgress;
-    aura+=response*(expand*.16+(hovered?.19*uHover:0.0));
+    aura+=response*expand*.16;
+    vec2 hoverOffset=p.xy-uInteraction.xy;
+    aura+=exp(-dot(hoverOffset,hoverOffset)/6200.0)*uInteraction.z*.36;
     if(uMotion.z>=0.0) ink*=.70+.30*expand;
     if(time>=0.0) {
       float drift=sin(p.x*.013+p.y*.017-time*.64);
       float sheen=smoothstep(.28,.98,sin(p.x*.009-p.y*.020-time*.57));
       tonal=drift*.043+sheen*.054*clamp(-kind,0.0,1.0);
-      p.z+=sin(p.x*.012+p.y*.017-time*.71)*.78+sin(p.y*.022+time*.48)*.47;
-      for(int k=0;k<4;k++) {
-        vec4 impulse=uImpulses[k];
-        if(impulse.w<.006||impulse.z>=.86) continue;
-        vec2 d=p.xy-impulse.xy;
-        float distanceSquared=dot(d,d), t=impulse.z;
-        float reach=t*102.0+69.0;
-        if(distanceSquared>reach*reach)continue;
-        float radius=sqrt(distanceSquared);
-        float ring=(radius-t*102.0)/24.0, local=exp(-distanceSquared/3300.0), wave=exp(-ring*ring);
-        float envelope=smoothstep(0.0,.065,t)*(1.0-smoothstep(.52,.86,t));
-        float force=impulse.w*exp(-2.8*t)*envelope;
-        p.z+=force*(local*(-3.5)+wave*2.25);
-        p.xy+=d/max(radius,9.0)*local*force*1.25;
-        aura+=(local*.14+wave*.30)*force;
-      }
     }
     ink*=mix(.54,1.0,smoothstep(0.0,1.0,uMotion.y));
   } else if(kind<1.5) {
-    aura=selected?.42:(hovered?.37*uHover:0.0);
+    aura=selected?.42:(hovered?.37*uInteraction.z:0.0);
     if(uMotion.z>=0.0 && !selected) ink*=.55;
     if(phase<.5) size+=aura*11.0;
   } else if(kind<2.5) {
@@ -77,6 +66,8 @@ void main() {
     ink*=smoothstep(.20,.76,expand);
     aura=exp(-length((p-uSkill.xyz)*vec3(.83,.83,.48))*.075)*.34*expand;
   }
+  float disturbance=uInteraction.w>.5?ripple(p):0.0;
+  aura+=disturbance;
   float x=p.x*uLens.z-p.y*uLens.w, y=p.x*uLens.w+p.y*uLens.z;
   float distanceToCamera=uCam.z-y*uLens.x-p.z*uLens.y;
   float magnification=uCam.z/max(uCam.z*.22,distanceToCamera);
@@ -114,6 +105,8 @@ void main() {
       float detail=smoothstep(2.5,3.0,uSurfaceLayer);
       float local=smoothstep(3.0,14.0,lift)*formationProgress;
       ink*=mix(1.0-contour*local*.84,smoothstep(.16,.88,formationProgress),detail);
+      color=mix(color,uPetal,clamp(aura*.70,0.0,.65));
+      ink+=aStyle.y*aura*(contour*.96+.37);
     }
   } else {
     color=mix(uAccent,mix(uPetal,uLight,.78),phase*.94);
@@ -264,7 +257,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   const streamAttrs=streamAttribs.map(([name,size,offset])=>({index:gl.getAttribLocation(streamProgram,name),size,offset}));
   const streamUniforms=["uSize","uAccent","uLight","uPetal","uTime","uPointer"] as const;
   const stream=Object.fromEntries(streamUniforms.map(name=>[name,gl.getUniformLocation(streamProgram,name)]));
-  const names=["uCam","uFrame","uMotion","uSkill","uLens","uHover","uSurfaceLayer","uGrade","uGround","uShadow","uMuted","uLight","uAccent","uPetal","uStone","uImpulses[0]","uPeaks[0]"] as const;
+  const names=["uCam","uFrame","uMotion","uSkill","uLens","uInteraction","uSurfaceLayer","uGrade","uGround","uShadow","uMuted","uLight","uAccent","uPetal","uStone","uImpulses[0]","uPeaks[0]"] as const;
   const u=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
   gl.uniform4f(u.uLens,lens.COS,lens.SIN,lens.CY,lens.SY);
   const peaks=new Float32Array(32);
@@ -303,7 +296,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
       gl.uniform3f(u.uCam,frame.camera.x,frame.camera.y,frame.perspective);
       gl.uniform4f(u.uFrame,frame.width,frame.height,frame.camera.z,frame.stretch);
       gl.uniform4f(u.uMotion,frame.motion?frame.time:-1,frame.progress,active,frame.hover);
-      gl.uniform1f(u.uHover,frame.hoverStrength);
+      gl.uniform4f(u.uInteraction,frame.hoverPoint?.x??99999,frame.hoverPoint?.y??99999,frame.hoverStrength,frame.rippling?1:0);
       const s=frame.activeSkill;
       gl.uniform4f(u.uSkill,s?.x??99999,s?.y??99999,s?.z??0,dpr);
       gl.uniform4fv(u["uImpulses[0]"],frame.impulses);
@@ -374,7 +367,10 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
         const skills=visibleSkills(frame.selection);
         const own=skills[0]?.territoryId;
         for(const item of skills) {
-          if(item.territoryId!==own)add(connectedSkillPose(item,frame),3,5,.72);
+          if(item.territoryId!==own){
+            const progress=frame.expansion[TERRITORIES_BY_ID.get(item.territoryId)!.index];
+            if(progress<.67)add(connectedSkillPose(item,frame),3,5,.72*(1-progress/.67));
+          }
         }
         if(offset) {
           gl.bindBuffer(gl.ARRAY_BUFFER,contextPins);

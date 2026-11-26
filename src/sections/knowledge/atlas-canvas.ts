@@ -38,7 +38,7 @@ export function makeCanvasAtlas(canvas: HTMLCanvasElement): AtlasRenderer | null
       }
       for(const {a,b,bridge,weight} of connectionsFor(frame.selection)){
         const p=connectionEndpoint(a,frame),q=connectionEndpoint(b,frame);
-        const curve=routeCurve(p,q,bridge);
+        const curve=routeCurve(p,q,bridge,frame.expansion);
         ctx.beginPath();
         for(let i=0;i<=28;i++){
           const v=screenPoint(curve(i/28),frame);

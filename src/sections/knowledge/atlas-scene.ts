@@ -6,6 +6,7 @@ import { ATLAS_TERRITORIES, SKILLS_BY_ID, TERRITORIES_BY_ID, type AtlasPosition,
 import { OVERVIEW_BOUNDS, PAN_BOUNDS, PERSPECTIVE, landmarkPositions, pickSurface, projection, screenPoint, skillPose, territoryIndex, visibleSkills, type AtlasRenderer, type SceneFrame } from "./atlas-geometry";
 import { makeCanvasAtlas } from "./atlas-canvas";
 import { connectedSkillPose, connectionEndpoint, connectionsFor, routeCurve, visibleProjects } from "./atlas-connections";
+import { anchorRipple, IMPULSE_DURATION } from "./atlas-motion";
 
 type AtlasElements = {
   stage: HTMLDivElement;
@@ -43,6 +44,7 @@ export function createAtlasScene(
   let hoverTarget = -1;
   let hoverStrength = 0;
   let hoverFrom = 0;
+  let previewSkill: ReturnType<typeof SKILLS_BY_ID.get>;
   let pointer: Point | null = null;
   let previousPointer: Point | null = null;
   let lastImpulse = -Infinity;
@@ -123,7 +125,7 @@ export function createAtlasScene(
     const regionIndex = territoryIndex(selection);
     const amount = regionIndex < 0 ? 1 : expansion[regionIndex];
     const settledOverview = !selection && fitted && !motion;
-    const labelKey = [width,height,camera.x,camera.y,camera.z,selection?.id,selection?.type,amount.toFixed(2),popupWidth,popupHeight,settledOverview].join("/");
+    const labelKey = [width,height,camera.x,camera.y,camera.z,selection?.id,selection?.type,amount.toFixed(2),popupWidth,popupHeight,settledOverview,state.rippling?state.time:0].join("/");
     if (labelView === labelKey) return;
     labelView = labelKey;
     const skills = visibleSkills(selection);
@@ -166,7 +168,7 @@ export function createAtlasScene(
       ];
       const linkSamples=connectionsFor(selection).filter(link=>link.weight>.4).flatMap(link=>{
         const a=connectionEndpoint(link.a,placementFrame),b=connectionEndpoint(link.b,placementFrame);
-        const curve=routeCurve(a,b,link.bridge);
+        const curve=routeCurve(a,b,link.bridge,placementFrame.expansion);
         return [.2,.4,.6,.8].map(t=>screenPoint(curve(t),placementFrame));
       });
       const labelPoints = candidates.map(item => {
@@ -196,7 +198,7 @@ export function createAtlasScene(
       const mark = marks.get(target.key);
       if (!mark) continue;
       if (!mark.width) mark.width = mark.element.offsetWidth;
-      const position = screenPoint(target.position, state);
+      const position = screenPoint(state.rippling ? anchorRipple(target.position,state) : target.position, state);
       const region = target.key.startsWith("territory");
       // Keep labels close to their anchors. Prefer their previous arrangement as the camera passes thresholds.
       const project = target.key.startsWith("project");
@@ -251,7 +253,7 @@ export function createAtlasScene(
     for(let i=0;i<4;i++){
       const age=(now-impulseTimes[i])/1000;
       impulseData[i*4+2]=Math.min(2,age);
-      disturbed ||= age < .86;
+      disturbed ||= age < IMPULSE_DURATION;
     }
     const range=now-lastRender;
     const isActive=Boolean(motion||expanding||disturbed||progress<1);
@@ -276,9 +278,11 @@ export function createAtlasScene(
     const target = hoverTarget >= 0 ? 1 : 0;
     hoverStrength = hoverFrom + (target - hoverFrom) * hoverProgress;
     if (target === 0 && hoverProgress === 1) hover = -1;
+    const hoverPoint = hover < 0 ? null : previewSkill ? skillPose(previewSkill,expansion[hover]) : landmarkPositions[hover];
     const state: SceneFrame = {
       camera,width,height,stretch,progress,selection,time:now/1000,perspective:PERSPECTIVE,hover,expansion,
-      impulses:impulseData,activeSkill:skill?skillPose(skill,1):null,motion:animated,quality,hoverStrength,
+      impulses:impulseData,activeSkill:skill?skillPose(skill,expansion[selectionRegion]):null,motion:animated,quality,hoverStrength,
+      hoverPoint,rippling:animated&&disturbed,
     };
     displayLabels(state);
     if (rendererType === "pending") {
@@ -477,10 +481,11 @@ export function createAtlasScene(
     for (const id of oldPointers) if (stage.hasPointerCapture(id)) stage.releasePointerCapture(id);
   }
 
-  function setHover(next: number) {
-    if (hoverTarget === next) return;
-    if (next >= 0 && hover !== next) {
+  function setHover(next: number, skill?: typeof previewSkill) {
+    if (hoverTarget === next && (next < 0 || skill === previewSkill)) return;
+    if (next >= 0 && (hover !== next || skill !== previewSkill)) {
       hover = next;
+      previewSkill = skill;
       hoverStrength = 0;
     }
     hoverTarget = next;
@@ -501,7 +506,8 @@ export function createAtlasScene(
       popupSlot=0;
       if(next){
         const region=territoryIndex(next);
-        if(region>=0)force({x:0,y:0},.94,now,landmarkPositions[region]);
+        const skill=next.type==="skill"?SKILLS_BY_ID.get(next.id):undefined;
+        if(region>=0)force({x:0,y:0},1.06,now,skill?skillPose(skill,expansion[region]):landmarkPositions[region]);
       }
       selectionTime = now;
       dragged = false;
@@ -519,6 +525,10 @@ export function createAtlasScene(
     },
     preview(id:string|null) {
       setHover(id ? TERRITORIES_BY_ID.get(id)?.index ?? -1 : -1);
+    },
+    previewSkill(id:string|null) {
+      const skill=id?SKILLS_BY_ID.get(id):undefined;
+      setHover(skill?TERRITORIES_BY_ID.get(skill.territoryId)!.index:-1,skill);
     },
     track(point:Point|null) {
       pointer=point;

@@ -1,5 +1,6 @@
 import { connectionEndpoint, connectionsFor, routeCurve } from "./atlas-connections";
 import { clamp, screenPoint, type SceneFrame } from "./atlas-geometry";
+import { anchorRipple } from "./atlas-motion";
 
 const STREAM_SEGMENTS = 28;
 export const STREAM_STRIDE = 9;
@@ -41,7 +42,7 @@ export function createAtlasStreams() {
         dirty = "";
         return { count: 0, changed: false };
       }
-      const view = [key, frame.width, frame.height, frame.stretch, frame.camera.x, frame.camera.y, frame.camera.z, frame.perspective, ...frame.expansion, reveal, fade].join("/");
+      const view = [key, frame.width, frame.height, frame.stretch, frame.camera.x, frame.camera.y, frame.camera.z, frame.perspective, ...frame.expansion, reveal, fade, frame.rippling?frame.time:0].join("/");
       if (view === dirty) return { count: written / STREAM_STRIDE, changed: false };
       dirty = view;
       written = 0;
@@ -62,7 +63,9 @@ export function createAtlasStreams() {
       const trace = (links: typeof current, opacity: number, progress: number, retiring: boolean) => {
         if (opacity < .009) return;
         links.forEach(({ a, b, bridge, weight, energy }, index) => {
-          const p = connectionEndpoint(a, frame), q = connectionEndpoint(b, frame);
+          const start = connectionEndpoint(a,frame), end = connectionEndpoint(b,frame);
+          const p=frame.rippling?anchorRipple(start,frame):start;
+          const q=frame.rippling?anchorRipple(end,frame):end;
           let visibility = 1;
           if (frame.selection?.type === "skill" && (bridge || b.fixed)) {
             const end = screenPoint(q, frame);
@@ -73,7 +76,7 @@ export function createAtlasStreams() {
           }
           let length = 0;
           let last = p;
-          const curve = routeCurve(p, q, bridge);
+          const curve = routeCurve(p, q, bridge,frame.expansion);
           for (let i = 0; i <= STREAM_SEGMENTS; i++) {
             const point = curve(i / STREAM_SEGMENTS);
             const screen = screenPoint(point, frame);

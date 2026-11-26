@@ -289,6 +289,10 @@ export const SkillsConstellation = () => {
                 {SKILLS.map(item => (
                   <button type="button" key={item.id} className="atlas-marker atlas-skill-marker"
                     data-atlas-marker={"skill-" + item.id} aria-label={item.label} tabIndex={-1} inert aria-pressed={item.id === skill?.id}
+                    onPointerEnter={event => {if(event.pointerType==="mouse")scene.current?.previewSkill(item.id);}}
+                    onPointerLeave={() => scene.current?.previewSkill(null)}
+                    onFocus={() => scene.current?.previewSkill(item.id)}
+                    onBlur={() => scene.current?.previewSkill(null)}
                     onClick={event => choose({type:"skill", id:item.id},event.detail === 0,event.currentTarget)}>
                     {item.label}
                   </button>

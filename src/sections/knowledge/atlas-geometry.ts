@@ -237,6 +237,7 @@ export type SceneFrame = {
   camera: Camera; width: number; height: number; stretch: number; progress: number; selection: Selection | null;
   time: number; perspective: number; hover: number; expansion: Float32Array;
   impulses: Float32Array; activeSkill: AtlasPosition | null; motion: boolean; quality: number; hoverStrength: number;
+  hoverPoint: AtlasPosition | null; rippling: boolean;
 };
 export type AtlasRenderer = { draw: (frame: SceneFrame) => void; dispose: () => void };
 
