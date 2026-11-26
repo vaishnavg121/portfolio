@@ -1,6 +1,6 @@
-import { clamp, landmarkPositions, lens, screenPoint, TERRAIN_STRIDE, territoryIndex, type AtlasRenderer } from "./atlas-geometry";
+import { clamp, landmarkPositions, lens, screenPoint, skillPose, TERRAIN_STRIDE, territoryIndex, type AtlasRenderer } from "./atlas-geometry";
 import { ATLAS_TERRITORIES } from "./atlas-model";
-import { connectedSkillPose, connectionEndpoint, connectionsFor, routeCurve, visibleProjects } from "./atlas-connections";
+import { connectionEndpoint, connectionsFor, routeCurve, visibleProjects } from "./atlas-connections";
 import { readAtlasPalette } from "./atlas-palette";
 import { createTerrainTiles, FOG_FAR, FOG_NEAR, terrainCenter } from "./atlas-terrain";
 
@@ -21,8 +21,7 @@ export function makeCanvasAtlas(canvas: HTMLCanvasElement): AtlasRenderer | null
       const field = terrain(center.x, center.y);
       for (let i=0; i<field.length; i+=5*TERRAIN_STRIDE) {
         const x=field[i],y=field[i+1];
-        const formation=field[i+8], owner=Math.floor(formation);
-        const z=field[i+2]+(formation-owner)*64*frame.expansion[owner];
+        const z=field[i+2];
         const depth = (x*lens.SY+y*lens.CY)*lens.COS+z*lens.SIN;
         if(depth>frame.perspective*.66)continue;
         const fog=clamp((FOG_FAR-Math.hypot(x-center.x,y-center.y))/(FOG_FAR-FOG_NEAR));
@@ -37,8 +36,8 @@ export function makeCanvasAtlas(canvas: HTMLCanvasElement): AtlasRenderer | null
         ctx.fillRect(p.x,p.y,1.45,1.45);
       }
       for(const {a,b,bridge,weight} of connectionsFor(frame.selection)){
-        const p=connectionEndpoint(a,frame),q=connectionEndpoint(b,frame);
-        const curve=routeCurve(p,q,bridge,frame.expansion);
+        const p=connectionEndpoint(a),q=connectionEndpoint(b);
+        const curve=routeCurve(p,q,bridge);
         ctx.beginPath();
         for(let i=0;i<=28;i++){
           const v=screenPoint(curve(i/28),frame);
@@ -70,7 +69,7 @@ export function makeCanvasAtlas(canvas: HTMLCanvasElement): AtlasRenderer | null
       ctx.fillStyle=palette.light.css;
       ctx.globalAlpha=.92;
       landmarkPositions.forEach(p=>node(p,2.8));
-      if(region>=0)ATLAS_TERRITORIES[region].items.forEach(skill=>node(connectedSkillPose(skill,frame),1.8));
+      if(region>=0)ATLAS_TERRITORIES[region].items.forEach(skill=>node(skillPose(skill),1.8));
       for(const { position } of visibleProjects(frame.selection)) {
         const p=screenPoint(position,frame);
         ctx.fillStyle=palette.accent.css;

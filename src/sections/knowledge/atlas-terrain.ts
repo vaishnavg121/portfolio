@@ -1,4 +1,4 @@
-import { clamp, encodeFormation, formationAt, landmarkPositions, lens, mix, skillPositions, terrainSample, type SceneFrame } from "./atlas-geometry";
+import { clamp, landmarkPositions, lens, mix, skillPositions, terrainSample, type SceneFrame } from "./atlas-geometry";
 import { ATLAS_TERRITORIES } from "./atlas-model";
 
 const TILE_SIZE = 416;
@@ -63,14 +63,14 @@ export function createTerrainTiles(detailed: boolean) {
         // Warp the same global rows on either side of every tile boundary.
         const px = sx + 4.8 * Math.sin(sy * .027 + sx * .009);
         const py = sy + 5.4 * Math.sin(sx * .024 - sy * .011) + 2 * Math.cos(sx * .057);
-        const { z, relief, region, tone, shade, rise, formation } = terrainSample(px, py);
+        const { z, relief, region, tone, shade } = terrainSample(px, py);
         const contour = .5 + .5 * Math.cos(z * .255 + Math.sin(px * .014 + py * .021) * 1.18);
         if (i > 1 && phase > .64 + shade * .13 + contour * .09) continue;
         const emphasis = .12 * shade + .13 * contour ** 3;
         const opacity = (.24 + relief * .40 + detail * .12) * (.60 + phase * .36 + emphasis);
         const size = 1.06 + .67 * phase + (1 - detail) * .58 + .28 * emphasis;
         // The fractional region index and negative point kind carry continuous tone and slope.
-        bands[densityBand(phase)].push(px, py, z, region + tone, opacity, size, -shade, phase, encodeFormation(formation,rise));
+        bands[densityBand(phase)].push(px, py, z, region + tone, opacity, size, -shade, phase);
       }
     }
     const offsets = new Uint32Array(DENSITY_BANDS + 1);
@@ -119,20 +119,18 @@ export function makeAtlasMarkers() {
   const particles: number[] = [];
   for (const region of ATLAS_TERRITORIES) {
     const summit = landmarkPositions[region.index];
-    particles.push(summit.x, summit.y, summit.z, region.index, .36, 20, 1, 0, 0);
-    particles.push(summit.x, summit.y, summit.z, region.index, .98, 7.2, 1, 1, 0);
+    particles.push(summit.x, summit.y, summit.z, region.index, .36, 20, 1, 0);
+    particles.push(summit.x, summit.y, summit.z, region.index, .98, 7.2, 1, 1);
     for (const skill of region.items) {
       const pose = skillPositions.get(skill.id)!;
-      const formation = formationAt(pose.x,pose.y);
-      const rise = formation.region===region.index?formation.rise*.88:0;
-      particles.push(pose.x, pose.y, pose.z, region.index, .88, 5.5, 2, 1, encodeFormation(region.index,rise));
+      particles.push(pose.x, pose.y, pose.z, region.index, .88, 5.5, 2, 1);
       for (let k = 0; k < 27; k++) {
         const j = 401 + k + skill.rank * 389 + region.index * 2177;
         const angle = seed(j) * Math.PI * 2, radius = 4 + seed(j + 7) ** .62 * 12;
         const x = pose.x + Math.cos(angle) * radius, y = pose.y + Math.sin(angle) * radius;
         const sample = terrainSample(x,y);
         particles.push(x, y, sample.z + 1.5, region.index, .23 + seed(j + 22) * .49,
-          1.1 + seed(j + 43) * .61, 2, 0, encodeFormation(sample.formation,sample.rise));
+          1.1 + seed(j + 43) * .61, 2, 0);
       }
     }
   }

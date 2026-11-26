@@ -130,14 +130,6 @@ export function heightField(x: number, y: number) {
   };
 }
 
-export const landmarkPositions = atlasPeaks.map(({x,y}) => ({ x, y, z: heightField(x,y).z + 9 }));
-const landmarkProjection = landmarkPositions.map(point => projection(point));
-export const PAN_BOUNDS = {
-  left: Math.min(...landmarkProjection.map(p => p.x)) - 46,
-  right: Math.max(...landmarkProjection.map(p => p.x)) + 46,
-  top: Math.min(...landmarkProjection.map(p => p.y)) - 32,
-  bottom: Math.max(...landmarkProjection.map(p => p.y)) + 32,
-};
 export const skillPositions = new Map<string, AtlasPosition>();
 for (const region of ATLAS_TERRITORIES) {
   const peak = atlasPeaks[region.index];
@@ -167,7 +159,7 @@ for (const region of ATLAS_TERRITORIES) for (const skill of region.items) {
 // Related skills share an orientation and may overlap into a small chain of shelves.
 const LANDMARK_CELL = 72;
 const reliefCell = (x: number, y: number) => (Math.floor(x / LANDMARK_CELL) + 2048) * 4096 + Math.floor(y / LANDMARK_CELL) + 2048;
-type Spur = { x: number; y: number; region: number; dx: number; dy: number; length: number; width: number; rise: number; shelf: number };
+type Spur = { x: number; y: number; dx: number; dy: number; length: number; width: number; rise: number; shelf: number };
 const skillSpurs = new Map<number, Spur[]>();
 for (const territory of ATLAS_TERRITORIES) for (const skill of territory.items) {
   const p = skillPositions.get(skill.id)!;
@@ -180,7 +172,7 @@ for (const territory of ATLAS_TERRITORIES) for (const skill of territory.items) 
   const nearest = related.sort((a, b) => Math.hypot(a.x-p.x,a.y-p.y) - Math.hypot(b.x-p.x,b.y-p.y))[0];
   const angle = nearest ? Math.atan2(nearest.y-p.y,nearest.x-p.x) : profile.angle + Math.sin(skill.rank * 1.9) * .65;
   const spur = {
-    x:p.x, y:p.y, region:territory.index, dx:Math.cos(angle), dy:Math.sin(angle),
+    x:p.x, y:p.y, dx:Math.cos(angle), dy:Math.sin(angle),
     length:39 + territory.index % 4 * 4, width:25 + (skill.rank % 3) * 3,
     rise:24 + (skill.rank % 3) * 4, shelf:profile.shelf,
   };
@@ -194,8 +186,8 @@ for (const territory of ATLAS_TERRITORIES) for (const skill of territory.items) 
   }
 }
 
-export function formationAt(x: number, y: number) {
-  let strongest = 0, second = 0, region = 0;
+function formationAt(x: number, y: number) {
+  let strongest = 0, second = 0;
   for (const p of skillSpurs.get(reliefCell(x,y)) ?? []) {
     const dx=x-p.x, dy=y-p.y;
     const along=(dx*p.dx+dy*p.dy)/p.length;
@@ -205,37 +197,42 @@ export function formationAt(x: number, y: number) {
     const shoulders=1-smooth(.18,1.85,q);
     const steps=.65*(1-smooth(.18,.94,q))+.35*shoulders;
     const amount=p.rise*mix(shoulders,steps,p.shelf);
-    if(amount>strongest){
-      if(p.region!==region)second=strongest;
-      strongest=amount;
-      region=p.region;
-    } else if(p.region!==region)second=Math.max(second,amount);
+    if (amount > strongest) {
+      second = strongest;
+      strongest = amount;
+    } else second = Math.max(second, amount);
   }
-  // At a border between domains the uplift goes to zero before ownership changes.
-  return { region, rise: Math.max(0,strongest-second) };
+  // Nearby spurs share a shoulder without summing into narrow peaks.
+  return strongest + .19 * second;
 }
 
 export function terrainSample(x: number, y: number) {
-  const sample=heightField(x,y), formation=formationAt(x,y);
-  return { ...sample, z:sample.z+formation.rise*.12, rise:formation.rise*.88, formation:formation.region };
+  const sample = heightField(x, y);
+  const rise = formationAt(x, y);
+  return { ...sample, z: sample.z + rise, relief: clamp(sample.relief + rise / 180) };
 }
 
-export function terrainHeight(x: number, y: number, expansion?: Float32Array) {
-  const sample=terrainSample(x,y);
-  return sample.z+sample.rise*(expansion?.[sample.formation]??0);
+export function terrainHeight(x: number, y: number) {
+  return heightField(x, y).z + formationAt(x, y);
 }
 
-export const TERRAIN_STRIDE = 9;
-export function encodeFormation(region: number, rise: number) {
-  return region + rise / 64;
-}
+export const TERRAIN_STRIDE = 8;
+
+export const landmarkPositions = atlasPeaks.map(({ x, y }) => ({ x, y, z: terrainHeight(x, y) + 9 }));
+const landmarkProjection = landmarkPositions.map(point => projection(point));
+export const PAN_BOUNDS = {
+  left: Math.min(...landmarkProjection.map(p => p.x)) - 46,
+  right: Math.max(...landmarkProjection.map(p => p.x)) + 46,
+  top: Math.min(...landmarkProjection.map(p => p.y)) - 32,
+  bottom: Math.max(...landmarkProjection.map(p => p.y)) + 32,
+};
 
 for (const point of skillPositions.values()) point.z=terrainHeight(point.x,point.y)+5;
 
 export const OVERVIEW_BOUNDS = { left:-590, right:630, top:-300, bottom:249 };
 export type SceneFrame = {
   camera: Camera; width: number; height: number; stretch: number; progress: number; selection: Selection | null;
-  time: number; perspective: number; hover: number; expansion: Float32Array;
+  time: number; perspective: number; hover: number; selectionLight: Float32Array;
   impulses: Float32Array; activeSkill: AtlasPosition | null; motion: boolean; quality: number; hoverStrength: number;
   hoverPoint: AtlasPosition | null; rippling: boolean;
 };
@@ -252,11 +249,8 @@ export function territoryIndex(selection: Selection | null) {
   return id ? TERRITORIES_BY_ID.get(id)?.index ?? -1 : -1;
 }
 
-export function skillPose(skill: AtlasSkill, amount: number): AtlasPosition {
-  const region = TERRITORIES_BY_ID.get(skill.territoryId)!;
-  const target = skillPositions.get(skill.id)!;
-  const formation = formationAt(target.x,target.y);
-  return { ...target, z:target.z+(formation.region===region.index?formation.rise*.88*amount:0) };
+export function skillPose(skill: AtlasSkill): AtlasPosition {
+  return skillPositions.get(skill.id)!;
 }
 
 export function visibleSkills(selection: Selection | null) {
@@ -271,7 +265,7 @@ export function visibleSkills(selection: Selection | null) {
 }
 
 // Undo perspective along a camera ray, then find its first intersection with the heightfield.
-export function pickSurface(point: Point, perspective: number, expansion?: Float32Array): AtlasPosition | null {
+export function pickSurface(point: Point, perspective: number): AtlasPosition | null {
   const at = (depth:number) => lens.rayPoint(point,depth,perspective);
   // Sample around the ray's intersection with the plain to include panning into the distance.
   const plane = point.y * lens.COS / (lens.SIN + point.y * lens.COS / perspective);
@@ -280,16 +274,16 @@ export function pickSurface(point: Point, perspective: number, expansion?: Float
   for(let d=start;d>=end;d-=14) {
     const p=at(d);
     if(p.z>260||p.z< -78)continue;
-    if(p.z>terrainHeight(p.x,p.y,expansion))continue;
+    if(p.z>terrainHeight(p.x,p.y))continue;
     let near=d+14,far=d;
     for(let i=0;i<5;i++) {
       const middle=(near+far)*.5;
       const candidate=at(middle);
-      if(candidate.z>terrainHeight(candidate.x,candidate.y,expansion))near=middle;
+      if(candidate.z>terrainHeight(candidate.x,candidate.y))near=middle;
       else far=middle;
     }
     const hit=at(far);
-    if(Math.abs(hit.z-terrainHeight(hit.x,hit.y,expansion))<8)return hit;
+    if(Math.abs(hit.z-terrainHeight(hit.x,hit.y))<8)return hit;
   }
   return null;
 }

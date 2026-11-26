@@ -5,7 +5,7 @@ import {
 import { ATLAS_TERRITORIES, SKILLS_BY_ID, TERRITORIES_BY_ID, type AtlasPosition, type Selection } from "./atlas-model";
 import { OVERVIEW_BOUNDS, PAN_BOUNDS, PERSPECTIVE, landmarkPositions, pickSurface, projection, screenPoint, skillPose, territoryIndex, visibleSkills, type AtlasRenderer, type SceneFrame } from "./atlas-geometry";
 import { makeCanvasAtlas } from "./atlas-canvas";
-import { connectedSkillPose, connectionEndpoint, connectionsFor, routeCurve, visibleProjects } from "./atlas-connections";
+import { connectionEndpoint, connectionsFor, routeCurve, visibleProjects } from "./atlas-connections";
 import { anchorRipple, IMPULSE_DURATION } from "./atlas-motion";
 
 type AtlasElements = {
@@ -51,10 +51,9 @@ export function createAtlasScene(
   let nextImpulse = 0;
   const impulseData = new Float32Array(16);
   const impulseTimes = new Float64Array(4).fill(-Infinity);
-  const expansion = new Float32Array(ATLAS_TERRITORIES.length);
-  const fromExpansion = new Float32Array(expansion.length);
-  const popupExpansion = new Float32Array(expansion.length);
-  let expandStart = -Infinity;
+  const selectionLight = new Float32Array(ATLAS_TERRITORIES.length);
+  const fromSelectionLight = new Float32Array(selectionLight.length);
+  let emphasisStart = -Infinity;
   let lastRender = 0;
   let ambientTimer = 0;
   let quality = 1;
@@ -95,7 +94,7 @@ export function createAtlasScene(
     if (skill) {
       const mobile = width < 640;
       let zoom = clamp(Math.min(width / (mobile ? 340 : 515), world.height / 260), min * 1.38, max);
-      const point = projection(skillPose(skill,1),PERSPECTIVE);
+      const point = projection(skillPose(skill),PERSPECTIVE);
       const project = visibleProjects(selection)[0];
       if (mobile && project) {
         const other = projection(project.position, PERSPECTIVE);
@@ -108,7 +107,7 @@ export function createAtlasScene(
       }
       return cameraAt({x:point.x,y:point.y+(mobile? .055 : .035)*world.height/zoom},zoom);
     }
-    const points = region.items.map(item => projection(skillPose(item,1),PERSPECTIVE));
+    const points = region.items.map(item => projection(skillPose(item),PERSPECTIVE));
     const peak = projection(landmarkPositions[region.index],PERSPECTIVE);
     const bounds = {
       left: Math.min(...points.map(p => p.x), peak.x) - 59,
@@ -123,9 +122,9 @@ export function createAtlasScene(
 
   const displayLabels = (state: SceneFrame) => {
     const regionIndex = territoryIndex(selection);
-    const amount = regionIndex < 0 ? 1 : expansion[regionIndex];
+    const labelsReady = regionIndex < 0 || selectionLight[regionIndex] > .30;
     const settledOverview = !selection && fitted && !motion;
-    const labelKey = [width,height,camera.x,camera.y,camera.z,selection?.id,selection?.type,amount.toFixed(2),popupWidth,popupHeight,settledOverview,state.rippling?state.time:0].join("/");
+    const labelKey = [width,height,camera.x,camera.y,camera.z,selection?.id,selection?.type,labelsReady,popupWidth,popupHeight,settledOverview,state.rippling?state.time:0].join("/");
     if (labelView === labelKey) return;
     labelView = labelKey;
     const skills = visibleSkills(selection);
@@ -135,7 +134,7 @@ export function createAtlasScene(
         const index=TERRITORIES_BY_ID.get(skill.territoryId)!.index;
         if(index!==regionIndex && (width<600 || counted.has(index)))return [];
         counted.add(index);
-        return [{key:"skill-"+skill.id,position:connectedSkillPose(skill,state),pinned:selection?.id===skill.id}];
+        return [{key:"skill-"+skill.id,position:skillPose(skill),pinned:selection?.id===skill.id}];
       })
       : ATLAS_TERRITORIES.map(region => ({key:"territory-"+region.id,position:landmarkPositions[region.index],pinned:false}));
     if (regionIndex >= 0) {
@@ -149,10 +148,8 @@ export function createAtlasScene(
     if (popupWidth && window.innerWidth >= 864 && selection) {
       const focus = selection.type === "skill" ? SKILLS_BY_ID.get(selection.id) : null;
       // Reserve panel space around the destination while the camera is still moving.
-      const placementFrame = motion ? { ...state, camera: motion.to, expansion: popupExpansion } : state;
-      popupExpansion.fill(0);
-      popupExpansion[regionIndex] = 1;
-      const anchor = screenPoint(focus ? skillPose(focus,motion ? 1 : amount) : landmarkPositions[regionIndex],placementFrame);
+      const placementFrame = motion ? { ...state, camera: motion.to } : state;
+      const anchor = screenPoint(focus ? skillPose(focus) : landmarkPositions[regionIndex],placementFrame);
       const inset = Math.max(12,width*.027);
       const left=clamp(anchor.x-popupWidth-69,inset,width-inset-popupWidth);
       const right=clamp(anchor.x+69,inset,width-inset-popupWidth);
@@ -167,15 +164,11 @@ export function createAtlasScene(
         ...sides,
       ];
       const linkSamples=connectionsFor(selection).filter(link=>link.weight>.4).flatMap(link=>{
-        const a=connectionEndpoint(link.a,placementFrame),b=connectionEndpoint(link.b,placementFrame);
-        const curve=routeCurve(a,b,link.bridge,placementFrame.expansion);
+        const a=connectionEndpoint(link.a),b=connectionEndpoint(link.b);
+        const curve=routeCurve(a,b,link.bridge);
         return [.2,.4,.6,.8].map(t=>screenPoint(curve(t),placementFrame));
       });
-      const labelPoints = candidates.map(item => {
-        const id=item.key.slice(6);
-        const skill=motion&&item.key.startsWith("skill-")?SKILLS_BY_ID.get(id):undefined;
-        return screenPoint(skill?connectedSkillPose(skill,placementFrame):item.position,placementFrame);
-      });
+      const labelPoints = candidates.map(item => screenPoint(item.position, placementFrame));
       const score=({x,y}:Point)=>{
         const contains=(p:Point,margin:number)=>p.x>x-margin&&p.x<x+popupWidth+margin&&p.y>y-margin&&p.y<y+popupHeight+margin;
         return (contains(anchor,36)?32:0)
@@ -194,7 +187,8 @@ export function createAtlasScene(
       popup.style.setProperty("--popup-y",y.toFixed(1)+"px");
       accepted.push({l:x-7,r:x+popupWidth+7,t:y-7,b:y+popupHeight+7});
     }
-    if (amount > .30) for (const target of candidates) {
+    for (const target of candidates) {
+      if (!labelsReady && !target.key.startsWith("territory-")) continue;
       const mark = marks.get(target.key);
       if (!mark) continue;
       if (!mark.width) mark.width = mark.element.offsetWidth;
@@ -241,9 +235,9 @@ export function createAtlasScene(
     if (formationStart === -1) formationStart = now;
     const selectionRegion = territoryIndex(selection);
     const animated = rendererType === "webgl" && !reduced.matches;
-    const expanding = animated && now - expandStart < 440;
-    const morph = expanding ? ease(clamp((now-expandStart)/440)) : 1;
-    for(let i=0;i<expansion.length;i++) expansion[i]=fromExpansion[i]+((i===selectionRegion?1:0)-fromExpansion[i])*morph;
+    const emphasizing = animated && now - emphasisStart < 440;
+    const morph = emphasizing ? ease(clamp((now-emphasisStart)/440)) : 1;
+    for(let i=0;i<selectionLight.length;i++) selectionLight[i]=fromSelectionLight[i]+((i===selectionRegion?1:0)-fromSelectionLight[i])*morph;
     if (pointer && animated && now-lastImpulse>51) {
       force(pointer,previousPointer ? clamp(Math.hypot(pointer.x-previousPointer.x,pointer.y-previousPointer.y)/35,.38,.90) : .66,now);
       previousPointer=pointer;
@@ -256,7 +250,7 @@ export function createAtlasScene(
       disturbed ||= age < IMPULSE_DURATION;
     }
     const range=now-lastRender;
-    const isActive=Boolean(motion||expanding||disturbed||progress<1);
+    const isActive=Boolean(motion||emphasizing||disturbed||progress<1);
     if (animated && isActive && lastRender > 0 && range < 190) {
       slowFrames=range>26 ? slowFrames+1 : Math.max(0,slowFrames-1);
       healthyFrames=range<18 ? healthyFrames+1 : 0;
@@ -278,10 +272,10 @@ export function createAtlasScene(
     const target = hoverTarget >= 0 ? 1 : 0;
     hoverStrength = hoverFrom + (target - hoverFrom) * hoverProgress;
     if (target === 0 && hoverProgress === 1) hover = -1;
-    const hoverPoint = hover < 0 ? null : previewSkill ? skillPose(previewSkill,expansion[hover]) : landmarkPositions[hover];
+    const hoverPoint = hover < 0 ? null : previewSkill ? skillPose(previewSkill) : landmarkPositions[hover];
     const state: SceneFrame = {
-      camera,width,height,stretch,progress,selection,time:now/1000,perspective:PERSPECTIVE,hover,expansion,
-      impulses:impulseData,activeSkill:skill?skillPose(skill,expansion[selectionRegion]):null,motion:animated,quality,hoverStrength,
+      camera,width,height,stretch,progress,selection,time:now/1000,perspective:PERSPECTIVE,hover,selectionLight,
+      impulses:impulseData,activeSkill:skill?skillPose(skill):null,motion:animated,quality,hoverStrength,
       hoverPoint,rippling:animated&&disturbed,
     };
     displayLabels(state);
@@ -300,8 +294,8 @@ export function createAtlasScene(
     const formation = progress < 1 ? "assembling" : "settled";
     if (stage.dataset.atlasFormation !== formation) stage.dataset.atlasFormation = formation;
     stage.toggleAttribute("data-atlas-reacting",disturbed);
-    stage.toggleAttribute("data-atlas-expanding",expanding);
-    if (animated && (motion || progress<1 || disturbed || expanding || pointer || hoverProgress<1)) schedule();
+    stage.toggleAttribute("data-atlas-expanding",emphasizing);
+    if (animated && (motion || progress<1 || disturbed || emphasizing || pointer || hoverProgress<1)) schedule();
     else if(animated) ambientTimer=window.setTimeout(schedule, compact ? 52 : 40);
   }
 
@@ -457,7 +451,7 @@ export function createAtlasScene(
     let hit = at;
     if (!hit) {
       const screen = local(point);
-      hit = pickSurface({x:(screen.x-camera.x)/camera.z,y:(screen.y-camera.y)/camera.z},PERSPECTIVE,expansion) ?? undefined;
+      hit = pickSurface({x:(screen.x-camera.x)/camera.z,y:(screen.y-camera.y)/camera.z},PERSPECTIVE) ?? undefined;
     }
     lastImpulse=now;
     if(!hit)return;
@@ -499,15 +493,15 @@ export function createAtlasScene(
     select(next: Selection | null) {
       const now = performance.now();
       if (next?.id === selection?.id && next?.type === selection?.type && now - selectionTime < 70) return;
-      fromExpansion.set(expansion);
-      expandStart=now;
+      fromSelectionLight.set(selectionLight);
+      emphasisStart=now;
       selection = next;
       setHover(-1);
       popupSlot=0;
       if(next){
         const region=territoryIndex(next);
         const skill=next.type==="skill"?SKILLS_BY_ID.get(next.id):undefined;
-        if(region>=0)force({x:0,y:0},1.06,now,skill?skillPose(skill,expansion[region]):landmarkPositions[region]);
+        if(region>=0)force({x:0,y:0},1.06,now,skill?skillPose(skill):landmarkPositions[region]);
       }
       selectionTime = now;
       dragged = false;
@@ -574,7 +568,7 @@ export function createAtlasScene(
       const candidates = visibleSkills(selection);
       const active=territoryIndex(selection);
       const items = candidates.length ? candidates.filter(skill=>skill.territoryId===ATLAS_TERRITORIES[active].id).map(skill=>({
-        type:"skill" as const,id:skill.id,anchor:projection(skillPose(skill,expansion[active]),PERSPECTIVE),
+        type:"skill" as const,id:skill.id,anchor:projection(skillPose(skill),PERSPECTIVE),
       })) : ATLAS_TERRITORIES.map(region=>({type:"territory" as const,id:region.id,anchor:projection(landmarkPositions[region.index],PERSPECTIVE)}));
       let nearest: Selection | null = null;
       let distance = candidates.length ? 17 : 28;
