@@ -2,9 +2,9 @@ import type { Disturbance } from "./particle-field";
 import type { createParticleRenderer } from "./particle-renderer";
 
 const FRAME_MS = 1000 / 60;
-const TAP_MS = 290;
+const TAP_MS = 340;
 export const WIDE_PORTRAIT = "(min-width: 64rem)";
-export const PORTRAIT_ASSETS = "/images/portrait-relief";
+export const PORTRAIT_ASSETS = "/images/portrait-sculpture";
 
 type Contact = {
   id: number;
@@ -107,6 +107,11 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     }
     if (!canPresent()) {
       if (presented) pause();
+      if (!renderer && request) {
+        request.abort();
+        request = undefined;
+        requested = "";
+      }
       return;
     }
 

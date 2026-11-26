@@ -17,8 +17,8 @@ export function DotPortrait() {
         <img
           src={`${PORTRAIT_ASSETS}/compact.webp`}
           alt="Vaishnav Gadamsetty rendered in warm halftone dots"
-          width={312}
-          height={312}
+          width={332}
+          height={332}
           decoding="async"
           fetchPriority="low"
         />
