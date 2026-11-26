@@ -1,7 +1,7 @@
 .portrait {
   position: relative;
   width: clamp(8.5rem, 43vw, 14rem);
-  aspect-ratio: 92 / 90;
+  aspect-ratio: 1;
   margin: 0.15rem auto -0.55rem;
   touch-action: pan-y pinch-zoom;
   user-select: none;

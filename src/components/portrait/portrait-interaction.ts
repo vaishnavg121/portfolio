@@ -1,9 +1,10 @@
-import { createParticleRenderer, type Disturbance } from "./particle-renderer";
+import type { Disturbance } from "./particle-field";
+import type { createParticleRenderer } from "./particle-renderer";
 
 const FRAME_MS = 1000 / 60;
-const TAP_MS = 240;
+const TAP_MS = 290;
 export const WIDE_PORTRAIT = "(min-width: 64rem)";
-export const PORTRAIT_ASSETS = "/images/dot-portrait";
+export const PORTRAIT_ASSETS = "/images/portrait-relief";
 
 type Contact = {
   id: number;
@@ -48,8 +49,8 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     if (tap && now >= tap.until) tap = undefined;
     let force = pointer;
     if (tap) {
-      const remaining = Math.min(1, (tap.until - now) / (TAP_MS * 0.65));
-      force = { ...tap.point, strength: tap.point.strength * remaining };
+      const progress = Math.max(0, 1 - (tap.until - now) / TAP_MS);
+      force = { ...tap.point, strength: tap.point.strength * (1 - progress * progress), pulse: progress };
     }
     const moving = renderer.advance(step, force);
     renderer.paint();
@@ -76,6 +77,7 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
 
   function showFallback() {
     pause();
+    renderer?.dispose();
     renderer = null;
     delete root.dataset.dotReady;
   }
@@ -120,12 +122,13 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     requested = density;
     const loading = new AbortController();
     request = loading;
-    fetch(`${PORTRAIT_ASSETS}/${density}.bin`, { signal: loading.signal, priority: "low" })
+    const data = fetch(`${PORTRAIT_ASSETS}/${density}.bin`, { signal: loading.signal, priority: "low" })
       .then((response) => {
         if (!response.ok) throw new Error("Portrait sample request failed");
         return response.arrayBuffer();
-      })
-      .then((samples) => {
+      });
+    Promise.all([data, import("./particle-renderer")])
+      .then(([samples, { createParticleRenderer }]) => {
         if (loading.signal.aborted || signal.aborted) return;
         renderer = createParticleRenderer(canvas, samples);
         present();
@@ -152,17 +155,25 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     reconcile();
   }
 
-  function at(event: PointerEvent, strength: number): Disturbance {
+  function at(event: PointerEvent, strength: number, tilt = 0): Disturbance {
     const box = root.getBoundingClientRect();
     return {
       x: (event.clientX - box.left) / box.width,
       y: (event.clientY - box.top) / box.height,
       strength,
+      tilt,
     };
   }
 
   function onPress(event: PointerEvent) {
-    if (!presented || !event.isPrimary || event.pointerType === "mouse") return;
+    if (!presented || !event.isPrimary) return;
+    if (event.pointerType === "mouse") {
+      if (event.button === 0) {
+        tap = { point: at(event, 1.20, 0.85), until: performance.now() + TAP_MS };
+        schedule();
+      }
+      return;
+    }
     contact = { id: event.pointerId, x: event.clientX, y: event.clientY, direction: "pending" };
   }
 
@@ -174,7 +185,7 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
         ? Math.hypot(event.clientX - pointerSample.x, event.clientY - pointerSample.y) / Math.max(4, time - pointerSample.time)
         : 0;
       pointerSample = { x: event.clientX, y: event.clientY, time };
-      pointer = at(event, 0.83 + Math.min(0.48, speed * 0.16));
+      pointer = at(event, 0.78 + Math.min(0.43, speed * 0.15), 1);
       schedule();
       return;
     }
@@ -188,7 +199,7 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     }
     if (contact.direction === "horizontal") {
       tap = undefined;
-      pointer = at(event, 1.05);
+      pointer = at(event, 0.92, 0.72);
       schedule();
     }
   }
@@ -197,7 +208,7 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     if (contact?.id !== event.pointerId) return;
     const travel = Math.hypot(event.clientX - contact.x, event.clientY - contact.y);
     if (contact.direction === "pending" && travel < 10) {
-      tap = { point: at(event, 1.32), until: performance.now() + TAP_MS };
+      tap = { point: at(event, 1.30), until: performance.now() + TAP_MS };
     }
     contact = undefined;
     pointer = null;
@@ -247,12 +258,12 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
   window.addEventListener("resize", sizeCanvas, passive);
   reduced.addEventListener("change", reconcile, { signal });
   wide.addEventListener("change", reconcile, { signal });
-  canvas.addEventListener("contextlost", (event) => {
+  canvas.addEventListener("webglcontextlost", (event) => {
     event.preventDefault();
     request?.abort();
     showFallback();
   }, { signal });
-  canvas.addEventListener("contextrestored", () => {
+  canvas.addEventListener("webglcontextrestored", () => {
     requested = "";
     reconcile();
   }, { signal });

@@ -1,185 +1,144 @@
-const SPRING = 0.125;
-const DRAG = 0.73;
-const QUIET = 0.018;
+import { createParticleField, type Disturbance } from "./particle-field";
 
-export type Disturbance = {
-  x: number;
-  y: number;
-  strength: number;
-};
+const vertex = `
+attribute vec3 aPosition;
+attribute vec3 aInk;
+uniform vec4 uCamera;
+uniform vec3 uGrid;
+uniform float uPixelsPerCell;
+varying vec4 vInk;
+varying vec2 vPoint;
+
+void main() {
+  float size = uGrid.x;
+  float x = aPosition.x * uCamera.x + aPosition.z * uCamera.y;
+  float z = aPosition.z * uCamera.x - aPosition.x * uCamera.y;
+  float y = aPosition.y * uCamera.z - z * uCamera.w;
+  z = aPosition.y * uCamera.w + z * uCamera.z;
+  float perspective = uGrid.y / (uGrid.y - z);
+  vec2 projected = (vec2(x, y) * perspective + vec2(size * .5, uGrid.z)) / size;
+  gl_Position = vec4(projected.x * 2. - 1., 1. - projected.y * 2., 0., 1.);
+
+  float tone = aInk.x;
+  float radius = aInk.z * perspective * uPixelsPerCell;
+  gl_PointSize = radius * 2. + 1.45;
+  vPoint = vec2(radius, gl_PointSize);
+  vec3 warm = mix(vec3(162., 156., 150.), vec3(243., 234., 225.), tone) / 255.;
+  vInk = vec4(warm, aInk.y * clamp(.88 + .53 * z / size, .62, 1.));
+}
+`;
+
+const fragment = `
+precision mediump float;
+varying vec4 vInk;
+varying vec2 vPoint;
+void main() {
+  float d = length(gl_PointCoord - .5) * vPoint.y;
+  float edge = 1. - smoothstep(max(0., vPoint.x - .52), vPoint.x + .52, d);
+  float alpha = vInk.a * edge;
+  gl_FragColor = vec4(vInk.rgb * alpha, alpha);
+}
+`;
+
+function shader(gl: WebGLRenderingContext, type: number, source: string) {
+  const stage = gl.createShader(type);
+  if (!stage) return null;
+  gl.shaderSource(stage, source);
+  gl.compileShader(stage);
+  if (gl.getShaderParameter(stage, gl.COMPILE_STATUS)) return stage;
+  gl.deleteShader(stage);
+  return null;
+}
+
+function link(gl: WebGLRenderingContext) {
+  const vs = shader(gl, gl.VERTEX_SHADER, vertex);
+  const fs = shader(gl, gl.FRAGMENT_SHADER, fragment);
+  const program = vs && fs && gl.createProgram();
+  if (program) {
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+  }
+  if (vs) gl.deleteShader(vs);
+  if (fs) gl.deleteShader(fs);
+  if (program && gl.getProgramParameter(program, gl.LINK_STATUS)) return program;
+  if (program) gl.deleteProgram(program);
+  return null;
+}
 
 export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuffer) {
-  const context = canvas.getContext("2d", { alpha: true });
-  if (!context) return null;
+  const field = createParticleField(data);
+  const gl = canvas.getContext("webgl", {
+    alpha: true,
+    antialias: false,
+    depth: false,
+    stencil: false,
+    powerPreference: "low-power",
+  });
+  if (!gl) return null;
+  const program = link(gl);
+  if (!program) return null;
 
-  // The four-byte magic/version precedes the dimensions and the column, row, style triplets.
-  const samples = new Uint8Array(data);
-  const columns = samples[4];
-  const rows = samples[5];
-  const length = (samples.length - 6) / 3;
-  if (samples[0] !== 68 || samples[1] !== 80 || samples[2] !== 1 || samples[3] !== 0 ||
-    !columns || !rows || !Number.isInteger(length) || length < 1) {
-    throw new Error("Invalid portrait samples");
+  const position = gl.createBuffer();
+  const ink = gl.createBuffer();
+  if (!position || !ink) {
+    gl.deleteProgram(program);
+    gl.deleteBuffer(position);
+    gl.deleteBuffer(ink);
+    return null;
   }
 
-  const homeX = new Float32Array(length);
-  const homeY = new Float32Array(length);
-  const x = new Float32Array(length);
-  const y = new Float32Array(length);
-  const vx = new Float32Array(length);
-  const vy = new Float32Array(length);
-  const buckets = new Map<number, { indices: number[]; radius: number; ink: string }>();
+  gl.useProgram(program);
+  const positionAttribute = gl.getAttribLocation(program, "aPosition");
+  const inkAttribute = gl.getAttribLocation(program, "aInk");
+  const camera = gl.getUniformLocation(program, "uCamera");
+  const grid = gl.getUniformLocation(program, "uGrid");
+  const pixelScale = gl.getUniformLocation(program, "uPixelsPerCell");
 
-  for (let index = 0; index < length; index++) {
-    const offset = 6 + index * 3;
-    homeX[index] = samples[offset] + 0.5;
-    homeY[index] = samples[offset + 1] + 0.5;
-    const style = samples[offset + 2];
-    let bucket = buckets.get(style);
-    if (!bucket) {
-      const tone = (style >> 4) / 15;
-      const coverage = (style & 15) / 15;
-      const red = Math.round(161 + 79 * tone);
-      const green = Math.round(155 + 77 * tone);
-      const blue = Math.round(150 + 75 * tone);
-      const alpha = (0.27 + 0.70 * tone) * coverage ** 0.78;
-      bucket = {
-        indices: [],
-        radius: (0.125 + 0.30 * Math.sqrt(tone)) * (0.78 + 0.22 * coverage),
-        ink: `rgba(${red}, ${green}, ${blue}, ${alpha})`,
-      };
-      buckets.set(style, bucket);
-    }
-    bucket.indices.push(index);
-  }
+  gl.bindBuffer(gl.ARRAY_BUFFER, ink);
+  gl.bufferData(gl.ARRAY_BUFFER, field.inks, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(inkAttribute);
+  gl.vertexAttribPointer(inkAttribute, 3, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, position);
+  gl.bufferData(gl.ARRAY_BUFFER, field.positions, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(positionAttribute);
+  gl.vertexAttribPointer(positionAttribute, 3, gl.FLOAT, false, 0, 0);
 
-  const styles = [...buckets.values()];
-  const reach = columns * 0.134;
-  const reachSquared = reach * reach;
-  let scaleX = 1;
-  let scaleY = 1;
-  let redrawAll = true;
-  let dirtyLeft = Infinity;
-  let dirtyTop = Infinity;
-  let dirtyRight = -Infinity;
-  let dirtyBottom = -Infinity;
-  x.set(homeX);
-  y.set(homeY);
-
-  function paint() {
-    if (!context || (!redrawAll && dirtyLeft === Infinity)) return;
-
-    // Pad for the dot radius and align the clip to the actual backing pixels.
-    const left = redrawAll ? 0 : Math.floor((dirtyLeft - 1) * scaleX) / scaleX;
-    const top = redrawAll ? 0 : Math.floor((dirtyTop - 1) * scaleY) / scaleY;
-    const right = redrawAll ? columns : Math.ceil((dirtyRight + 1) * scaleX) / scaleX;
-    const bottom = redrawAll ? rows : Math.ceil((dirtyBottom + 1) * scaleY) / scaleY;
-    if (!redrawAll) {
-      context.save();
-      context.beginPath();
-      context.rect(left, top, right - left, bottom - top);
-      context.clip();
-    }
-    context.clearRect(left, top, right - left, bottom - top);
-
-    for (const { indices, radius, ink } of styles) {
-      context.beginPath();
-      for (const index of indices) {
-        const px = x[index];
-        const py = y[index];
-        if (px + radius >= left && px - radius <= right && py + radius >= top && py - radius <= bottom) {
-          context.moveTo(px + radius, py);
-          context.arc(px, py, radius, 0, Math.PI * 2);
-        }
-      }
-      context.fillStyle = ink;
-      context.fill();
-    }
-    if (!redrawAll) context.restore();
-    redrawAll = false;
-    dirtyLeft = dirtyTop = Infinity;
-    dirtyRight = dirtyBottom = -Infinity;
-  }
+  gl.clearColor(0, 0, 0, 0);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  gl.uniform3f(grid, field.size, field.focal, field.centerY);
 
   return {
     resize(width: number, height: number) {
-      const density = Math.min(window.devicePixelRatio || 1, 1.75);
-      const pixelWidth = Math.max(1, Math.round(width * density));
-      const pixelHeight = Math.max(1, Math.round(height * density));
-      if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
-      if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
-      scaleX = pixelWidth / columns;
-      scaleY = pixelHeight / rows;
-      context.setTransform(scaleX, 0, 0, scaleY, 0, 0);
-      redrawAll = true;
+      const density = Math.min(window.devicePixelRatio || 1, 1.75, 820 / Math.max(width, height, 1));
+      const w = Math.max(1, Math.round(width * density));
+      const h = Math.max(1, Math.round(height * density));
+      if (canvas.width !== w) canvas.width = w;
+      if (canvas.height !== h) canvas.height = h;
+      gl.viewport(0, 0, w, h);
+      gl.uniform1f(pixelScale, Math.min(w, h) / field.size);
     },
-    paint,
-    scatter() {
-      // A repeatable, small outward offset gives the opening one brief settling motion.
-      for (let index = 0; index < length; index++) {
-        const distance = ((index * 149) % 251) / 251;
-        x[index] = homeX[index] + (homeX[index] - columns * 0.55) * distance * 0.085;
-        y[index] = homeY[index] + (homeY[index] - rows * 0.44) * distance * 0.085;
-      }
-      redrawAll = true;
+    paint() {
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniform4fv(camera, field.camera);
+      gl.bindBuffer(gl.ARRAY_BUFFER, position);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, field.positions);
+      gl.drawArrays(gl.POINTS, 0, field.count);
     },
-    reset() {
-      x.set(homeX);
-      y.set(homeY);
-      vx.fill(0);
-      vy.fill(0);
-      redrawAll = true;
+    advance(step: number, force: Disturbance | null) {
+      return field.advance(step, force);
     },
-    advance(step: number, disturbance: Disturbance | null) {
-      const drag = DRAG ** step;
-      const centerX = (disturbance?.x ?? -1) * columns;
-      const centerY = (disturbance?.y ?? -1) * rows;
-      const strength = (disturbance?.strength ?? 0) * columns * 0.053;
-      let moving = false;
-
-      for (let index = 0; index < length; index++) {
-        let targetX = homeX[index];
-        let targetY = homeY[index];
-        const dx = targetX - centerX;
-        const dy = targetY - centerY;
-        const distanceSquared = dx * dx + dy * dy;
-        if (strength > 0 && distanceSquared < reachSquared) {
-          const distance = Math.sqrt(distanceSquared);
-          const falloff = 1 - distance / reach;
-          const mobility = 0.32 + 0.68 * ((index * 97) % 127) / 127;
-          const push = strength * falloff * falloff * mobility;
-          targetX += distance > 0.001 ? dx / distance * push : push;
-          targetY += distance > 0.001 ? dy / distance * push : 0;
-        }
-
-        const previousX = x[index];
-        const previousY = y[index];
-        const gapX = targetX - previousX;
-        const gapY = targetY - previousY;
-        if (Math.abs(gapX) + Math.abs(gapY) + Math.abs(vx[index]) + Math.abs(vy[index]) < QUIET) {
-          x[index] = targetX;
-          y[index] = targetY;
-          vx[index] = 0;
-          vy[index] = 0;
-        } else {
-          vx[index] = (vx[index] + gapX * SPRING * step) * drag;
-          vy[index] = (vy[index] + gapY * SPRING * step) * drag;
-          x[index] += vx[index] * step;
-          y[index] += vy[index] * step;
-          moving = true;
-        }
-
-        if (!redrawAll && (previousX !== x[index] || previousY !== y[index])) {
-          dirtyLeft = Math.min(dirtyLeft, previousX, x[index]);
-          dirtyTop = Math.min(dirtyTop, previousY, y[index]);
-          dirtyRight = Math.max(dirtyRight, previousX, x[index]);
-          dirtyBottom = Math.max(dirtyBottom, previousY, y[index]);
-        }
-      }
-
-      // One complete resting frame restores every backing pixel after partial repaints.
-      if (!moving && !disturbance) redrawAll = true;
-      return moving;
+    scatter: field.scatter,
+    reset: field.reset,
+    dispose() {
+      gl.disableVertexAttribArray(positionAttribute);
+      gl.disableVertexAttribArray(inkAttribute);
+      gl.bindBuffer(gl.ARRAY_BUFFER, null);
+      gl.useProgram(null);
+      gl.deleteBuffer(position);
+      gl.deleteBuffer(ink);
+      gl.deleteProgram(program);
     },
   };
 }
