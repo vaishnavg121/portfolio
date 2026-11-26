@@ -6,10 +6,27 @@
   --surface-elevated: #1d1819;
   --text-primary: #f0ece1;
   --text-muted: #a69b98;
-  --accent: #d95b5b;
-  --accent-soft: rgba(204, 51, 51, 0.1);
+  --accent-source: #d95b5b;
+  --accent: color-mix(in srgb, var(--accent-source) 82%, var(--text-primary));
+  --accent-petal: color-mix(in srgb, var(--accent-source) 46%, var(--text-primary));
+  --accent-stone: color-mix(in srgb, var(--text-muted) 72%, #8d7160);
+  --accent-soft: color-mix(in srgb, var(--accent) 11%, transparent);
   --border: #33292a;
   --border-strong: #534043;
+  --edge-soft: color-mix(in srgb, var(--border-strong) 56%, transparent);
+  --selected-edge: color-mix(in srgb, var(--accent) 52%, var(--border));
+  --selected-surface: color-mix(in srgb, var(--accent) 12%, var(--surface-elevated));
+  --surface-tinted: color-mix(in srgb, var(--accent-stone) 10%, var(--surface-elevated));
+  --atmosphere-rose: color-mix(in srgb, var(--accent-petal) 12%, var(--background));
+  --atmosphere-stone: color-mix(in srgb, var(--accent-stone) 10%, var(--background));
+  --surface-gradient: linear-gradient(150deg, var(--surface-tinted), var(--surface) 82%);
+  --shadow-soft: 0 12px 38px rgb(0 0 0 / .26);
+  --shadow-floating: 0 18px 52px rgb(0 0 0 / .42);
+  --radius-control: .65rem;
+  --radius-surface: 1rem;
+  --radius-card: 1.35rem;
+  --duration-feedback: 160ms;
+  --duration-panel: 240ms;
   --portfolio-edge: clamp(1rem, 5vw, 5rem);
   --portfolio-width: 94rem;
   --chapter-space: clamp(3rem, 7.8vw, 7.5rem);
@@ -97,20 +114,23 @@ body {
 }
 
 .chapter-divider {
-  border-block-start: 1px solid var(--border);
-  background-image: radial-gradient(ellipse at 85% 0%, #1c1113 0%, transparent 54%);
+  background-image: radial-gradient(ellipse 76% min(37rem, 49%) at var(--chapter-glow-x, 82%) 34%,
+    var(--atmosphere-stone), transparent);
 }
+
+#work { --chapter-glow-x: 29%; }
+.notes-section { --chapter-glow-x: 48%; }
 
 .portfolio-control {
   border: 1px solid var(--border-strong);
-  background: linear-gradient(155deg, #24191b, #141011 76%);
+  background: var(--surface-gradient);
   color: var(--text-primary);
-  transition: border-color 180ms ease, color 180ms ease, scale 160ms var(--ease-reveal);
+  transition: border-color var(--duration-feedback) ease, color var(--duration-feedback) ease, scale var(--duration-feedback) var(--ease-reveal);
 }
 
 .portfolio-control:not(:disabled):is(:hover, :focus-visible) {
   border-color: var(--accent);
-  color: #fff3ec;
+  color: var(--text-primary);
 }
 
 .portfolio-control:not(:disabled):active { scale: 0.975; }
@@ -177,7 +197,7 @@ body {
 }
 
 .hero-ambient {
-  background: radial-gradient(ellipse 68% 56% at 65% 32%, #261a1c, #171213 54%, transparent 83%);
+  background: radial-gradient(ellipse 71% 60% at 65% 32%, var(--atmosphere-rose), var(--atmosphere-stone) 52%, transparent 90%);
 }
 
 .hero-frame {
@@ -206,7 +226,7 @@ body {
 
 .hero-name > span { display: block; padding: 0.04em 0.065em 0.085em 0; overflow: clip; }
 .hero-name > span > span { display: block; }
-.hero-surname { color: #b8a8a3; }
+.hero-surname { color: color-mix(in srgb, var(--text-muted) 72%, var(--text-primary)); }
 .hero-portrait-stage { grid-area: portrait; width: clamp(8.5rem, 48.5vw, 12.8rem); margin-block: -0.35rem -0.65rem; justify-self: center; }
 .hero-subtitle-block { grid-area: intro; align-self: start; }
 .hero-positioning { border-inline-start: 2px solid var(--accent); padding-inline-start: 0.875rem; }
@@ -560,17 +580,14 @@ body:has(.case-image-dialog[open]) { overflow: hidden; }
 
 .case-image-dialog::backdrop { background: #080506e8; }
 
-.experience-section { background-color: #0d0a0b; }
+.experience-section { --chapter-glow-x: 22%; }
 .experience-section .exp-timeline-container { max-width: 72rem; margin-inline: auto; }
 .experience-section .chap-content h3 { text-wrap: balance; }
-.notes-section { background-color: #0e0b0d; }
 .notes-page { border-color: var(--border-strong); background: linear-gradient(150deg, #211719, #110e0f 58%); }
 .gh-panel { box-shadow: 0 28px 85px #0006; }
 
 .contact-section {
-  background:
-    radial-gradient(ellipse at 50% 0, #2a191d, transparent 66%),
-    #100d0e;
+  background-image: radial-gradient(ellipse 79% 75% at 48% 66%, var(--atmosphere-rose), transparent);
 }
 
 .contact-actions {
@@ -614,7 +631,7 @@ body:has(.case-image-dialog[open]) { overflow: hidden; }
 @media (width >= 64rem) {
   .hero-composition { min-height: min(92svh, 59rem); display: grid; align-items: center; }
   .hero-ambient {
-    background: radial-gradient(ellipse 51% 70% at 78% 42%, #2a1e20, #191314 51%, transparent 82%);
+    background: radial-gradient(ellipse 57% 68% at 77% 42%, var(--atmosphere-rose), var(--atmosphere-stone) 47%, transparent 88%);
   }
   .hero-frame {
     grid-template-columns: minmax(0, 1.34fr) minmax(0, 1fr);
