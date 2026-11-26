@@ -2,6 +2,7 @@ import { landmarkPositions, lens, screenPoint, territoryIndex, visibleSkills, ty
 import { connectedSkillPose, visibleProjects } from "./atlas-connections";
 import { createAtlasStreams, STREAM_STRIDE } from "./atlas-streams";
 import { readAtlasPalette } from "./atlas-palette";
+import { makeAtlasSurface } from "./atlas-surface";
 import { createTerrainTiles, FOG_FAR, FOG_NEAR, makeAtlasMarkers, terrainCenter } from "./atlas-terrain";
 
 const vertex = `
@@ -12,6 +13,7 @@ attribute float aPhase;
 uniform vec3 uCam;
 uniform vec4 uFrame, uMotion, uSkill, uLens;
 uniform float uHover;
+uniform float uSurfaceLayer;
 uniform vec2 uGround;
 uniform vec3 uShadow, uMuted, uLight, uAccent, uPetal, uStone;
 uniform vec4 uImpulses[4], uPeaks[8];
@@ -81,20 +83,28 @@ void main() {
   if(kind<.5) {
     float relief=smoothstep(-27.0,133.0,aPosition.z);
     float shade=clamp(-kind,0.0,1.0);
-    float light=clamp(.34+shade*.42+relief*.24+phase*.10+tonal,0.0,1.0);
+    float stratum=abs(fract((aPosition.z+4.0*sin(p.x*.018+p.y*.012))/17.0)-.5);
+    float facet=(1.0-smoothstep(.033,.13,stratum))*relief;
+    float light=clamp(.37+shade*.40+relief*.22+phase*.09+tonal+facet*.15,0.0,1.0);
     vec3 mineral=mix(uStone,uPetal,smoothstep(.10,.84,fract(aStyle.x)));
     vec3 surface=mix(uMuted,mineral,.66+relief*.19);
     surface=mix(surface,uLight,relief*shade*.48+phase*.12);
     color=mix(uShadow,surface,light);
     color=mix(color,uPetal,aura*.43);
-    ink*=.70+.46*shade;
+    ink*=.71+.51*shade+facet*.18;
     ink+=aura*.29;
+    if(uSurfaceLayer>.5) {
+      float contour=step(1.5,uSurfaceLayer);
+      vec3 veil=mix(uShadow,mineral,.42+relief*.22);
+      color=mix(veil,mix(mineral,uLight,.26+.32*shade),contour);
+      ink=aStyle.y*mix(.8,1.12,contour)*(.55+.45*uMotion.y);
+    }
   } else {
     color=mix(uAccent,mix(uPetal,uLight,.78),phase*.94);
     ink+=aura*(kind<1.5?.46:.73);
   }
   vColor=vec4(color,clamp(ink*fog*edge*smoothstep(uCam.z*.20,uCam.z*.39,distanceToCamera),0.0,1.0));
-  vKind=kind;
+  vKind=uSurfaceLayer>.5?-2.0:kind;
 }
 `;
 const fragment = `
@@ -102,6 +112,11 @@ precision mediump float;
 varying vec4 vColor;
 varying float vKind;
 void main() {
+  if(vKind< -1.5){
+    if(vColor.a<.003)discard;
+    gl_FragColor=vColor;
+    return;
+  }
   vec2 fromCenter=abs(gl_PointCoord-.5);
   float radius=vKind>3.5?fromCenter.x+fromCenter.y:length(fromCenter);
   float alpha=1.0-smoothstep(vKind>.5?.12:.16,.51,radius);
@@ -196,11 +211,21 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
     return null;
   }
   const terrain = createTerrainTiles(!compact);
+  const surface = makeAtlasSurface(compact);
   const markerData = makeAtlasMarkers();
   const palette = readAtlasPalette(canvas);
   const field=gl.createBuffer()!,markers=gl.createBuffer()!,streamBuffer=gl.createBuffer()!,contextPins=gl.createBuffer()!;
   gl.bindBuffer(gl.ARRAY_BUFFER,markers);
   gl.bufferData(gl.ARRAY_BUFFER,markerData,gl.STATIC_DRAW);
+  const layers = [
+    { points: surface.veil, mode: gl.TRIANGLE_STRIP, pass: 1 },
+    { points: surface.contours, mode: gl.LINES, pass: 2 },
+  ].map(layer => {
+    const buffer = gl.createBuffer()!;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, layer.points, gl.STATIC_DRAW);
+    return { buffer, mode: layer.mode, pass: layer.pass, count: layer.points.length / 8 };
+  });
   let currentField: ReturnType<typeof terrain> | undefined;
   const streams=createAtlasStreams();
   const pins=new Float32Array(32*8);
@@ -219,7 +244,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   const streamAttrs=streamAttribs.map(([name,size,offset])=>({index:gl.getAttribLocation(streamProgram,name),size,offset}));
   const streamUniforms=["uSize","uAccent","uLight","uPetal","uTime","uPointer"] as const;
   const stream=Object.fromEntries(streamUniforms.map(name=>[name,gl.getUniformLocation(streamProgram,name)]));
-  const names=["uCam","uFrame","uMotion","uSkill","uLens","uHover","uGround","uShadow","uMuted","uLight","uAccent","uPetal","uStone","uImpulses[0]","uPeaks[0]"] as const;
+  const names=["uCam","uFrame","uMotion","uSkill","uLens","uHover","uSurfaceLayer","uGround","uShadow","uMuted","uLight","uAccent","uPetal","uStone","uImpulses[0]","uPeaks[0]"] as const;
   const u=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
   gl.uniform4f(u.uLens,lens.COS,lens.SIN,lens.CY,lens.SY);
   const peaks=new Float32Array(32);
@@ -235,13 +260,13 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   gl.uniform3fv(stream.uPetal,palette.petal.rgb);
   const markerCount=markerData.length / 8;
   landmarkPositions.forEach((p,i)=>peaks.set([p.x,p.y,p.z,0],i*4));
-  const draw=(buffer:WebGLBuffer,count:number)=>{
+  const draw=(buffer:WebGLBuffer,count:number,primitive:number=gl.POINTS)=>{
     gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
     for (const {index,size,offset} of attrs) {
       gl.enableVertexAttribArray(index);
       gl.vertexAttribPointer(index,size,gl.FLOAT,false,32,offset);
     }
-    gl.drawArrays(gl.POINTS,0,count);
+    gl.drawArrays(primitive,0,count);
   };
   let lastCount=0;
   return {
@@ -273,6 +298,12 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
       }
       const visibleCount=Math.floor(nextField.length/8*frame.quality);
       if(visibleCount!==lastCount){canvas.dataset.drawnParticles=String(visibleCount);lastCount=visibleCount;}
+      for(const layer of layers) {
+        if(layer.pass===1&&frame.quality<.57)continue;
+        gl.uniform1f(u.uSurfaceLayer,layer.pass);
+        draw(layer.buffer,layer.count,layer.mode);
+      }
+      gl.uniform1f(u.uSurfaceLayer,0);
       draw(field,visibleCount);
       const paths=streams.update(frame);
       if(paths.count) {
@@ -318,6 +349,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
     },
     dispose(){
       for(const buffer of [field,markers,streamBuffer,contextPins])gl.deleteBuffer(buffer);
+      for(const layer of layers)gl.deleteBuffer(layer.buffer);
       gl.deleteProgram(program);
       gl.deleteProgram(streamProgram);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
