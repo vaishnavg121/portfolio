@@ -146,7 +146,7 @@ export function createAtlasScene(
         {x:right,y:middle},{x:left,y:middle},{x:right,y:top},{x:left,y:top},{x:right,y:bottom},{x:left,y:bottom},
         {x:inset,y:middle},{x:width-inset-popupWidth,y:middle},
       ];
-      const linkSamples=connectionsFor(selection,-1).filter(link=>link.weight>.4).flatMap(link=>{
+      const linkSamples=connectionsFor(selection).filter(link=>link.weight>.4).flatMap(link=>{
         const a=connectionEndpoint(link.a,state),b=connectionEndpoint(link.b,state);
         return [.2,.4,.6,.8].map(t=>screenPoint(routePoint(a,b,t,link.bridge),state));
       });

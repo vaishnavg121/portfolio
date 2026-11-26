@@ -1,4 +1,4 @@
-import { atlasPeaks, clamp, heightField, landmarkPositions, mix, skillPose, skillPositions, territoryIndex, type SceneFrame } from "./atlas-geometry";
+import { atlasPeaks, clamp, heightField, landmarkPositions, skillPose, skillPositions, territoryIndex, type SceneFrame } from "./atlas-geometry";
 import { ATLAS_BRIDGES, ATLAS_LINKS, ATLAS_TERRITORIES, SKILLS, SKILLS_BY_ID, TERRITORIES_BY_ID, skillReferences, type AtlasPosition, type AtlasSkill, type Selection } from "./atlas-model";
 
 type Anchor = { region: number; skill?: AtlasSkill; fixed?: AtlasPosition };
@@ -45,36 +45,30 @@ const allBridges = ATLAS_BRIDGES.map(({ from, to, count }) => {
   return { a: { region: from }, b: { region: to }, length, score: length / (1 + count * .28), bridge: true };
 }).sort((a, b) => a.score - b.score);
 
-// Show nearby bridges first. Longer links come forward when exploring their regions.
-const regions = ATLAS_TERRITORIES.map(({ index }) => index);
-const overviewBridges = allBridges.filter(({ a, b, length }) => {
-  const left = regions[a.region], right = regions[b.region];
-  if (left === right || length > 550) return false;
-  regions.forEach((group, index) => { if (group === right) regions[index] = left; });
-  return true;
-});
-
-export function connectionsFor(selection: Selection | null, hover: number): Connection[] {
-  if (!selection) {
-    const related = allBridges.filter(({ a, b }) => hover === a.region || hover === b.region).slice(0, 4);
-    return [...new Set([...overviewBridges, ...related])].map((link, index) => ({
-      ...link, weight: related.includes(link) ? .68 : .31, energy: related.includes(link) ? .76 : index < 3 ? .32 : 0,
-    }));
-  }
+export function connectionsFor(selection: Selection | null): Connection[] {
+  if (!selection) return [];
   const region = territoryIndex(selection);
   const domain = ATLAS_TERRITORIES[region];
   if (selection.type === "territory") {
-    const spokes = domain.items.map(skill => ({ a: { region }, b: skillAnchor(skill), weight: .36, energy: 0, bridge: false }));
+    const spokes = domain.items.map((skill, index) => ({
+      a: { region }, b: skillAnchor(skill), weight: .39, energy: index < 2 ? .44 : .18, bridge: false,
+    }));
     return [...spokes, ...allBridges.filter(({ a, b }) => a.region === region || b.region === region).slice(0, 2)
-      .map(link => ({ ...link, weight: .25, energy: .28 }))];
+      .map(link => ({
+        ...link, a: link.a.region === region ? link.a : link.b, b: link.a.region === region ? link.b : link.a,
+        weight: .24, energy: .31,
+      }))];
   }
   const focus = skillAnchor(SKILLS_BY_ID.get(selection.id)!);
   const relationships = ATLAS_LINKS.flatMap(({ a, b, bridge }) => {
     const other = a.id === selection.id ? b : b.id === selection.id ? a : undefined;
-    return other ? [{ a: focus, b: skillAnchor(other), weight: bridge ? .36 : .61, energy: bridge ? .37 : .71, bridge }] : [];
+    if (!other) return [];
+    const destination = skillAnchor(other);
+    if (bridge) destination.fixed = skillPositions.get(other.id);
+    return [{ a: focus, b: destination, weight: bridge ? .36 : .64, energy: bridge ? .37 : .68, bridge }];
   });
   return [
-    { a: { region }, b: focus, weight: .30, energy: .25, bridge: false },
+    { a: focus, b: { region }, weight: .30, energy: .25, bridge: false },
     ...relationships.filter(link => !link.bridge).slice(0, 6),
     ...relationships.filter(link => link.bridge).slice(0, 5),
     ...visibleProjects(selection).map(project => ({
@@ -92,16 +86,19 @@ export function connectedSkillPose(skill: AtlasSkill, frame: SceneFrame): AtlasP
 }
 
 export function connectionEndpoint(anchor: Anchor, frame: SceneFrame) {
-  return anchor.fixed ?? (anchor.skill ? connectedSkillPose(anchor.skill, frame) : landmarkPositions[anchor.region]);
+  return anchor.fixed ?? (anchor.skill ? skillPose(anchor.skill, frame.expansion[anchor.region]) : landmarkPositions[anchor.region]);
 }
 
 export function routePoint(a: AtlasPosition, b: AtlasPosition, t: number, bridge: boolean): AtlasPosition {
   const dx = b.x - a.x, dy = b.y - a.y;
-  const arch = clamp(Math.hypot(dx, dy) * (bridge ? .088 : .14), 6, bridge ? 44 : 23);
-  const bend = Math.sin(Math.PI * t) * (bridge ? .042 : .10);
+  const distance = Math.hypot(dx, dy);
+  const arch = clamp(distance * (bridge ? .064 : .105), 0, bridge ? 30 : 20);
+  const side = (bridge ? .075 : .15) * (b.y >= a.y ? 1 : -1);
+  const first = 3 * (1 - t) ** 2 * t, second = 3 * (1 - t) * t * t;
+  const bend = side * (first - .24 * second);
   return {
-    x: mix(a.x, b.x, t) - dy * bend,
-    y: mix(a.y, b.y, t) + dx * bend,
-    z: mix(a.z, b.z, t) + arch * 4 * t * (1 - t),
+    x: a.x + dx * t - dy * bend,
+    y: a.y + dy * t + dx * bend,
+    z: a.z + (b.z - a.z) * t + arch * (first * 1.2 + second),
   };
 }

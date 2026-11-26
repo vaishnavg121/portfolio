@@ -1,43 +1,52 @@
 import { connectionEndpoint, connectionsFor, routePoint } from "./atlas-connections";
 import { clamp, screenPoint, type SceneFrame } from "./atlas-geometry";
 
-export const STREAM_SEGMENTS = 28;
-const STRIDE = 8;
+const STREAM_SEGMENTS = 28;
+export const STREAM_STRIDE = 9;
 const WIDTH = 3.15;
 
 // Project each curve once per segment. The fragment shader paints both the fine core and its glow.
 export function createAtlasStreams() {
-  const data = new Float32Array(36 * STREAM_SEGMENTS * STRIDE * 6);
+  const data = new Float32Array(36 * STREAM_SEGMENTS * STREAM_STRIDE * 6);
   const centers = new Float32Array((STREAM_SEGMENTS + 1) * 3);
   const edges = new Float32Array((STREAM_SEGMENTS + 1) * 4);
   let current: ReturnType<typeof connectionsFor> = [];
   let previous: typeof current = [];
   let key = "";
   let change = -Infinity;
-  let previousSelection: string | undefined;
+  let lastReveal = 0;
+  let retiringReveal = 0;
   let dirty = "";
   let written = 0;
 
   return {
     data,
     update(frame: SceneFrame) {
-      const selectionId = frame.selection?.id;
-      const next = [frame.selection?.type, selectionId, frame.hover].join("/");
+      const next = frame.selection ? frame.selection.type + "/" + frame.selection.id : "";
       if (next !== key) {
         previous = current;
-        current = connectionsFor(frame.selection, frame.hover);
-        change = key ? frame.time : -Infinity;
-        previousSelection = key.split("/")[1] || undefined;
+        retiringReveal = lastReveal;
+        current = connectionsFor(frame.selection);
+        change = frame.time;
         key = next;
       }
-      const phase = frame.motion ? clamp((frame.time - change) / (previousSelection === selectionId ? .21 : .39)) : 1;
-      const ease = phase * phase * (3 - 2 * phase);
-      const view = [key, frame.width, frame.height, frame.stretch, frame.camera.x, frame.camera.y, frame.camera.z, frame.perspective, ...frame.expansion, ease].join("/");
-      if (view === dirty) return { count: written / STRIDE, changed: false };
+      const age = frame.motion ? frame.time - change : 1;
+      const phase = clamp(age / .42);
+      const reveal = phase * phase * (3 - 2 * phase);
+      const fade = clamp(1 - age / .25);
+      lastReveal = reveal;
+      if (!fade) previous = [];
+      if (!current.length && !previous.length) {
+        written = 0;
+        dirty = "";
+        return { count: 0, changed: false };
+      }
+      const view = [key, frame.width, frame.height, frame.stretch, frame.camera.x, frame.camera.y, frame.camera.z, frame.perspective, ...frame.expansion, reveal, fade].join("/");
+      if (view === dirty) return { count: written / STREAM_STRIDE, changed: false };
       dirty = view;
       written = 0;
 
-      const emit = (index: number, side: number, length: number, opacity: number, seed: number, flow: number) => {
+      const emit = (index: number, side: number, length: number, opacity: number, seed: number, flow: number, tip: number) => {
         const offset = index * 4 + (side > 0 ? 2 : 0);
         data[written++] = edges[offset];
         data[written++] = edges[offset + 1];
@@ -47,9 +56,10 @@ export function createAtlasStreams() {
         data[written++] = opacity;
         data[written++] = seed;
         data[written++] = flow;
+        data[written++] = tip;
       };
 
-      const trace = (links: typeof current, opacity: number) => {
+      const trace = (links: typeof current, opacity: number, progress: number, retiring: boolean) => {
         if (opacity < .009) return;
         links.forEach(({ a, b, bridge, weight, energy }, index) => {
           const p = connectionEndpoint(a, frame), q = connectionEndpoint(b, frame);
@@ -85,20 +95,21 @@ export function createAtlasStreams() {
           }
           const seed = ((a.region * 13 + b.region * 7 + index * 9) % 41) / 41;
           const alpha = opacity * weight * clamp(length / 45) * visibility;
-          const flow = energy * visibility * opacity;
+          const flow = retiring ? 0 : energy * visibility * opacity * clamp((progress - .68) / .32);
+          const tip = progress * 1.07 - .025;
           for (let i = 0; i < STREAM_SEGMENTS; i++) {
-            emit(i, -1, length, alpha, seed, flow);
-            emit(i, 1, length, alpha, seed, flow);
-            emit(i + 1, -1, length, alpha, seed, flow);
-            emit(i + 1, -1, length, alpha, seed, flow);
-            emit(i, 1, length, alpha, seed, flow);
-            emit(i + 1, 1, length, alpha, seed, flow);
+            emit(i, -1, length, alpha, seed, flow, tip);
+            emit(i, 1, length, alpha, seed, flow, tip);
+            emit(i + 1, -1, length, alpha, seed, flow, tip);
+            emit(i + 1, -1, length, alpha, seed, flow, tip);
+            emit(i, 1, length, alpha, seed, flow, tip);
+            emit(i + 1, 1, length, alpha, seed, flow, tip);
           }
         });
       };
-      trace(previous, 1 - ease);
-      trace(current, ease);
-      return { count: written / STRIDE, changed: true };
+      trace(previous, fade * fade, retiringReveal, true);
+      trace(current, clamp(phase * 3), reveal, false);
+      return { count: written / STREAM_STRIDE, changed: true };
     },
   };
 }

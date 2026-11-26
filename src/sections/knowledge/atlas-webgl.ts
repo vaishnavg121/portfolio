@@ -1,6 +1,6 @@
 import { landmarkPositions, lens, screenPoint, territoryIndex, visibleSkills, type AtlasRenderer } from "./atlas-geometry";
 import { connectedSkillPose, visibleProjects } from "./atlas-connections";
-import { createAtlasStreams } from "./atlas-streams";
+import { createAtlasStreams, STREAM_STRIDE } from "./atlas-streams";
 import { readAtlasPalette } from "./atlas-palette";
 import { createTerrainTiles, FOG_FAR, FOG_NEAR, makeAtlasMarkers, terrainCenter } from "./atlas-terrain";
 
@@ -112,10 +112,11 @@ void main() {
 const streamVertex = `
 attribute vec2 aPixels;
 attribute vec4 aFlow;
-attribute vec2 aState;
+attribute vec3 aState;
 uniform mediump vec2 uSize;
 varying mediump vec4 vFlow;
-varying mediump vec2 vState, vClip;
+varying mediump vec3 vState;
+varying mediump vec2 vClip;
 void main() {
   vClip=aPixels/uSize*2.0-1.0;
   gl_Position=vec4(vClip.x,-vClip.y,0.0,1.0);
@@ -126,30 +127,36 @@ void main() {
 
 const streamFragment = `
 precision mediump float;
-uniform vec3 uAccent, uLight;
+uniform vec3 uAccent, uLight, uPetal;
 uniform vec3 uPointer;
 uniform mediump vec2 uSize;
 uniform float uTime;
 varying vec4 vFlow;
-varying vec2 vState, vClip;
+varying vec3 vState;
+varying vec2 vClip;
 void main() {
   float t=vFlow.y;
+  float reveal=1.0-smoothstep(vState.z-.040,vState.z+.016,t);
+  if(reveal<.01)discard;
   float edge=(1.0-smoothstep(.82,1.0,abs(vClip.x)))*(1.0-smoothstep(.82,1.0,abs(vClip.y)));
   float shoulder=sin(t*3.14159);
   float reach=clamp(1.0-length((vClip-uPointer.xy)*uSize*.5)/136.0,0.0,1.0);
   float nearby=reach*reach*uPointer.z;
   float pulse=0.0;
   if(uTime>=0.0&&vState.y>.01) {
-    float phase=fract(uTime/max(3.2,vFlow.z/64.0+1.2)+vState.x);
+    float phase=fract(uTime/max(2.6,vFlow.z/56.0)+vState.x);
     float center=1.0-abs(2.0*phase-1.0);
     float span=(t-center)*vFlow.z/28.0;
     pulse=exp(-span*span)*smoothstep(.02,.12,center)*(1.0-smoothstep(.84,.98,center))*vState.y;
   }
   float core=1.0-smoothstep(.095,.38,abs(vFlow.x));
   float glow=exp(-vFlow.x*vFlow.x*6.0)*(1.0-smoothstep(.77,1.0,abs(vFlow.x)));
-  float alpha=edge*(core*(vFlow.w*(.70+.30*shoulder)+nearby*.11+pulse*.44)+glow*(vFlow.w*.14+pulse*.17));
+  float front=(t-vState.z+.035)*18.0;
+  float leading=exp(-front*front)*(1.0-step(1.0,vState.z));
+  float alpha=edge*reveal*(core*(vFlow.w*(.64+.36*shoulder+nearby*.24+leading*.40)+pulse*.39)+glow*(vFlow.w*.13+pulse*.14));
   if(alpha<.007)discard;
-  vec3 color=mix(uAccent,uLight,clamp(core*(.35+nearby*.16+pulse*.56),0.0,.9));
+  vec3 tint=mix(uAccent,uPetal,.20+.66*shoulder);
+  vec3 color=mix(tint,uLight,clamp(core*(.21+nearby*.11+pulse*.65+leading*.18),0.0,.85));
   gl_FragColor=vec4(color,alpha);
 }
 `;
@@ -207,9 +214,9 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   const attribs = [["aPosition",3,0],["aStyle",4,12],["aPhase",1,28]] as const;
   const attrs=attribs.map(([name,size,offset])=>({index:gl.getAttribLocation(program,name),size,offset}));
 
-  const streamAttribs = [["aPixels",2,0],["aFlow",4,8],["aState",2,24]] as const;
+  const streamAttribs = [["aPixels",2,0],["aFlow",4,8],["aState",3,24]] as const;
   const streamAttrs=streamAttribs.map(([name,size,offset])=>({index:gl.getAttribLocation(streamProgram,name),size,offset}));
-  const streamUniforms=["uSize","uAccent","uLight","uTime","uPointer"] as const;
+  const streamUniforms=["uSize","uAccent","uLight","uPetal","uTime","uPointer"] as const;
   const stream=Object.fromEntries(streamUniforms.map(name=>[name,gl.getUniformLocation(streamProgram,name)]));
   const names=["uCam","uFrame","uMotion","uSkill","uLens","uHover","uGround","uShadow","uMuted","uLight","uAccent","uPetal","uStone","uImpulses[0]","uPeaks[0]"] as const;
   const u=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
@@ -224,6 +231,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   gl.useProgram(streamProgram);
   gl.uniform3fv(stream.uAccent,palette.accent.rgb);
   gl.uniform3fv(stream.uLight,palette.light.rgb);
+  gl.uniform3fv(stream.uPetal,palette.petal.rgb);
   const markerCount=markerData.length / 8;
   landmarkPositions.forEach((p,i)=>peaks.set([p.x,p.y,p.z,0],i*4));
   const draw=(buffer:WebGLBuffer,count:number)=>{
@@ -279,10 +287,10 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
           gl.uniform3f(stream.uPointer,p.x/frame.width*2-1,p.y/frame.height*2-1,1-age/.78);
         } else gl.uniform3f(stream.uPointer,0,0,0);
         gl.bindBuffer(gl.ARRAY_BUFFER,streamBuffer);
-        if(paths.changed)gl.bufferSubData(gl.ARRAY_BUFFER,0,streams.data.subarray(0,paths.count*8));
+        if(paths.changed)gl.bufferSubData(gl.ARRAY_BUFFER,0,streams.data.subarray(0,paths.count*STREAM_STRIDE));
         for (const {index,size,offset} of streamAttrs) {
           gl.enableVertexAttribArray(index);
-          gl.vertexAttribPointer(index,size,gl.FLOAT,false,32,offset);
+          gl.vertexAttribPointer(index,size,gl.FLOAT,false,STREAM_STRIDE*Float32Array.BYTES_PER_ELEMENT,offset);
         }
         gl.drawArrays(gl.TRIANGLES,0,paths.count);
       }

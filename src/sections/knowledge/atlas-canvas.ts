@@ -34,14 +34,19 @@ export function makeCanvasAtlas(canvas: HTMLCanvasElement): AtlasRenderer | null
         ctx.globalAlpha=edge*fog*fog*(3-2*fog)*field[i+4]*(.66-.48*field[i+6])*(region<0||region===domain?1:.72);
         ctx.fillRect(p.x,p.y,1.45,1.45);
       }
-      for(const {a,b,bridge,weight} of connectionsFor(frame.selection,frame.hover)){
+      for(const {a,b,bridge,weight} of connectionsFor(frame.selection)){
         const p=connectionEndpoint(a,frame),q=connectionEndpoint(b,frame);
         ctx.beginPath();
         for(let i=0;i<=28;i++){
           const v=screenPoint(routePoint(p,q,i/28,bridge),frame);
           if(i===0)ctx.moveTo(v.x,v.y);else ctx.lineTo(v.x,v.y);
         }
-        ctx.strokeStyle=palette.accent.css;
+        const begin=screenPoint(p,frame),end=screenPoint(q,frame);
+        const gradient=ctx.createLinearGradient(begin.x,begin.y,end.x,end.y);
+        gradient.addColorStop(0,palette.accent.css);
+        gradient.addColorStop(.56,palette.petal.css);
+        gradient.addColorStop(1,palette.accent.css);
+        ctx.strokeStyle=gradient;
         ctx.globalAlpha=weight*.18;
         ctx.lineWidth=4;
         ctx.stroke();

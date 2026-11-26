@@ -124,25 +124,21 @@ export const SkillsConstellation = () => {
     }
   };
 
-  const close = () => {
-    const next = skill && territory ? {type:"territory", id:territory.id} as const : null;
-    setSelection(next);
-    setMore(false);
-    setQuery("");
-    scene.current?.select(next);
-    if (detail.current) detail.current.scrollTop = 0;
-    if (detail.current?.contains(document.activeElement)) requestAnimationFrame(() => {
-      const trigger = returnFocus.current;
-      if (trigger?.isConnected && !trigger.inert && trigger.getClientRects().length) trigger.focus({preventScroll:true});
-      else queryInput.current?.focus({preventScroll:true});
-    });
-  };
-
   const reset = () => {
     setSelection(null);
     setMore(false);
     setQuery("");
     scene.current?.select(null);
+    if (detail.current) detail.current.scrollTop = 0;
+  };
+
+  const close = () => {
+    reset();
+    if (detail.current?.contains(document.activeElement)) requestAnimationFrame(() => {
+      const trigger = returnFocus.current;
+      if (trigger?.isConnected && !trigger.inert && trigger.getClientRects().length) trigger.focus({preventScroll:true});
+      else queryInput.current?.focus({preventScroll:true});
+    });
   };
 
   const toggleExploration = () => {
@@ -270,6 +266,7 @@ export const SkillsConstellation = () => {
                 scene.current?.impulse(point);
                 const nearest = scene.current?.nearest(point);
                 if (nearest) choose(nearest, false, event.currentTarget);
+                else if (selection) reset();
               }}
             >
               <canvas ref={webgl} className="atlas-webgl" aria-hidden="true" />
@@ -321,7 +318,7 @@ export const SkillsConstellation = () => {
                     {skill && <p className="atlas-kicker">{territory.label}</p>}
                     <h3>{skill?.label ?? territory.title}</h3>
                   </div>
-                  <button type="button" ref={closeButton} aria-label={skill ? "Back to region details" : "Close region details"}
+                  <button type="button" ref={closeButton} aria-label="Close landscape details"
                     onClick={close}><X size={18} aria-hidden="true" /></button>
                 </div>
                 {skill ? (
