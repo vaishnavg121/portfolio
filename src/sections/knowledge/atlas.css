@@ -72,11 +72,12 @@
   border-radius:999px;background:color-mix(in srgb,var(--background) 90%,transparent);z-index:-1;content:"";
 }
 .atlas-region-marker::before {background:color-mix(in srgb,var(--surface) 90%,transparent);box-shadow:0 0 .65rem color-mix(in srgb,var(--background) 88%,transparent);}
-.atlas-marker[data-anchor="0"]::after,.atlas-marker[data-anchor="1"]::after {
+.atlas-marker:is([data-anchor="0"],[data-anchor="1"],[data-anchor="4"],[data-anchor="5"])::after {
   position:absolute;left:50%;top:calc(50% + .62rem);height:.46rem;
   border-left:1px solid var(--accent);opacity:.75;content:"";
 }
-.atlas-marker[data-anchor="1"]::after {top:auto;bottom:calc(50% + .62rem);}
+.atlas-marker:is([data-anchor="1"],[data-anchor="5"])::after {top:auto;bottom:calc(50% + .62rem);}
+.atlas-marker:is([data-anchor="4"],[data-anchor="5"])::after {height:1.18rem;}
 .atlas-marker[data-anchor="2"]::after,.atlas-marker[data-anchor="3"]::after {
   position:absolute;top:50%;right:100%;width:.62rem;border-top:1px solid var(--accent);opacity:.75;content:"";
 }
@@ -158,13 +159,17 @@
   .atlas-skill-marker {font-size:.66rem;}
 }
 @media (width < 37rem) {
-  .atlas-toolbar .atlas-zoom button:not(:last-child) {display:none;}
+  .atlas-toolbar:not(:has(.atlas-back,.atlas-explore[aria-pressed="true"])) .atlas-zoom button:not(:last-child) {display:none;}
   .atlas-controls .atlas-explore svg {display:none;}
-  .atlas-toolbar:has(.atlas-back) .atlas-search {width:100%;}
-  .atlas-toolbar:has(.atlas-back) .atlas-controls {width:100%;justify-content:space-between;}
+  .atlas-toolbar:has(.atlas-back,.atlas-explore[aria-pressed="true"]) .atlas-search {width:100%;}
+  .atlas-toolbar:has(.atlas-back,.atlas-explore[aria-pressed="true"]) .atlas-controls {width:100%;justify-content:space-between;}
+  .atlas-inspector {margin-block-start:.65rem;}
+}
+@media (width < 22.5rem) {
+  .atlas-toolbar:has(.atlas-back) .atlas-zoom button:not(:last-child) {display:none;}
 }
 @media (width < 23rem) {
-  .atlas-toolbar:not(:has(.atlas-back)) .atlas-search {width:45%;}
+  .atlas-toolbar:not(:has(.atlas-back,.atlas-explore[aria-pressed="true"])) .atlas-search {width:45%;}
   .atlas-controls .atlas-explore {padding-inline:.56rem;}
   .atlas-search-field {gap:.4rem;padding-inline:.62rem;}
 }

@@ -275,6 +275,7 @@ export const SkillsConstellation = () => {
                 {ATLAS_TERRITORIES.map(region => (
                   <button type="button" key={region.id} className="atlas-marker atlas-region-marker"
                     data-atlas-marker={"territory-" + region.id} aria-label={region.title} tabIndex={-1} inert
+                    aria-pressed={territory?.id === region.id}
                     onPointerEnter={event => {if(event.pointerType==="mouse")scene.current?.preview(region.id);}}
                     onPointerLeave={() => scene.current?.preview(null)}
                     onFocus={() => scene.current?.preview(region.id)}

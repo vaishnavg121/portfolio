@@ -45,7 +45,7 @@ void main() {
       p.z+=sin(p.x*.012+p.y*.017-time*.79)*.96+sin(p.y*.022+time*.53)*.54;
       for(int k=0;k<4;k++) {
         vec4 impulse=uImpulses[k];
-        if(impulse.w<.006) continue;
+        if(impulse.w<.006||impulse.z>=.86) continue;
         vec2 d=p.xy-impulse.xy;
         float distanceSquared=dot(d,d), t=impulse.z;
         float reach=t*102.0+69.0;

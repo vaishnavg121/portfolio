@@ -90,8 +90,18 @@ export function createAtlasScene(
     const [min, max] = zoomLimits();
     if (skill) {
       const mobile = width < 640;
-      const zoom = clamp(Math.min(width / (mobile ? 340 : 515), world.height / 260), min * 1.38, max);
+      let zoom = clamp(Math.min(width / (mobile ? 340 : 515), world.height / 260), min * 1.38, max);
       const point = projection(skillPose(skill,1),PERSPECTIVE);
+      const project = visibleProjects(selection)[0];
+      if (mobile && project) {
+        const other = projection(project.position, PERSPECTIVE);
+        const dx = other.x - point.x, dy = other.y - point.y;
+        const fitPair = Math.min((width - 102) / Math.max(1, Math.abs(dx)), (world.height - 57) / Math.max(1, Math.abs(dy)));
+        if (fitPair >= min * 1.25) {
+          zoom = Math.min(zoom, fitPair);
+          return cameraAt({ x: point.x + dx * .37, y: point.y + dy * .34 }, zoom);
+        }
+      }
       return cameraAt({x:point.x,y:point.y+(mobile? .055 : .035)*world.height/zoom},zoom);
     }
     const points = region.items.map(item => projection(skillPose(item,1),PERSPECTIVE));
@@ -126,8 +136,9 @@ export function createAtlasScene(
       : ATLAS_TERRITORIES.map(region => ({key:"territory-"+region.id,position:landmarkPositions[region.index],pinned:false}));
     if (regionIndex >= 0) {
       const region = ATLAS_TERRITORIES[regionIndex];
-      candidates.splice(selection?.type === "skill" ? 1 : 0, 0, {key:"territory-"+region.id,position:landmarkPositions[region.index],pinned:false});
-      candidates.splice(2, 0, ...visibleProjects(selection).map(project => ({key:"project-"+project.href,position:project.position,pinned:false})));
+      const projects = visibleProjects(selection).map(project => ({key:"project-"+project.href,position:project.position,pinned:false}));
+      const anchor = {key:"territory-"+region.id,position:landmarkPositions[region.index],pinned:false};
+      candidates.splice(selection?.type === "skill" ? 1 : 0, 0, ...projects, anchor);
     }
     const accepted: {l:number; r:number; t:number; b:number}[] = [];
     const shown = new Set<string>();
@@ -173,11 +184,15 @@ export function createAtlasScene(
       const position = screenPoint(target.position, state);
       const region = target.key.startsWith("territory");
       // Keep labels close to their anchors. Prefer their previous arrangement as the camera passes thresholds.
-      const offsets = region ? [[0, -24], [0, 22], [13, 0], [-13, 0]] : [[0, -20], [0, 22], [13, 0], [-13, 0]];
+      const project = target.key.startsWith("project");
+      const offsets = [
+        [0, region ? -24 : -20], [0, 22], [13, 0], [-13, 0],
+        ...(project ? [[0, -34], [0, 35]] : []),
+      ];
       const placements = settledOverview ? offsets.keys() : new Set([mark.anchor, ...offsets.keys()]);
       for (const index of placements) {
         const [dx, dy] = offsets[index];
-        const x = position.x + dx + (index < 2 ? 0 : (index === 2 ? 0.5 : -0.5) * mark.width);
+        const x = position.x + dx + (index === 2 ? .5 : index === 3 ? -.5 : 0) * mark.width;
         const y = position.y + dy;
         const w = mark.width / 2;
         const h = (region ? 28 : 23) / 2;
