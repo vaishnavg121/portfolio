@@ -37,13 +37,27 @@ const smooth = (start: number, end: number, value: number) => {
   return t * t * (3 - 2 * t);
 };
 
+// Offsets and spans are expressed in the rotated domain frame.
+type Formation = [along: number, across: number, span: number, breadth: number, rise: number, bend: number];
+const formations: Record<string, readonly Formation[]> = {
+  cs: [[-.54,-.13,.64,.20,33,-.18],[-.19,.41,.84,.24,22,.10],[.31,-.16,.25,.27,18,.16]],
+  ai: [[-.28,-.26,.49,.27,32,.29],[.35,.17,.69,.18,35,-.20],[.12,.68,.40,.19,25,.16]],
+  data: [[-.42,-.36,.87,.20,27,.20],[.17,.31,.88,.21,33,-.34],[.22,-.03,.78,.17,-25,.16]],
+  agents: [[-.40,-.12,.82,.18,33,-.39],[.22,.33,.86,.18,30,.50],[.42,-.42,.59,.17,31,-.36]],
+  web: [[-.18,-.14,.94,.19,31,.22],[.25,.31,.68,.24,31,-.17],[.21,.04,.72,.14,-13,.24]],
+  finance: [[-.40,-.16,.85,.34,26,.35],[.18,.39,.83,.33,23,-.36],[.66,.14,.35,.22,15,.16]],
+  infra: [[-.33,-.28,.79,.30,29,-.16],[.11,.33,.94,.25,24,.16],[.51,.07,.43,.29,21,-.30]],
+  robotics: [[-.55,-.22,.50,.18,42,.37],[.30,-.32,.43,.16,42,-.43],[.26,.36,.59,.22,34,.52],[.63,.09,.26,.15,27,-.21]],
+};
+const strata = ATLAS_TERRITORIES.map(({id})=>formations[id]);
+
 export function heightField(x: number, y: number) {
   const fold = x * .009 + y * .011, basin = y * .013 - x * .006, grain = x * .027 - y * .018;
   const folds = Math.sin(fold), basins = Math.cos(basin), texture = Math.sin(grain);
   const plain = -17 + 10 * folds + 8 * basins + 2.6 * texture;
   let slope = .09 * Math.cos(fold) - .11 * Math.sin(basin) + .038 * Math.cos(grain);
   if (Math.abs(x) > 935 || Math.abs(y) > 820) return { z: plain, relief: 0, region: 0, tone: .31, shade: clamp(.54 - slope) };
-  let peaks = 0, weight = 0, region = 0, warmth = .09, mass = .30, shoulder = 0;
+  let peaks = 0, weight = 0, region = 0, warmth = .09, mass = .30, shoulder = 0, geology = 0;
   for (let i = 0; i < atlasPeaks.length; i++) {
     const p = atlasPeaks[i];
     const dx = x - p.x, dy = y - p.y;
@@ -57,11 +71,23 @@ export function heightField(x: number, y: number) {
     const cap = Math.exp(-(.96 + .17 * v) * q - .19 * q * q);
     const table = .57 * (1 - smooth(.19 + p.shelf * .26, .65 + p.shelf * .28, q))
       + .27 * (1 - smooth(.72, 1.24, q)) + .16 * foothill;
-    const influence = mix(cap * .86 + foothill * .14, table, .79 * p.shelf);
+    const influence = mix(cap * .86 + foothill * .14, table, .76 * p.shelf);
     if (influence > weight) { weight = influence; region = i; }
     peaks += p.height * influence;
     const gradient = 2 * (u * (p.cos * .62 + p.sin * .78) / p.width + v * (p.cos * .78 - p.sin * .62) / p.depth);
     slope -= p.height * gradient * (cap * (.84 + .31 * q) + foothill * .108);
+    if (q < 5) for (const [along, across, span, breadth, rise, bend] of strata[i]) {
+      const axis = (u - along) / span;
+      const bank = (v - across - bend * (u - along)) / breadth;
+      const footprint = axis * axis + bank * bank;
+      if (footprint >= 6) continue;
+      const mask = (1 - footprint / 6) ** 2;
+      const raised = Math.exp(-footprint * .74);
+      const shelf = 1 - smooth(.24, 1.55, footprint);
+      const form = mix(raised, shelf, .27 * p.shelf);
+      geology += rise * form * mask;
+      slope -= rise * bank * .048 * raised;
+    }
     shoulder += foothill;
     warmth += p.rose * foothill;
     mass += foothill;
@@ -90,9 +116,15 @@ export function heightField(x: number, y: number) {
   const rear = (y + 406 + .13 * x + 30 * Math.sin(x * .009 + 1.3)) / 102;
   const far = 37 * Math.exp(-rear * rear - x * x / 512000);
   const terrace = (4.4 * Math.sin(fold * 2.3 + basins * 1.3) + 1.7 * texture) * clamp(shoulder) * (1 - weight * .73);
-  const relief = clamp((peaks + saddle * .8 + near + far - valley * .38) / 116) * extent;
+  const fabric = x * .076 + y * .047 + Math.sin(y * .031 - x * .018) * 1.48;
+  const crease = Math.cos(fabric);
+  const finer = Math.sin(y * .125 - x * .091 + folds * 2.8);
+  const roughness = clamp(.24 + shoulder * .58);
+  const textureRise = ((crease * crease - .43) * 5.7 + finer * 1.6) * roughness;
+  slope += (-Math.sin(fabric) * crease * .49 + Math.cos(y * .125 - x * .091 + folds * 2.8) * .12) * roughness;
+  const relief = clamp((peaks + geology + saddle * .8 + near + far - valley * .38) / 135) * extent;
   return {
-    z: plain + (peaks + saddle + terrace + near + far - valley) * extent,
+    z: plain + (peaks + geology + saddle + terrace + near + far - valley + textureRise) * extent,
     relief, region, tone: mix(.31, warmth / mass, extent),
     shade: clamp(.55 - slope * .72),
   };
@@ -177,7 +209,7 @@ export function pickSurface(point: Point, perspective: number): AtlasPosition | 
   const end = Math.max(-2390, plane - 180);
   for(let d=start;d>=end;d-=14) {
     const p=at(d);
-    if(p.z>224||p.z< -68)continue;
+    if(p.z>260||p.z< -78)continue;
     if(p.z>heightField(p.x,p.y).z)continue;
     let near=d+14,far=d;
     for(let i=0;i<5;i++) {
