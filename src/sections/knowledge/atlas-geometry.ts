@@ -1,58 +1,71 @@
-import { ATLAS_LINKS, ATLAS_TERRITORIES, SKILLS_BY_ID, TERRITORIES_BY_ID, terrainPoint, type AtlasPosition, type Selection } from "./atlas-model";
-import type { Camera } from "@/lib/knowledge-camera";
+import { ATLAS_LINKS, ATLAS_TERRITORIES, SKILLS_BY_ID, TERRITORIES_BY_ID, type AtlasPosition, type AtlasSkill, type Selection } from "./atlas-model";
+import type { Camera, Point } from "@/lib/knowledge-camera";
 
+export const PERSPECTIVE = 1450;
+const PITCH = .62;
+const YAW = -.17;
+const COS = Math.cos(PITCH), SIN = Math.sin(PITCH);
+const CY = Math.cos(YAW), SY = Math.sin(YAW);
+export const lens = { COS, SIN, CY, SY };
+export const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+export const clamp = (n: number, a = 0, b = 1) => Math.max(a, Math.min(b, n));
+const seed = (n: number) => {
+  const a = Math.sin(n * 127.1 + 311.7) * 43758.5453123;
+  return a - Math.floor(a);
+};
+export function projection(p: AtlasPosition, perspective = PERSPECTIVE): Point {
+  const u = p.x * CY - p.y * SY;
+  const v = p.x * SY + p.y * CY;
+  const k = perspective / (perspective - v * COS - p.z * SIN);
+  return { x: u * k, y: (v * SIN - p.z * COS) * k };
+}
+
+export const atlasPeaks = ATLAS_TERRITORIES.map((r, index) => ({
+  x: r.x, y: r.y,
+  z: [80,143,107,101,53,92,63,130][index],
+  rx: [142,154,145,139,130,147,132,153][index],
+  ry: [101,112,122,111,102,113,112,117][index],
+  tint: [.23,.66,.07,.36,.11,.49,.04,.43][index],
+}));
+
+export function heightField(x: number, y: number) {
+  let mass = 0, peaks = 0, weight = 0, region = 0;
+  for (let i=0;i<atlasPeaks.length;i++) {
+    const p=atlasPeaks[i];
+    const dx = (x-p.x)/p.rx, dy = (y-p.y)/p.ry;
+    const g = Math.exp(-(dx*dx + dy*dy) * 1.65);
+    if (g > weight) { weight = g; region = i; }
+    mass += g;
+    peaks += (p.z-16) * g ** 1.19;
+  }
+  const ripple = Math.sin(x*.039 + y*.023) * 4.1 + Math.cos(y*.052 - x*.019)*3.2 + Math.sin((x+y)*.079)*1.5;
+  const outline = mass - .22 + (Math.sin(x*.028 + y*.016) + Math.cos(y*.037-x*.012))*.048;
+  return { z: 14 * Math.min(1,mass) + peaks + ripple * clamp(mass*2.1), outline, region };
+}
+
+export const landmarkPositions = atlasPeaks.map(({x,y}) => ({ x, y, z: heightField(x,y).z + 9 }));
+export const skillPositions = new Map<string, AtlasPosition>();
+for (const region of ATLAS_TERRITORIES) {
+  const peak = atlasPeaks[region.index];
+  region.items.forEach((skill, i) => {
+    const a = i * 2.39996 + region.index * 1.23;
+    const r = i === 0 ? 24 : 50 + Math.sqrt(i / region.items.length) * 116;
+    const x = peak.x + Math.cos(a) * r;
+    const y = peak.y + Math.sin(a) * r * 1.03;
+    skillPositions.set(skill.id, { x, y, z: heightField(x,y).z + 30 + (i % 3) * 8 });
+  });
+}
+export const OVERVIEW_BOUNDS = { left:-590, right:630, top:-300, bottom:249 };
 export type SceneFrame = {
-  camera: Camera;
-  width: number;
-  height: number;
-  stretch: number;
-  progress: number;
-  level: number;
-  selection: Selection | null;
-  signal: number;
+  camera: Camera; width: number; height: number; stretch: number; progress: number; selection: Selection | null;
+  signal: number; time: number; perspective: number; hover: number; expansion: Float32Array;
+  impulses: Float32Array; activeSkill: AtlasPosition | null; motion: boolean; quality: number; hoverStrength: number;
 };
 export type AtlasRenderer = { draw: (frame: SceneFrame) => void; dispose: () => void };
-type Color = [number, number, number];
-type Path = { points: AtlasPosition[]; bridge: boolean; active: boolean };
-const mix = (a: number, b: number, t: number) => a + (b - a) * t;
-const noise = (seed: number) => {
-  const value = Math.sin(seed * 127.1 + 311.7) * 43758.5453123;
-  return value - Math.floor(value);
-};
 
-export function screenPoint(point: {x: number; y: number}, frame: Pick<SceneFrame, "camera" | "width" | "height" | "stretch">) {
-  const { camera, width, height, stretch } = frame;
-  return {
-    x: width / 2 + point.x * camera.z + camera.x,
-    y: height / 2 + (point.y * camera.z + camera.y) * stretch,
-  };
-}
-
-export function routePoint(a: AtlasPosition, b: AtlasPosition, t: number, bridge: boolean): AtlasPosition {
-  // Lift bridges over the terrain; local paths trace nearer the associated surface points.
-  const rise = bridge ? 34 : 14;
-  const bend = bridge ? 0.08 : 0.028;
-  const arc = Math.sin(t * Math.PI);
-  return {
-    x: mix(a.x, b.x, t) - (b.y - a.y) * bend * arc,
-    y: mix(a.y, b.y, t) + (b.x - a.x) * bend * arc,
-    z: mix(a.z, b.z, t) + rise * arc + 4,
-  };
-}
-
-export function getSceneRoutes(selection: Selection | null, level: number): Path[] {
-  const focus = selection?.type === "skill" ? SKILLS_BY_ID.get(selection.id) : null;
-  const region = selection?.type === "territory" ? selection.id : focus?.territoryId;
-  return ATLAS_LINKS.flatMap(({ a, b, bridge, overview }) => {
-    const inside = a.territoryId === region || b.territoryId === region;
-    const active = focus ? a.id === focus.id || b.id === focus.id : inside && (bridge || level > 0);
-    if (!active && !(overview && !focus) && !(level > 0 && !region && !bridge)) return [];
-    const reverse = focus?.id === b.id || (!focus && b.territoryId === region && a.territoryId !== region);
-    const start = reverse ? b : a;
-    const end = reverse ? a : b;
-    const points = Array.from({length: 25}, (_, index) => routePoint(start.position, end.position, index / 24, bridge));
-    return [{ points, bridge, active }];
-  });
+export function screenPoint(p: AtlasPosition, {camera,width,height,stretch,perspective}: Pick<SceneFrame,"camera"|"width"|"height"|"stretch"|"perspective">) {
+  const pt = projection(p,perspective);
+  return { x: width / 2 + camera.x + pt.x * camera.z, y: height / 2 + (camera.y + pt.y * camera.z) * stretch };
 }
 
 export function territoryIndex(selection: Selection | null) {
@@ -61,95 +74,121 @@ export function territoryIndex(selection: Selection | null) {
   return id ? TERRITORIES_BY_ID.get(id)?.index ?? -1 : -1;
 }
 
-export function getVisibleSkills(selection: Selection | null, level: number) {
-  if (selection?.type === "skill") {
-    return [SKILLS_BY_ID.get(selection.id)!, ...ATLAS_LINKS.flatMap(({a,b}) => a.id === selection.id ? [b] : b.id === selection.id ? [a] : [])];
-  }
-  if (selection?.type === "territory") return TERRITORIES_BY_ID.get(selection.id)?.items ?? [];
-  return ATLAS_TERRITORIES.flatMap(territory => territory.items.filter(skill => level > 1 || (level === 1 && skill.rank < 3)));
+export function skillPose(skill: AtlasSkill, amount: number): AtlasPosition {
+  const region = TERRITORIES_BY_ID.get(skill.territoryId)!;
+  const peak = landmarkPositions[region.index];
+  const target = skillPositions.get(skill.id)!;
+  return { x:mix(peak.x,target.x,amount), y:mix(peak.y,target.y,amount), z:mix(peak.z,target.z,amount) + Math.sin(amount*Math.PI) * 19 };
 }
 
-function colorOf(hex: string): Color {
-  return [1, 3, 5].map(index => parseInt(hex.substring(index, index + 2), 16) / 255) as Color;
-}
-function vertex(output: number[], p: AtlasPosition, color: Color, alpha: number, region = -1) {
-  output.push(p.x, p.y, p.z, ...color, alpha, region);
-}
-
-export function sampleAtlasTerrains(compact: boolean) {
-  const segments = compact ? 44 : 64;
-  const rings = compact ? 9 : 13;
-  const terrains = ATLAS_TERRITORIES.map(region =>
-    Array.from({length: rings + 1}, (_, r) =>
-      Array.from({length: segments + 1}, (_, i) => terrainPoint(region, region.index, i / segments * Math.PI * 2, r / rings))),
-  );
-  return { segments, rings, terrains };
+export function visibleSkills(selection: Selection | null) {
+  const region = territoryIndex(selection);
+  if (region < 0) return [];
+  const own = ATLAS_TERRITORIES[region].items;
+  if (selection?.type !== "skill") return own;
+  const focus = SKILLS_BY_ID.get(selection.id)!;
+  const neighbors = ATLAS_LINKS.flatMap(({a,b}) => a.id === focus.id ? [b] : b.id === focus.id ? [a] : []);
+  const ranked = [focus,...neighbors];
+  return [...ranked, ...own.filter(skill=>!ranked.includes(skill))];
 }
 
-export function atlasGeometry(compact: boolean) {
-  const surface: number[] = [];
-  const triangles: number[] = [];
-  const contours: number[] = [];
-  const points: number[] = [];
-  const grid: number[] = [];
-  const { segments, rings, terrains } = sampleAtlasTerrains(compact);
-  const gridColor: Color = [0.38, 0.33, 0.35];
-  for (let x = -504; x <= 504; x += 36) {
-    vertex(grid, {x, y: -345, z: -18}, gridColor, x % 144 === 0 ? .30 : .14);
-    vertex(grid, {x, y: 349, z: -18}, gridColor, x % 144 === 0 ? .30 : .14);
-  }
-  for (let y = -345; y <= 351; y += 34) {
-    vertex(grid, {x: -505, y, z: -18}, gridColor, y % 4 === 3 ? .26 : .14);
-    vertex(grid, {x: 505, y, z: -18}, gridColor, y % 4 === 3 ? .26 : .14);
-  }
+export function sceneRoutes(selection: Selection | null, hover: number) {
+  const region = territoryIndex(selection);
+  const overview = !selection;
+  const links = ATLAS_LINKS.filter(({ a,b,overview: representative }) => {
+    if (overview) return representative && hover >= 0 && (a.territoryId===ATLAS_TERRITORIES[hover].id || b.territoryId===ATLAS_TERRITORIES[hover].id);
+    if (selection.type === "skill") return a.id===selection.id || b.id===selection.id;
+    const id = ATLAS_TERRITORIES[region].id;
+    return (a.territoryId === id && b.territoryId === id) || (representative && (a.territoryId === id || b.territoryId === id));
+  });
+  return links.slice(0,overview ? 3 : 16).map(({a,b,bridge}) => {
+    const reverse = selection?.type==="skill" ? selection.id === b.id : (region >= 0 && b.territoryId===ATLAS_TERRITORIES[region].id);
+    return { a: reverse ? b : a, b: reverse ? a : b, bridge };
+  });
+}
+export function routePoint(a: AtlasPosition,b: AtlasPosition,t: number,bridge: boolean) {
+  const arc = Math.sin(t * Math.PI);
+  const swell = Math.sin(Math.PI * t * 2) * (bridge ? .018 : .035);
+  return {
+    x: mix(a.x,b.x,t) - (b.y-a.y) * swell,
+    y: mix(a.y,b.y,t) + (b.x-a.x) * swell,
+    z: mix(a.z,b.z,t) + (bridge ? 57 : 22) * arc,
+  };
+}
 
-  for (const region of ATLAS_TERRITORIES) {
-    const tint = colorOf(region.color);
-    const samples = terrains[region.index];
-    const paint = (p: AtlasPosition, angle: number, radius: number, side = false) => {
-      const light = 0.5 - Math.cos(angle - 0.98) * 0.5;
-      const slope = Math.sin(Math.PI * radius);
-      const amount = side ? 0.115 + light * 0.035 : 0.155 + light * slope * 0.22 + (1 - radius) * .05;
-      const color = tint.map((channel, index) => mix([0.073, 0.061, 0.068][index], channel, amount)) as Color;
-      vertex(surface, p, color, 1, region.index);
-    };
-    const base = surface.length / 8;
-    const stride = segments + 1;
-    for (let r = 0; r <= rings; r++) {
-      for (let i = 0; i <= segments; i++) paint(samples[r][i], i / segments * Math.PI * 2, r / rings);
+// One progressive field. Interleaving by a deterministic hash keeps both quality tiers spatially balanced.
+export function makeTerrainParticles(high: boolean) {
+  const vertices: number[][] = [];
+  const step = high ? 4.1 : 6;
+  const push = (x:number,y:number,z:number,region:number,alpha:number,size:number,kind:number,phase:number) => {
+    vertices.push([x,y,z,region,alpha,size,kind,phase]);
+  };
+  let i = 0;
+  for (let y=-410;y<439;y+=step) for (let x=-585;x<590;x+=step) {
+    const sample = ++i;
+    const px = x + (seed(sample+3)-.5)*step*.79;
+    const py = y + (seed(sample+9)-.5)*step*.80;
+    const {z,outline,region} = heightField(px,py);
+    if (outline < -.105 || seed(sample+19) > clamp((outline+.105)*5.2)) continue;
+    const softness = clamp((outline+.105)*4.5);
+    const ridge = .49 + .51*Math.cos(z*.17 + .32*Math.sin(px*.035+py*.018));
+    push(px,py,z,region, softness * (.20 + ridge*.34 + seed(sample+71)*.39), .79 + .71*seed(sample+46) + ridge*.28,0,seed(sample+61));
+    if (seed(sample+24) < .098) {
+      const shade = seed(sample+27);
+      push(px + (seed(sample+26)-.5)*17,py + (seed(sample+44)-.5)*15,z - 14 - shade*48,region,softness*(.11+.17*(1-shade)),.59+shade*.51,0,seed(sample+80));
     }
-    for (let r = 0; r < rings; r++) {
-      for (let i = 0; i < segments; i++) {
-        const a = base + r * stride + i;
-        const b = a + stride;
-        triangles.push(a, b, b + 1, a, b + 1, a + 1);
+  }
+  for (const r of ATLAS_TERRITORIES) {
+    const summit = landmarkPositions[r.index];
+    for (let j=0;j<5;j++) for (let k=0;k<72;k++) {
+      const a = k/72*Math.PI*2, radius=15 + j*4.6;
+      const x = summit.x+Math.cos(a)*radius, y = summit.y+Math.sin(a)*radius;
+      push(x,y,heightField(x,y).z+7,r.index,.31 + .31*(1-j/5),.95,1,seed(k+j*9));
+    }
+    for (const skill of r.items) {
+      const s = skillPositions.get(skill.id)!;
+      for (let k=0;k<85;k++) {
+        const j = 401 + k + skill.rank*389 + r.index*2177;
+        const a=seed(j)*Math.PI*2, radius=4.8+seed(j+7)**.62*(skill.rank===0?16:12);
+        const x=s.x+Math.cos(a)*radius, y=s.y+Math.sin(a)*radius;
+        push(x,y,s.z+(seed(j+13)-.5)*13,r.index,.37+seed(j+22)*.55,.93+seed(j+43)*.77,2,seed(j+477));
       }
     }
-    for (let i = 0; i < segments; i++) {
-      const a = samples[rings][i];
-      const b = samples[rings][i + 1];
-      const lowA = { ...a, z: -11 };
-      const lowB = { ...b, z: -11 };
-      const angle = i / segments * Math.PI * 2;
-      const side = surface.length / 8;
-      for (const p of [a, lowA, b, lowB]) paint(p, angle, 1, true);
-      triangles.push(side, side + 1, side + 2, side + 2, side + 1, side + 3);
-      for (const p of [lowA, lowB]) vertex(contours, p, tint, .22, region.index);
-      for (let r = 2; r <= rings; r++) {
-        const strength = r === rings ? .63 : r % 3 === 0 ? .48 : .27;
-        for (const p of [samples[r][i], samples[r][i + 1]]) {
-          vertex(contours, {...p, z:p.z + 1.15}, tint, strength, region.index);
-        }
-      }
-    }
-    const count = compact ? 215 : 450;
-    for (let i = 0; i < count; i++) {
-      const sample = i + region.index * 917;
-      const angle = noise(sample) * Math.PI * 2;
-      const radius = .045 + .91 * Math.sqrt(noise(sample + 132));
-      const p = terrainPoint(region, region.index, angle, radius);
-      vertex(points, {...p, z:p.z + 1.7 + noise(sample + 41) * 5.5}, tint, .19 + noise(sample + 8) * .60, region.index);
+  }
+  // Sorting by a stable hash avoids a visible density boundary when the adaptive draw range shrinks.
+  const field = vertices.filter(v=>v[6]===0).sort((a,b)=>a[7]-b[7]);
+  const markers = vertices.filter(v=>v[6]!==0);
+  return { field: new Float32Array(field.flat()), markers: new Float32Array(markers.flat()) };
+}
+
+const surfaceSamples = Array.from({length:35},(_,j)=>
+  Array.from({length:47},(_,i)=>{
+    const x=-575+i*25,y=-410+j*25;
+    return {x,y,...heightField(x,y)};
+  })).flat().filter(p=>p.outline>-.025);
+
+// Sample the forward projection of the interaction surface to pick the frontmost plausible ray hit.
+// Refinement shrinks the sampling footprint to ~2 scene units and respects the current lens and zoom.
+export function pickSurface(point: Point, perspective: number): AtlasPosition | null {
+  let best: AtlasPosition | null = null;
+  let error = 30 ** 2;
+  for (const p of surfaceSamples) {
+    const q=projection(p,perspective);
+    const d=(q.x-point.x)**2 + (q.y-point.y)**2;
+    if (d < error) { error=d; best=p; }
+  }
+  if (!best) return null;
+  for (const step of [11,5,2]) {
+    const center: AtlasPosition = best;
+    for (let j=-1;j<=1;j++) for (let i=-1;i<=1;i++) {
+      const x=center.x+i*step,y=center.y+j*step;
+      const h=heightField(x,y);
+      if(h.outline<-.085) continue;
+      const p={x,y,z:h.z};
+      const q=projection(p,perspective);
+      const d=(q.x-point.x)**2+(q.y-point.y)**2;
+      if(d<error) {error=d;best=p;}
     }
   }
-  return { surface, contours, points, grid, triangles: new Uint16Array(triangles) };
+  return best;
 }

@@ -2,34 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowRight, ArrowUpRight, Crosshair, Hand, Minus, Plus, Search, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Crosshair, Hand, Minus, Plus, Search, X } from "lucide-react";
 import { SKILL_DETAILS } from "@/lib/skill_details";
 import {
-  ATLAS_LINKS, ATLAS_TERRITORIES, SKILLS, SKILLS_BY_ID, TERRITORIES_BY_ID, atlasSearch, relatedSkills, skillReferences,
+  ATLAS_TERRITORIES, SKILLS, SKILLS_BY_ID, TERRITORIES_BY_ID, atlasSearch, relatedSkills, skillReferences,
   type AtlasTerritory, type AtlasSkill, type Selection,
 } from "./knowledge/atlas-model";
 import { createAtlasScene } from "./knowledge/atlas-scene";
 import "./knowledge/atlas.css";
 
 type SelectAtlasItem = (selection: Selection, keyboard?: boolean, trigger?: HTMLElement) => void;
-
-function RegionIndex({ select }: {select: SelectAtlasItem}) {
-  return (
-    <ol className="atlas-index">
-      {ATLAS_TERRITORIES.map(region => (
-        <li key={region.id}>
-          <button type="button" style={{"--territory-color":region.color} as CSSProperties}
-            onClick={event => select({type:"territory", id:region.id}, event.detail === 0, event.currentTarget)}>
-            <span className="atlas-index-number">{String(region.index + 1).padStart(2,"0")}</span>
-            <span>{region.label}</span>
-            <span className="atlas-index-count">{region.items.length}</span>
-            <ArrowRight size={13} aria-hidden="true" />
-          </button>
-        </li>
-      ))}
-    </ol>
-  );
-}
 
 function ReferenceLinks({ references }: { references: ReturnType<typeof skillReferences> }) {
   return (
@@ -75,7 +57,6 @@ export const SkillsConstellation = () => {
   const labels = useRef<HTMLDivElement>(null);
   const scale = useRef<HTMLSpanElement>(null);
   const queryInput = useRef<HTMLInputElement>(null);
-  const regionInput = useRef<HTMLSelectElement>(null);
   const results = useRef<HTMLUListElement>(null);
   const detail = useRef<HTMLElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
@@ -84,6 +65,7 @@ export const SkillsConstellation = () => {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [exploring, setExploring] = useState(false);
   const [query, setQuery] = useState("");
+  const [more, setMore] = useState(false);
   const search = useMemo(() => atlasSearch(query).slice(0, 10), [query]);
   const skill = selection?.type === "skill" ? SKILLS_BY_ID.get(selection.id) : undefined;
   const territory = TERRITORIES_BY_ID.get(skill?.territoryId ?? selection?.id ?? "");
@@ -95,10 +77,10 @@ export const SkillsConstellation = () => {
   }, [skill,territory]);
 
   useEffect(() => {
-    if (!stage.current || !webgl.current || !fallback.current || !labels.current || !scale.current) return;
+    if (!stage.current || !webgl.current || !fallback.current || !labels.current || !scale.current || !detail.current) return;
     const element = stage.current;
     const controller = createAtlasScene({
-      stage: element, webgl: webgl.current, fallback: fallback.current, labels: labels.current, scale: scale.current,
+      stage: element, webgl: webgl.current, fallback: fallback.current, labels: labels.current, scale: scale.current, popup: detail.current,
     }, () => setExploring(false));
     scene.current = controller;
     const selectRegion = (id: string | null) => {
@@ -128,6 +110,7 @@ export const SkillsConstellation = () => {
   const choose = (next: Selection, keyboard = false, trigger?: HTMLElement) => {
     if (trigger) returnFocus.current = trigger;
     setSelection(next);
+    setMore(false);
     setQuery("");
     scene.current?.select(next);
     if (detail.current) detail.current.scrollTop = 0;
@@ -137,18 +120,20 @@ export const SkillsConstellation = () => {
   const close = () => {
     const next = skill && territory ? {type:"territory", id:territory.id} as const : null;
     setSelection(next);
+    setMore(false);
     setQuery("");
     scene.current?.select(next);
     if (detail.current) detail.current.scrollTop = 0;
     if (detail.current?.contains(document.activeElement)) requestAnimationFrame(() => {
       const trigger = returnFocus.current;
       if (trigger?.isConnected && !trigger.inert && trigger.getClientRects().length) trigger.focus({preventScroll:true});
-      else regionInput.current?.focus({preventScroll:true});
+      else queryInput.current?.focus({preventScroll:true});
     });
   };
 
   const reset = () => {
     setSelection(null);
+    setMore(false);
     setQuery("");
     scene.current?.select(null);
   };
@@ -200,13 +185,8 @@ export const SkillsConstellation = () => {
     >
       <div className="portfolio-frame">
         <header className="atlas-header">
-          <div>
-            <p className="atlas-kicker">Knowledge Landscape</p>
-            <h2 className="chapter-heading">Living Knowledge Atlas</h2>
-          </div>
-          <a className="atlas-continue portfolio-text-link" href="#about" onClick={() => setExploring(false)}>
-            <span className="portfolio-link-label">Continue to experience</span><ArrowDown className="portfolio-link-arrow" aria-hidden="true" />
-          </a>
+          <h2 className="chapter-heading">Knowledge Landscape</h2>
+          <p>Explore the connections between my skills and projects.</p>
         </header>
         <div className="atlas-toolbar" data-familiar-protect data-familiar-yield>
           <form role="search" className="atlas-search" onSubmit={event => {
@@ -245,17 +225,10 @@ export const SkillsConstellation = () => {
               {query.trim() && search.length === 0 && <li className="atlas-no-match" role="status">No skills or regions match.</li>}
             </ul>
           </form>
-          <label className="atlas-region-select">
-            <span className="sr-only">Knowledge region</span>
-            <select ref={regionInput} value={territory?.id ?? ""}
-              onChange={event => event.target.value ? choose({type:"territory",id:event.target.value}) : reset()}>
-              <option value="">All regions</option>
-              {ATLAS_TERRITORIES.map(region => <option key={region.id} value={region.id}>{region.label}</option>)}
-            </select>
-          </label>
           <div className="atlas-controls">
             <button className="atlas-explore" type="button" aria-controls="knowledge-map" aria-pressed={exploring}
               onClick={toggleExploration}><Hand size={15} aria-hidden="true" />{exploring ? "Finish exploring" : "Explore map"}</button>
+            {selection && <button className="atlas-back" type="button" onClick={reset}><ArrowLeft size={15} aria-hidden="true" />Overview</button>}
             <div className="atlas-zoom" aria-label="Map controls" role="group">
               <button type="button" aria-label="Zoom out" onClick={() => scene.current?.scaleBy(1/1.31)}><Minus size={17} aria-hidden="true" /></button>
               <button type="button" aria-label="Zoom in" onClick={() => scene.current?.scaleBy(1.31)}><Plus size={17} aria-hidden="true" /></button>
@@ -274,33 +247,35 @@ export const SkillsConstellation = () => {
               onPointerDown={startPointer}
               onPointerMove={event => scene.current?.move({ pointerId:event.pointerId, pointerType:event.pointerType, x:event.clientX, y:event.clientY })}
               onPointerUp={event => scene.current?.up(event.pointerId)}
-              onPointerLeave={event => { if (event.pointerType !== "touch" && !event.currentTarget.hasPointerCapture(event.pointerId)) scene.current?.up(event.pointerId); }}
-              onPointerCancel={event => scene.current?.up(event.pointerId)}
+              onPointerLeave={event => {
+                scene.current?.track(null);
+                if (event.pointerType !== "touch" && !event.currentTarget.hasPointerCapture(event.pointerId)) scene.current?.up(event.pointerId);
+              }}
+              onPointerCancel={event => {scene.current?.up(event.pointerId);scene.current?.track(null);}}
               onLostPointerCapture={event => { if (event.target === event.currentTarget) scene.current?.up(event.pointerId); }}
               onClickCapture={event => {
                 if (event.detail !== 0 && scene.current?.discardClick()) { event.preventDefault(); event.stopPropagation(); }
               }}
               onClick={event => {
                 if (event.detail === 0 || (event.target as Element).closest("button")) return;
-                const nearest = scene.current?.nearest({x:event.clientX,y:event.clientY});
+                const point = {x:event.clientX,y:event.clientY};
+                scene.current?.impulse(point);
+                const nearest = scene.current?.nearest(point);
                 if (nearest) choose(nearest, false, event.currentTarget);
               }}
             >
               <canvas ref={webgl} className="atlas-webgl" aria-hidden="true" />
               <canvas ref={fallback} className="atlas-fallback" aria-hidden="true" />
-              <div className="atlas-state" aria-hidden="true">
-                <i />{skill ? "Skill focus" : territory ? "Region focus" : (
-                  <><span data-level="0">Regional overview</span><span data-level="1">Regional detail</span><span data-level="2">Skill layer</span></>
-                )}
-              </div>
-              <span className="atlas-orientation" aria-hidden="true"><Crosshair size={15} /><small>XY</small></span>
               <div className="atlas-markers" ref={labels}>
                 {ATLAS_TERRITORIES.map(region => (
                   <button type="button" key={region.id} className="atlas-marker atlas-region-marker"
                     data-atlas-marker={"territory-" + region.id} aria-label={region.title} tabIndex={-1} inert
                     style={{"--territory-color":region.color} as CSSProperties}
+                    onPointerEnter={event => {if(event.pointerType==="mouse")scene.current?.preview(region.id);}}
+                    onPointerLeave={() => scene.current?.preview(null)}
+                    onFocus={() => scene.current?.preview(region.id)}
+                    onBlur={() => scene.current?.preview(null)}
                     onClick={event => choose({type:"territory",id:region.id},event.detail === 0,event.currentTarget)}>
-                    <span className="atlas-marker-number">{String(region.index + 1).padStart(2,"0")}</span>
                     <span className="atlas-marker-wide">{region.label}</span>
                     <span className="atlas-marker-compact">{region.compactLabel ?? region.label}</span>
                   </button>
@@ -318,22 +293,18 @@ export const SkillsConstellation = () => {
             </div>
             <div className="atlas-map-caption">
               <p id="atlas-instructions">
-                <span className="atlas-desktop-hint">Drag to pan. Use + and − to zoom.</span>
-                <span className="atlas-mobile-hint">{exploring ? "Drag or pinch inside the map. Scroll outside it." : "Tap a label or use Explore map to pan and pinch."}</span>
+                <span className="atlas-desktop-hint">Select a region · Drag to pan · + / − to zoom</span>
+                <span className="atlas-mobile-hint">{exploring ? "Drag or pinch here · Scroll outside the terrain" : "Tap a region · Explore map to drag and pinch"}</span>
               </p>
-              <ul className="atlas-legend" aria-label="Map legend">
-                <li><span className="atlas-skill-symbol" /> Skill</li>
-                <li><span className="atlas-bridge-symbol" /> Cross-region link</li>
-              </ul>
             </div>
           </div>
-          <aside className="atlas-inspector" aria-label={selection ? "Atlas details" : "Region index"} ref={detail}
+          <aside className="atlas-inspector" aria-label="Atlas details" ref={detail} hidden={!territory}
             data-selection={selection?.type} data-familiar-protect data-familiar-margin="8" data-familiar-yield>
             {territory ? (
               <div className="atlas-detail-content" key={skill?.id ?? territory.id} style={{"--territory-color":territory.color} as CSSProperties}>
                 <div className="atlas-panel-head">
                   <div>
-                    <p className="atlas-kicker">Region {String(territory.index + 1).padStart(2,"0")}{skill ? " / " + territory.label : ""}</p>
+                    {skill && <p className="atlas-kicker">{territory.label}</p>}
                     <h3>{skill?.label ?? territory.title}</h3>
                   </div>
                   <button type="button" ref={closeButton} aria-label={skill ? "Back to region details" : "Close region details"}
@@ -342,29 +313,20 @@ export const SkillsConstellation = () => {
                 {skill ? (
                   <>
                     {SKILL_DETAILS[skill.id] && <p className="atlas-panel-copy">{SKILL_DETAILS[skill.id].description}</p>}
-                    {references.length > 0 && <><h4>Used in</h4><ReferenceLinks references={references} /></>}
-                    <h4>Connected skills</h4>
-                    {neighbors.length > 0 ? <SkillList skills={neighbors.map(entry => entry.skill)}
-                      bridges={new Set(neighbors.filter(entry => entry.bridge).map(entry => entry.skill.id))} select={choose} />
-                      : <p className="atlas-panel-copy">No direct relationships recorded.</p>}
+                    <button type="button" className="atlas-more" aria-expanded={more} onClick={() => setMore(value=>!value)}>
+                      {more ? "Show less" : "Projects and connections"}<ArrowRight size={14} aria-hidden="true" />
+                    </button>
+                    <div className="atlas-detail-links" data-open={more || undefined}>
+                      {references.length > 0 && <><h4>Used in</h4><ReferenceLinks references={references} /></>}
+                      <h4>Connected skills</h4>
+                      {neighbors.length > 0 ? <SkillList skills={neighbors.map(entry => entry.skill)}
+                        bridges={new Set(neighbors.filter(entry => entry.bridge).map(entry => entry.skill.id))} select={choose} />
+                        : <p className="atlas-panel-copy">No direct relationships recorded.</p>}
+                    </div>
                   </>
                 ) : domainPanel(territory)}
               </div>
-            ) : (<>
-              <div className="atlas-directory-panel">
-                <h3>Region index</h3>
-                <RegionIndex select={choose} />
-                <p className="atlas-directory-note">{SKILLS.length} skills · {ATLAS_LINKS.length} mapped relationships</p>
-              </div>
-              <details className="atlas-directory">
-                <summary>
-                  <span>Region index</span>
-                  <small>{ATLAS_TERRITORIES.length} regions · {SKILLS.length} skills</small>
-                </summary>
-                <RegionIndex select={choose}/>
-                <p className="atlas-directory-note">{ATLAS_LINKS.length} mapped relationships</p>
-              </details>
-            </>)}
+            ) : null}
           </aside>
         </div>
         <span className="sr-only" role="status">{skill ? skill.label + " skill details" : territory ? territory.title + " region details" : ""}</span>
