@@ -632,6 +632,7 @@ body:has(.case-image-dialog[open]) { overflow: hidden; }
 }
 
 .contact-profile-link { max-width: 100%; overflow-wrap: anywhere; }
+.contact-profile-link > span { max-width: 100%; }
 
 @media (width >= 64rem) and (prefers-reduced-motion: no-preference) {
   @keyframes atmosphere-breathe { 50% { opacity: 0.56; } }

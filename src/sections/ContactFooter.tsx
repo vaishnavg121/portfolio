@@ -24,7 +24,7 @@ export const ContactFooter = () => {
   }, { scope: containerRef });
 
   const LINKS = [
-    { name: "GitHub", display: "github.com/vaishnavg121", url: socials.github },
+    { name: "GitHub", display: <>github.com/<wbr />vaishnavg121</>, url: socials.github },
     { name: "LinkedIn", display: "Venkatanaga Vaishnav Gadamsetty", url: socials.linkedin }
   ];
 
