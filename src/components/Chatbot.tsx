@@ -165,7 +165,7 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="w-full lg:w-[400px] bg-surface-elevated border-t lg:border border-border shadow-2xl flex flex-col overflow-hidden h-full lg:h-[550px] lg:max-h-[calc(100vh-4rem)]"
+        className="chat-panel w-full lg:w-[400px] bg-surface-elevated border-t lg:border border-border flex flex-col overflow-hidden h-full lg:h-[550px] lg:max-h-[calc(100vh-4rem)]"
         data-familiar-protect="true"
         onMouseEnter={() => {
            window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "chat-hover" } }));

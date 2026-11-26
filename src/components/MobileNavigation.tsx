@@ -42,7 +42,7 @@ export function MobileNavigation() {
         </div>
       </div>
       <dialog id="mobile-menu" ref={menu} aria-labelledby="mobile-menu-title"
-        className="mobile-menu border border-border bg-surface text-text-primary backdrop:bg-black/75"
+        className="mobile-menu portfolio-popover text-text-primary backdrop:bg-black/75"
         onClick={(event) => {
           if (event.target === event.currentTarget) event.currentTarget.close();
         }}>

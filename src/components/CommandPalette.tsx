@@ -114,7 +114,7 @@ export const CommandPalette = () => {
             transition={{ duration: 0.2, ease: "easeOut" }}
             role="dialog"
             aria-label="Command palette"
-            className="relative w-full max-w-lg bg-surface border border-border shadow-2xl rounded-xl overflow-hidden font-mono"
+            className="portfolio-popover relative w-full max-w-lg overflow-hidden font-mono"
           >
             <div className="flex items-center px-4 border-b border-border">
               <span className="text-text-muted mr-2">{'>'}</span>
