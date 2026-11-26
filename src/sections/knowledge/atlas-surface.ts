@@ -1,12 +1,12 @@
 import { clamp, heightField, mix } from "./atlas-geometry";
 
 const FIELD_EXTENT = { x: 752, y: 608 };
-const CONTOUR_INTERVAL = 15;
 const edges = [[0, 1], [1, 2], [2, 3], [3, 0]] as const;
 
 export function makeAtlasSurface(compact: boolean) {
-  const columns = compact ? 58 : 90;
-  const rows = compact ? 49 : 74;
+  const interval = compact ? 10 : 8;
+  const columns = compact ? 68 : 105;
+  const rows = compact ? 56 : 85;
   const stepX = FIELD_EXTENT.x * 2 / (columns - 1);
   const stepY = FIELD_EXTENT.y * 2 / (rows - 1);
   const samples = Array.from({ length: columns * rows }, (_, index) => {
@@ -20,8 +20,7 @@ export function makeAtlasSurface(compact: boolean) {
   type Sample = typeof samples[number];
   const lines: number[] = [];
   const veil: number[] = [];
-  const write = (buffer: number[], x: number, y: number, z: number, style: Sample, opacity: number) => {
-    const grain = .5 + .5 * Math.sin(x * .013 + y * .017);
+  const write = (buffer: number[], x: number, y: number, z: number, style: Sample, opacity: number, grain = .5) => {
     buffer.push(x, y, z, style.region + style.tone, opacity, 1, -style.shade, grain);
   };
   const writeVeil = (sample: Sample) => {
@@ -43,9 +42,11 @@ export function makeAtlasSurface(compact: boolean) {
       const cell = [samples[start], samples[start + 1], samples[start + columns + 1], samples[start + columns]];
       const low = Math.min(...cell.map(sample => sample.z));
       const high = Math.max(...cell.map(sample => sample.z));
-      if (high < 11 || !cell.some(sample => sample.fade > .009)) continue;
-      const first = 10 + Math.ceil((Math.max(low, 10) - 10) / CONTOUR_INTERVAL) * CONTOUR_INTERVAL;
-      for (let level = first; level <= high; level += CONTOUR_INTERVAL) {
+      const floor = -20;
+      if (high < floor || !cell.some(sample => sample.fade > .009)) continue;
+      const first = Math.ceil((Math.max(low, floor) - floor) / interval);
+      for (let index = first; floor + index * interval <= high; index++) {
+        const level = floor + index * interval;
         const crossings: { a: Sample; b: Sample; t: number }[] = [];
         for (let side = 0; side < edges.length; side++) {
           const [i, j] = edges[side], a = cell[i], b = cell[j];
@@ -53,8 +54,9 @@ export function makeAtlasSurface(compact: boolean) {
           crossings.push({ a, b, t: (level - a.z) / (b.z - a.z) });
         }
         if (crossings.length === 4) {
-          const center = cell.reduce((sum, p) => sum + p.z, 0) * .25;
-          if ((center < level) === (cell[0].z < level)) crossings.push(crossings.shift()!);
+          // The bilinear saddle decides which edges share the same isoline.
+          const determinant = (cell[0].z - level) * (cell[2].z - level) - (cell[1].z - level) * (cell[3].z - level);
+          if (determinant < 0) crossings.push(crossings.shift()!);
         }
         for (const { a, b, t } of crossings) {
           const style = {
@@ -63,8 +65,11 @@ export function makeAtlasSurface(compact: boolean) {
           const x = mix(a.x, b.x, t), y = mix(a.y, b.y, t);
           const bands = .5 + .5 * Math.sin(x * .018 - y * .014 + level * .13);
           const fade = mix(a.fade, b.fade, t);
-          const strength = fade * (.035 + .25 * bands ** 2) * (.30 + style.shade * .71);
-          write(lines, x, y, level, style, strength);
+          const major = index % 3 === 1;
+          const crest = clamp((style.shade - .49) * 2.1) * bands;
+          const strength = fade * (major ? .19 + bands * .16 : .052 + bands * .055)
+            * (.45 + style.shade * .61) * (level < 0 ? .58 : 1) + fade * crest * (major ? .16 : .055);
+          write(lines, x, y, level, style, strength, crest * .76 + (major ? .24 : 0));
         }
       }
     }

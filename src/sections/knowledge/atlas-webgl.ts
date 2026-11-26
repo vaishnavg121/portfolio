@@ -105,7 +105,7 @@ void main() {
       vec3 soil=mix(uShadow,uAccent,.13+.14*hue);
       vec3 veil=mix(soil,mineral,.23+face*.29+relief*.20);
       veil=mix(veil,uStone,distanceWash*uGrade.w*.26);
-      vec3 rim=mix(mineral,mix(uPetal,uLight,.48),.19+face*.46);
+      vec3 rim=mix(mineral,mix(uPetal,uLight,.48),.16+face*.39+phase*.27);
       color=mix(veil,rim,contour);
       ink=aStyle.y*mix(uGrade.x*(.76+face*.28),uGrade.z*(.72+face*.45),contour)*(.55+.45*uMotion.y);
     }
