@@ -1,11 +1,18 @@
-import { clamp, encodeFormation, formationAt, landmarkPositions, lens, mix, skillPositions, terrainSample, TERRAIN_STRIDE, type SceneFrame } from "./atlas-geometry";
+import { clamp, encodeFormation, formationAt, landmarkPositions, lens, mix, skillPositions, terrainSample, type SceneFrame } from "./atlas-geometry";
 import { ATLAS_TERRITORIES } from "./atlas-model";
 
 const TILE_SIZE = 416;
 const TILE_RADIUS = 3;
 export const FOG_NEAR = 515;
 export const FOG_FAR = TILE_SIZE * TILE_RADIUS - 120;
-const STRIDE = TERRAIN_STRIDE;
+const DENSITY_BANDS = 6;
+type TerrainTile = { values: Float32Array; offsets: Uint32Array };
+
+function densityBand(phase: number) {
+  const value = Math.fround(phase) * 851.147;
+  return Math.floor((value - Math.floor(value)) * DENSITY_BANDS);
+}
+
 const seed = (n: number) => {
   const value = Math.sin(n * 127.1 + 311.7) * 43758.5453123;
   return value - Math.floor(value);
@@ -19,7 +26,7 @@ export function terrainCenter({ camera, perspective }: SceneFrame) {
 }
 
 export function createTerrainTiles(detailed: boolean) {
-  const tiles = new Map<string, Float32Array>();
+  const tiles = new Map<string, TerrainTile>();
   const subdivisions = detailed ? 5 : 3;
   const cachedMargin = 18;
   const cellsPerTile = 20;
@@ -36,7 +43,7 @@ export function createTerrainTiles(detailed: boolean) {
       tiles.set(key, cached);
       return cached;
     }
-    const points: number[] = [];
+    const bands = Array.from({ length: DENSITY_BANDS }, () => [] as number[]);
     for (let iy = 0; iy < cellsPerTile; iy++) for (let ix = 0; ix < cellsPerTile; ix++) {
       const gx = tx * cellsPerTile + ix, gy = ty * cellsPerTile + iy;
       const x = gx * cellSize - TILE_SIZE / 2, y = gy * cellSize - TILE_SIZE / 2;
@@ -63,13 +70,17 @@ export function createTerrainTiles(detailed: boolean) {
         const opacity = (.24 + relief * .40 + detail * .12) * (.60 + phase * .36 + emphasis);
         const size = 1.06 + .67 * phase + (1 - detail) * .58 + .28 * emphasis;
         // The fractional region index and negative point kind carry continuous tone and slope.
-        points.push(px, py, z, region + tone, opacity, size, -shade, phase, encodeFormation(formation,rise));
+        bands[densityBand(phase)].push(px, py, z, region + tone, opacity, size, -shade, phase, encodeFormation(formation,rise));
       }
     }
-    const values = new Float32Array(points);
-    tiles.set(key, values);
+    const offsets = new Uint32Array(DENSITY_BANDS + 1);
+    for (let band = 0; band < DENSITY_BANDS; band++) offsets[band + 1] = offsets[band] + bands[band].length;
+    const values = new Float32Array(offsets[DENSITY_BANDS]);
+    for (let band = 0; band < DENSITY_BANDS; band++) values.set(bands[band], offsets[band]);
+    const packed = { values, offsets };
+    tiles.set(key, packed);
     if (tiles.size > (TILE_RADIUS * 2 + 1) ** 2 + cachedMargin) tiles.delete(tiles.keys().next().value!);
-    return values;
+    return packed;
   }
 
   return (x: number, y: number) => {
@@ -81,7 +92,7 @@ export function createTerrainTiles(detailed: boolean) {
     if (windowX === tx && windowY === ty) return field;
     windowX = tx;
     windowY = ty;
-    const visible: Float32Array[] = [];
+    const visible: TerrainTile[] = [];
     for (let iy = ty - TILE_RADIUS; iy <= ty + TILE_RADIUS; iy++) {
       for (let ix = tx - TILE_RADIUS; ix <= tx + TILE_RADIUS; ix++) {
         const gapX = Math.max(0, Math.abs(ix - tx) - .5 - margin) * TILE_SIZE;
@@ -89,25 +100,15 @@ export function createTerrainTiles(detailed: boolean) {
         if (Math.hypot(gapX, gapY) < FOG_FAR) visible.push(tile(ix, iy));
       }
     }
-    const length = visible.reduce((sum, points) => sum + points.length, 0);
+    const length = visible.reduce((sum, tile) => sum + tile.values.length, 0);
     field = new Float32Array(length);
-    // Interleave every tile by phase so reducing the draw count thins the whole surface.
-    const bands = 6;
-    const bandFor = (phase: number) => {
-      const value = phase * 851.147;
-      return Math.floor((value - Math.floor(value)) * bands);
-    };
-    const counts = new Uint32Array(bands);
-    for (const points of visible) {
-      for (let i = 0; i < points.length; i += STRIDE) counts[bandFor(points[i + 7])]++;
-    }
-    const offsets = new Uint32Array(bands);
-    for (let i = 1; i < bands; i++) offsets[i] = offsets[i - 1] + counts[i - 1] * STRIDE;
-    for (const points of visible) {
-      for (let i = 0; i < points.length; i += STRIDE) {
-        const band = bandFor(points[i + 7]);
-        for (let j = 0; j < STRIDE; j++) field[offsets[band] + j] = points[i + j];
-        offsets[band] += STRIDE;
+    // Interleave cached bands so lowering the draw count thins the whole surface.
+    let writeOffset = 0;
+    for (let band = 0; band < DENSITY_BANDS; band++) {
+      for (const { values, offsets } of visible) {
+        const points = values.subarray(offsets[band], offsets[band + 1]);
+        field.set(points, writeOffset);
+        writeOffset += points.length;
       }
     }
     return field;
