@@ -14,6 +14,7 @@ uniform vec3 uCam;
 uniform vec4 uFrame, uMotion, uSkill, uLens;
 uniform float uHover;
 uniform float uSurfaceLayer;
+uniform vec4 uGrade;
 uniform vec2 uGround;
 uniform vec3 uShadow, uMuted, uLight, uAccent, uPetal, uStone;
 uniform vec4 uImpulses[4], uPeaks[8];
@@ -83,21 +84,28 @@ void main() {
   if(kind<.5) {
     float relief=smoothstep(-27.0,133.0,aPosition.z);
     float shade=clamp(-kind,0.0,1.0);
+    float face=smoothstep(.20,.91,shade);
+    float distanceWash=1.0-smoothstep(-725.0,-120.0,y);
     float stratum=abs(fract((aPosition.z+4.0*sin(p.x*.018+p.y*.012))/17.0)-.5);
     float facet=(1.0-smoothstep(.033,.13,stratum))*relief;
-    float light=clamp(.37+shade*.40+relief*.22+phase*.09+tonal+facet*.15,0.0,1.0);
-    vec3 mineral=mix(uStone,uPetal,smoothstep(.10,.84,fract(aStyle.x)));
-    vec3 surface=mix(uMuted,mineral,.66+relief*.19);
-    surface=mix(surface,uLight,relief*shade*.48+phase*.12);
+    float light=clamp(.32+face*.37+relief*.21+phase*.09+tonal+facet*uGrade.y*.32,0.0,1.0);
+    float hue=smoothstep(.07,.88,fract(aStyle.x)+.11*sin(p.x*.009-p.y*.006));
+    vec3 mineral=mix(uStone,uPetal,hue);
+    vec3 surface=mix(uMuted,mineral,.69+relief*.22);
+    surface=mix(surface,uLight,relief*face*(.28+uGrade.y*.30)+phase*.11);
+    surface=mix(surface,uStone,distanceWash*uGrade.w*.35);
     color=mix(uShadow,surface,light);
     color=mix(color,uPetal,aura*.43);
-    ink*=.71+.51*shade+facet*.18;
+    ink*=(.72+.49*face+facet*uGrade.y*.41)*(1.0-distanceWash*.13);
     ink+=aura*.29;
     if(uSurfaceLayer>.5) {
       float contour=step(1.5,uSurfaceLayer);
-      vec3 veil=mix(uShadow,mineral,.42+relief*.22);
-      color=mix(veil,mix(mineral,uLight,.26+.32*shade),contour);
-      ink=aStyle.y*mix(.8,1.12,contour)*(.55+.45*uMotion.y);
+      vec3 soil=mix(uShadow,uAccent,.13+.14*hue);
+      vec3 veil=mix(soil,mineral,.23+face*.29+relief*.20);
+      veil=mix(veil,uStone,distanceWash*uGrade.w*.26);
+      vec3 rim=mix(mineral,mix(uPetal,uLight,.48),.19+face*.46);
+      color=mix(veil,rim,contour);
+      ink=aStyle.y*mix(uGrade.x*(.76+face*.28),uGrade.z*(.72+face*.45),contour)*(.55+.45*uMotion.y);
     }
   } else {
     color=mix(uAccent,mix(uPetal,uLight,.78),phase*.94);
@@ -244,7 +252,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   const streamAttrs=streamAttribs.map(([name,size,offset])=>({index:gl.getAttribLocation(streamProgram,name),size,offset}));
   const streamUniforms=["uSize","uAccent","uLight","uPetal","uTime","uPointer"] as const;
   const stream=Object.fromEntries(streamUniforms.map(name=>[name,gl.getUniformLocation(streamProgram,name)]));
-  const names=["uCam","uFrame","uMotion","uSkill","uLens","uHover","uSurfaceLayer","uGround","uShadow","uMuted","uLight","uAccent","uPetal","uStone","uImpulses[0]","uPeaks[0]"] as const;
+  const names=["uCam","uFrame","uMotion","uSkill","uLens","uHover","uSurfaceLayer","uGrade","uGround","uShadow","uMuted","uLight","uAccent","uPetal","uStone","uImpulses[0]","uPeaks[0]"] as const;
   const u=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
   gl.uniform4f(u.uLens,lens.COS,lens.SIN,lens.CY,lens.SY);
   const peaks=new Float32Array(32);
@@ -254,6 +262,8 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   gl.uniform3fv(u.uAccent,palette.accent.rgb);
   gl.uniform3fv(u.uPetal,palette.petal.rgb);
   gl.uniform3fv(u.uStone,palette.stone.rgb);
+  // Surface body, directional crest light, contour intensity, and distance wash.
+  gl.uniform4f(u.uGrade,1.48,.94,1.18,.93);
   gl.useProgram(streamProgram);
   gl.uniform3fv(stream.uAccent,palette.accent.rgb);
   gl.uniform3fv(stream.uLight,palette.light.rgb);
