@@ -148,7 +148,7 @@ body {
 .hero-name > span { display: block; padding: 0.04em 0.065em 0.085em 0; overflow: clip; }
 .hero-name > span > span { display: block; }
 .hero-surname { color: #b8a8a3; }
-.hero-portrait-stage { grid-area: portrait; width: clamp(8.5rem, 46.5vw, 12.4rem); margin-block: -0.4rem; justify-self: center; }
+.hero-portrait-stage { grid-area: portrait; width: clamp(8.5rem, 48.5vw, 12.8rem); margin-block: -0.35rem -0.65rem; justify-self: center; }
 .hero-subtitle-block { grid-area: intro; align-self: start; }
 .hero-positioning { border-inline-start: 2px solid var(--accent); padding-inline-start: 0.875rem; }
 .hero-introduction { display: grid; gap: 0.7rem; max-width: 61ch; margin-block: 0.82rem; line-height: 1.55; }
@@ -460,7 +460,13 @@ body:has(.case-image-dialog[open]) { overflow: hidden; }
     padding-block: clamp(3rem, 6.8svh, 5rem) clamp(2.75rem, 5vw, 5rem);
   }
   .hero-name { font-size: clamp(4.6rem, 7.8vw, 7.6rem); }
-  .hero-portrait-stage { width: min(100%, 32rem); max-width: none; align-self: center; margin-block-start: -1.75rem; }
+  .hero-portrait-stage {
+    width: min(103%, 33.5rem);
+    max-width: none;
+    align-self: center;
+    margin-block-start: -3rem;
+    translate: -0.75rem 0;
+  }
   .hero-card-grid { padding-block-start: 1rem; }
   .hero-card { min-height: clamp(7.25rem, 9vw, 8.65rem); }
   .hero-card-symbol { inset-block-start: 0.62rem; inset-inline-end: 0.9rem; }
