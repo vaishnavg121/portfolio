@@ -9,7 +9,6 @@ type Territory = {
   title: string;
   label: string;
   compactLabel?: string;
-  color: string;
   x: number;
   y: number;
   description: string;
@@ -18,49 +17,49 @@ type Territory = {
 
 export const TERRITORIES: readonly Territory[] = [
   {
-    id: "cs", title: "Computer Science Fundamentals", label: "CS Fundamentals", compactLabel: "CS", color: "#baa18f",
+    id: "cs", title: "Computer Science Fundamentals", label: "CS Fundamentals", compactLabel: "CS",
     x: -348, y: -101,
     description: "Algorithms and data structures, programming languages, and the layers between operating systems and hardware.",
     skills: ["c__", "dsa", "c", "java", "oop", "operating_systems", "discrete_structures", "logic_in_cs", "microprocessors", "assembly", "digital_design"],
   },
   {
-    id: "ai", title: "Artificial Intelligence & Machine Learning", label: "AI / ML", color: "#c1b599",
+    id: "ai", title: "Artificial Intelligence & Machine Learning", label: "AI / ML",
     x: -87, y: -231,
     description: "Python, feature engineering and time-series modeling, including aviation-weather forecasting and sensor analysis.",
     skills: ["machine_learning", "python", "feature_engineering", "time_series"],
   },
   {
-    id: "data", title: "Databases & Data Engineering", label: "Data Engineering", compactLabel: "Data Eng.", color: "#a0b5aa",
+    id: "data", title: "Databases & Data Engineering", label: "Data Engineering", compactLabel: "Data Eng.",
     x: 214, y: -190,
     description: "Relational, analytical and vector data systems, alongside the tools used to work with structured data.",
     skills: ["postgresql", "database_systems", "duckdb", "sqlite", "vector_dbs", "data_analysis", "numpy", "pandas"],
   },
   {
-    id: "agents", title: "LLMs, RAG & Agentic Systems", label: "Agentic AI", color: "#c59c96",
+    id: "agents", title: "LLMs, RAG & Agentic Systems", label: "Agentic AI",
     x: 329, y: 27,
     description: "Language models, semantic retrieval and the stages that ground answers in retrieved evidence.",
     skills: ["rag", "agentic_systems", "embeddings", "semantic_search", "vector_retrieval", "llms"],
   },
   {
-    id: "web", title: "Software & Systems Engineering", label: "Software Systems", compactLabel: "Software", color: "#aaa3b6",
+    id: "web", title: "Software & Systems Engineering", label: "Software Systems", compactLabel: "Software",
     x: -44, y: 2,
     description: "The interfaces, services and typed application layers used across the portfolio’s software projects.",
     skills: ["fastapi", "next_js", "react", "typescript", "express", "prisma"],
   },
   {
-    id: "finance", title: "Quantitative Finance", label: "Quant Finance", color: "#c2ad8a",
+    id: "finance", title: "Quantitative Finance", label: "Quant Finance",
     x: -311, y: 198,
     description: "Finance-minor coursework in markets, derivatives and risk, with practical market-system experimentation.",
     skills: ["quant_finance", "derivatives", "risk_management", "financial_markets", "fundamentals"],
   },
   {
-    id: "infra", title: "Tooling & Developer Infrastructure", label: "Infrastructure", compactLabel: "Infra", color: "#9caaa6",
+    id: "infra", title: "Tooling & Developer Infrastructure", label: "Infrastructure", compactLabel: "Infra",
     x: -7, y: 241,
     description: "Version control, automation, Linux and containers.",
     skills: ["linux", "git", "github_actions", "docker"],
   },
   {
-    id: "robotics", title: "Robotics & Mechanical Engineering", label: "Robotics", color: "#c49e87",
+    id: "robotics", title: "Robotics & Mechanical Engineering", label: "Robotics",
     x: 294, y: 235,
     description: "The controls, CAD, simulation and fabrication work associated with Team ThriveForce.",
     skills: ["robotic_systems", "ros_2", "gazebo", "px4", "qgroundcontrol", "fusion_360", "fea"],

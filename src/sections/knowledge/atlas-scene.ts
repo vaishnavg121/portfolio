@@ -110,9 +110,8 @@ export function createAtlasScene(
 
   const displayLabels = (state: SceneFrame) => {
     const regionIndex = territoryIndex(selection);
-    const earliest = .62;
     const amount = regionIndex < 0 ? 1 : expansion[regionIndex];
-    const labelKey = [width,height,camera.x,camera.y,camera.z,currentLens,selection?.id,selection?.type,amount.toFixed(2),popupWidth,popupHeight,progress>=earliest].join("/");
+    const labelKey = [width,height,camera.x,camera.y,camera.z,currentLens,selection?.id,selection?.type,amount.toFixed(2),popupWidth,popupHeight].join("/");
     if (labelView === labelKey) return;
     labelView = labelKey;
     const skills = visibleSkills(selection);
@@ -146,7 +145,7 @@ export function createAtlasScene(
       popup.style.setProperty("--popup-y",y.toFixed(1)+"px");
       accepted.push({l:x-7,r:x+popupWidth+7,t:y-7,b:y+popupHeight+7});
     }
-    if (progress >= earliest && amount>.48) for (const target of candidates) {
+    if (amount > .30) for (const target of candidates) {
       const mark = marks.get(target.key);
       if (!mark) continue;
       if (!mark.width) mark.width = mark.element.offsetWidth;
@@ -189,8 +188,8 @@ export function createAtlasScene(
     if (formationStart === -1) formationStart = now;
     const selectionRegion = territoryIndex(selection);
     const animated = rendererType === "webgl" && !reduced.matches;
-    const expanding = animated && now - expandStart < 870;
-    const morph = expanding ? ease(clamp((now-expandStart)/870)) : 1;
+    const expanding = animated && now - expandStart < 510;
+    const morph = expanding ? ease(clamp((now-expandStart)/510)) : 1;
     for(let i=0;i<expansion.length;i++) expansion[i]=fromExpansion[i]+((i===selectionRegion?1:0)-fromExpansion[i])*morph;
     if (pointer && animated && now-lastImpulse>38) {
       force(pointer,previousPointer ? clamp(Math.hypot(pointer.x-previousPointer.x,pointer.y-previousPointer.y)/23,.49,1.28) : .89,now);
@@ -201,7 +200,7 @@ export function createAtlasScene(
     for(let i=0;i<4;i++){
       const age=(now-impulseTimes[i])/1000;
       impulseData[i*4+2]=Math.min(2,age);
-      disturbed ||= age < 1.18;
+      disturbed ||= age < .98;
     }
     const range=now-lastRender;
     if(animated) {
@@ -217,7 +216,7 @@ export function createAtlasScene(
       if(healthyFrames>=90 && quality<1){quality=Math.min(1,quality+.23);healthyFrames=0;}
     }
     lastRender=now;
-    progress = reduced.matches || rendererType !== "webgl" ? 1 : clamp((now - formationStart) / 1120, 0, 1);
+    progress = reduced.matches || rendererType !== "webgl" ? 1 : clamp((now - formationStart) / 645, 0, 1);
     if (motion) {
       const fraction = reduced.matches ? 1 : clamp((now - motion.start) / motion.duration, 0, 1);
       const t = ease(fraction);
@@ -474,7 +473,7 @@ export function createAtlasScene(
         // Deform the surface as the visitor moves, without sending pointer frames through React.
         trackPointer(pointer);
       }
-      if(pointer.pointerType==="mouse"&&!touches.size&&!selection)lensAim=PERSPECTIVE+clamp(local(pointer).x/width,-.5,.5)*169;
+      if(pointer.pointerType==="mouse"&&!touches.size&&!selection)lensAim=PERSPECTIVE+clamp(local(pointer).x/width,-.5,.5)*34;
       if (!touches.has(pointer.pointerId) || !inputStart) return;
       const position = local(pointer);
       touches.set(pointer.pointerId, position);

@@ -5,10 +5,6 @@ export const PERSPECTIVE = 1450;
 export const lens = reliefLens(.62, -.17);
 export const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 export const clamp = (n: number, a = 0, b = 1) => Math.max(a, Math.min(b, n));
-const seed = (n: number) => {
-  const a = Math.sin(n * 127.1 + 311.7) * 43758.5453123;
-  return a - Math.floor(a);
-};
 export function projection(p: AtlasPosition, perspective = PERSPECTIVE): Point {
   return lens.project(p,perspective);
 }
@@ -18,22 +14,49 @@ export const atlasPeaks = ATLAS_TERRITORIES.map((r, index) => ({
   z: [80,143,107,101,53,92,63,130][index],
   rx: [142,154,145,139,130,147,132,153][index],
   ry: [101,112,122,111,102,113,112,117][index],
-  tint: [.23,.66,.07,.36,.11,.49,.04,.43][index],
 }));
 
+const ridgePairs = new Map<string, { from: number; to: number; count: number }>();
+for (const { a, b, bridge } of ATLAS_LINKS) {
+  if (!bridge) continue;
+  const [from, to] = [TERRITORIES_BY_ID.get(a.territoryId)!.index, TERRITORIES_BY_ID.get(b.territoryId)!.index].sort((a, b) => a - b);
+  const key = from + "/" + to;
+  const pair = ridgePairs.get(key) ?? { from, to, count: 0 };
+  pair.count++;
+  ridgePairs.set(key, pair);
+}
+const ridges = Array.from(ridgePairs.values(), ({ from, to, count }) => {
+  const a = atlasPeaks[from], b = atlasPeaks[to];
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const length = Math.hypot(dx, dy);
+  return { a, dx, dy, length, lift: clamp(7 + count * 5 - length * .014, 3, 29) };
+});
+
 export function heightField(x: number, y: number) {
-  let mass = 0, peaks = 0, weight = 0, region = 0;
-  for (let i=0;i<atlasPeaks.length;i++) {
-    const p=atlasPeaks[i];
-    const dx = (x-p.x)/p.rx, dy = (y-p.y)/p.ry;
-    const g = Math.exp(-(dx*dx + dy*dy) * 1.65);
-    if (g > weight) { weight = g; region = i; }
-    mass += g;
-    peaks += (p.z-16) * g ** 1.19;
+  // A low continuous plain underlies both the knowledge regions and the distant terrain.
+  const plain = -14 + Math.sin(x * .009 + y * .011) * 7
+    + Math.cos(y * .014 - x * .006) * 5 + Math.sin(x * .025 - y * .018) * 2;
+  if (Math.abs(x) > 910 || Math.abs(y) > 790) return { z: plain, relief: 0, region: 0 };
+  let peaks = 0, weight = 0, region = 0;
+  for (let i = 0; i < atlasPeaks.length; i++) {
+    const p = atlasPeaks[i];
+    const dx = (x - p.x) / p.rx, dy = (y - p.y) / p.ry;
+    const influence = Math.exp(-1.35 * (dx * dx + dy * dy));
+    if (influence > weight) { weight = influence; region = i; }
+    peaks += p.z * influence;
   }
-  const ripple = Math.sin(x*.039 + y*.023) * 4.1 + Math.cos(y*.052 - x*.019)*3.2 + Math.sin((x+y)*.079)*1.5;
-  const outline = mass - .22 + (Math.sin(x*.028 + y*.016) + Math.cos(y*.037-x*.012))*.048;
-  return { z: 14 * Math.min(1,mass) + peaks + ripple * clamp(mass*2.1), outline, region };
+  let saddle = 0;
+  for (const { a, dx, dy, length, lift } of ridges) {
+    const u = x - a.x, v = y - a.y;
+    const along = (u * dx + v * dy) / (length * length);
+    if (along <= 0 || along >= 1) continue;
+    const across = (u * dy - v * dx) / length;
+    if (Math.abs(across) > 170) continue;
+    saddle += lift * Math.sin(along * Math.PI) ** 2 * Math.exp(-across * across / 3650);
+  }
+  const extent = (1 - clamp((Math.abs(x) - 710) / 200)) * (1 - clamp((Math.abs(y) - 590) / 200));
+  const relief = clamp((peaks + saddle * .7) / 120) * extent;
+  return { z: plain + (peaks + saddle) * extent, relief, region };
 }
 
 export const landmarkPositions = atlasPeaks.map(({x,y}) => ({ x, y, z: heightField(x,y).z + 9 }));
@@ -71,7 +94,7 @@ export function skillPose(skill: AtlasSkill, amount: number): AtlasPosition {
   const region = TERRITORIES_BY_ID.get(skill.territoryId)!;
   const peak = landmarkPositions[region.index];
   const target = skillPositions.get(skill.id)!;
-  return { x:mix(peak.x,target.x,amount), y:mix(peak.y,target.y,amount), z:mix(peak.z,target.z,amount) + Math.sin(amount*Math.PI) * 19 };
+  return { x:mix(peak.x,target.x,amount), y:mix(peak.y,target.y,amount), z:mix(peak.z,target.z,amount) };
 }
 
 export function visibleSkills(selection: Selection | null) {
@@ -109,60 +132,18 @@ export function routePoint(a: AtlasPosition,b: AtlasPosition,t: number,bridge: b
   };
 }
 
-// One progressive field. Interleaving by a deterministic hash keeps both quality tiers spatially balanced.
-export function makeTerrainParticles(high: boolean) {
-  const vertices: number[][] = [];
-  const step = high ? 4.1 : 6;
-  const push = (x:number,y:number,z:number,region:number,alpha:number,size:number,kind:number,phase:number) => {
-    vertices.push([x,y,z,region,alpha,size,kind,phase]);
-  };
-  let i = 0;
-  for (let y=-410;y<439;y+=step) for (let x=-585;x<590;x+=step) {
-    const sample = ++i;
-    const px = x + (seed(sample+3)-.5)*step*.79;
-    const py = y + (seed(sample+9)-.5)*step*.80;
-    const {z,outline,region} = heightField(px,py);
-    if (outline < -.105 || seed(sample+19) > clamp((outline+.105)*5.2)) continue;
-    const softness = clamp((outline+.105)*4.5);
-    const ridge = .49 + .51*Math.cos(z*.17 + .32*Math.sin(px*.035+py*.018));
-    push(px,py,z,region, softness * (.20 + ridge*.34 + seed(sample+71)*.39), .79 + .71*seed(sample+46) + ridge*.28,0,seed(sample+61));
-    if (seed(sample+24) < .098) {
-      const shade = seed(sample+27);
-      push(px + (seed(sample+26)-.5)*17,py + (seed(sample+44)-.5)*15,z - 14 - shade*48,region,softness*(.11+.17*(1-shade)),.59+shade*.51,0,seed(sample+80));
-    }
-  }
-  for (const r of ATLAS_TERRITORIES) {
-    const summit = landmarkPositions[r.index];
-    for (let j=0;j<5;j++) for (let k=0;k<72;k++) {
-      const a = k/72*Math.PI*2, radius=15 + j*4.6;
-      const x = summit.x+Math.cos(a)*radius, y = summit.y+Math.sin(a)*radius;
-      push(x,y,heightField(x,y).z+7,r.index,.31 + .31*(1-j/5),.95,1,seed(k+j*9));
-    }
-    for (const skill of r.items) {
-      const s = skillPositions.get(skill.id)!;
-      for (let k=0;k<85;k++) {
-        const j = 401 + k + skill.rank*389 + r.index*2177;
-        const a=seed(j)*Math.PI*2, radius=4.8+seed(j+7)**.62*(skill.rank===0?16:12);
-        const x=s.x+Math.cos(a)*radius, y=s.y+Math.sin(a)*radius;
-        push(x,y,s.z+(seed(j+13)-.5)*13,r.index,.37+seed(j+22)*.55,.93+seed(j+43)*.77,2,seed(j+477));
-      }
-    }
-  }
-  // Sorting by a stable hash avoids a visible density boundary when the adaptive draw range shrinks.
-  const field = vertices.filter(v=>v[6]===0).sort((a,b)=>a[7]-b[7]);
-  const markers = vertices.filter(v=>v[6]!==0);
-  return { field: new Float32Array(field.flat()), markers: new Float32Array(markers.flat()) };
-}
-
 // Undo perspective along a camera ray, then find its first intersection with the heightfield.
 export function pickSurface(point: Point, perspective: number): AtlasPosition | null {
   const at = (depth:number) => lens.rayPoint(point,depth,perspective);
-  for(let d=590;d>=-530;d-=12) {
+  // Sample around the ray's intersection with the plain to include panning into the distance.
+  const plane = point.y * lens.COS / (lens.SIN + point.y * lens.COS / perspective);
+  const start = clamp(plane + 430, -2150, perspective * .78);
+  const end = Math.max(-2390, plane - 180);
+  for(let d=start;d>=end;d-=14) {
     const p=at(d);
-    if(p.z>175||p.z< -16)continue;
-    const sample=heightField(p.x,p.y);
-    if(sample.outline<-.075||p.z>sample.z)continue;
-    let near=d+12,far=d;
+    if(p.z>195||p.z< -44)continue;
+    if(p.z>heightField(p.x,p.y).z)continue;
+    let near=d+14,far=d;
     for(let i=0;i<5;i++) {
       const middle=(near+far)*.5;
       const candidate=at(middle);

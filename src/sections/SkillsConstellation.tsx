@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Crosshair, Hand, Minus, Plus, Search, X } from "lucide-react";
 import { SKILL_DETAILS } from "@/lib/skill_details";
@@ -270,7 +270,6 @@ export const SkillsConstellation = () => {
                 {ATLAS_TERRITORIES.map(region => (
                   <button type="button" key={region.id} className="atlas-marker atlas-region-marker"
                     data-atlas-marker={"territory-" + region.id} aria-label={region.title} tabIndex={-1} inert
-                    style={{"--territory-color":region.color} as CSSProperties}
                     onPointerEnter={event => {if(event.pointerType==="mouse")scene.current?.preview(region.id);}}
                     onPointerLeave={() => scene.current?.preview(null)}
                     onFocus={() => scene.current?.preview(region.id)}
@@ -283,7 +282,6 @@ export const SkillsConstellation = () => {
                 {SKILLS.map(item => (
                   <button type="button" key={item.id} className="atlas-marker atlas-skill-marker"
                     data-atlas-marker={"skill-" + item.id} aria-label={item.label} tabIndex={-1} inert aria-pressed={item.id === skill?.id}
-                    style={{"--territory-color":TERRITORIES_BY_ID.get(item.territoryId)?.color} as CSSProperties}
                     onClick={event => choose({type:"skill", id:item.id},event.detail === 0,event.currentTarget)}>
                     {item.label}
                   </button>
@@ -301,7 +299,7 @@ export const SkillsConstellation = () => {
           <aside className="atlas-inspector" aria-label="Atlas details" ref={detail} hidden={!territory}
             data-selection={selection?.type} data-familiar-protect data-familiar-margin="8" data-familiar-yield>
             {territory ? (
-              <div className="atlas-detail-content" key={skill?.id ?? territory.id} style={{"--territory-color":territory.color} as CSSProperties}>
+              <div className="atlas-detail-content" key={skill?.id ?? territory.id}>
                 <div className="atlas-panel-head">
                   <div>
                     {skill && <p className="atlas-kicker">{territory.label}</p>}

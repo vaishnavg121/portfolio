@@ -1,5 +1,7 @@
-import { landmarkPositions, lens, makeTerrainParticles, mix, routePoint, sceneRoutes, skillPose, territoryIndex, type AtlasRenderer } from "./atlas-geometry";
+import { landmarkPositions, lens, mix, routePoint, sceneRoutes, skillPose, territoryIndex, type AtlasRenderer } from "./atlas-geometry";
 import { TERRITORIES_BY_ID } from "./atlas-model";
+import { readAtlasPalette } from "./atlas-palette";
+import { createTerrainTiles, FOG_FAR, FOG_NEAR, makeAtlasMarkers, terrainCenter } from "./atlas-terrain";
 
 const vertex = `
 precision highp float;
@@ -9,6 +11,8 @@ attribute float aPhase;
 uniform vec3 uCam;
 uniform vec4 uFrame, uMotion, uSkill, uLens;
 uniform float uHover;
+uniform vec2 uGround;
+uniform vec3 uShadow, uMuted, uLight, uAccent;
 uniform vec4 uImpulses[4], uPeaks[8];
 varying mediump vec4 vColor;
 varying mediump float vKind;
@@ -16,63 +20,73 @@ void main() {
   vec3 p=aPosition;
   int id=int(max(0.0,aStyle.x));
   float kind=aStyle.w, phase=aPhase, ink=aStyle.y, size=aStyle.z, time=uMotion.x;
-  float enter=smoothstep(0.0,1.0,clamp(uMotion.y*1.34-float(id)*.033,0.0,1.0));
   vec4 peak=uPeaks[id];
-  float expand=peak.w, aura=0.0, tonal=0.0;
-  if(kind<2.5) {
-    if(kind<.5) {
-      vec2 around=p.xy-peak.xy;
-      float response=exp(-dot(around,around)/23800.0);
-      p.xy+=around*.11*expand*response;
-      p.z+=expand*response*(20.0+p.z*.12);
-      if(abs(float(id)-uMotion.w)<.2) { p.z+=8.5*response*uHover; aura+=.18*response*uHover; }
-    } else if(kind<1.5) {
-      p.z+=expand*21.0;
-      ink*=1.0-expand*.77;
-      if(abs(float(id)-uMotion.w)<.2) { p.z+=5.0*uHover; aura+=.44*uHover; }
-    } else {
-      p=mix(peak.xyz,p,expand);
-      p.z+=sin(expand*3.14159)*19.0;
-      ink*=smoothstep(.18,.84,expand);
+  float expand=peak.w, aura=0.0, tonal=0.0, fog=1.0;
+  bool hovered=abs(float(id)-uMotion.w)<.2;
+  bool selected=abs(float(id)-uMotion.z)<.2;
+  if(kind<.5) {
+    float groundDistance=length(p.xy-uGround);
+    if(groundDistance>${FOG_FAR}.0) {
+      gl_Position=vec4(2.0,2.0,0.0,1.0);
+      gl_PointSize=1.0;
+      vColor=vec4(0.0);
+      vKind=0.0;
+      return;
     }
-    float distanceToSkill=length((p-uSkill.xyz)*vec3(.83,.83,.48));
-    aura+=exp(-distanceToSkill*.047)*.56;
-    if(uMotion.z>=0.0 && abs(float(id)-uMotion.z)>.25) ink*=.43+expand*.44;
+    fog=1.0-smoothstep(${FOG_NEAR}.0,${FOG_FAR}.0,groundDistance);
+    vec2 around=p.xy-peak.xy;
+    float response=exp(-dot(around,around)/18800.0);
+    p.z+=expand*response*5.0;
+    aura+=response*(expand*.16+(hovered?.19*uHover:0.0));
+    if(uMotion.z>=0.0) ink*=.70+.30*expand;
     if(time>=0.0) {
-      tonal=sin(p.x*.016+p.y*.024+time*1.1)*.05;
-      p.z+=sin(p.x*.015+p.y*.019-time*1.45)*2.8+sin(p.y*.029+time*.92)*1.45;
-      if(kind<.5) for(int k=0;k<4;k++) {
+      tonal=sin(p.x*.015+p.y*.020-time*.83)*.055;
+      p.z+=sin(p.x*.012+p.y*.017-time*.82)*1.1+sin(p.y*.022+time*.64)*.62;
+      for(int k=0;k<4;k++) {
         vec4 impulse=uImpulses[k];
         if(impulse.w<.006) continue;
         vec2 d=p.xy-impulse.xy;
         float distanceSquared=dot(d,d), t=impulse.z;
-        float reach=max(112.0,t*115.0+47.0);
+        float reach=t*106.0+62.0;
         if(distanceSquared>reach*reach)continue;
         float radius=sqrt(distanceSquared);
-        float ring=radius-t*115.0, local=exp(-radius*radius/5100.0), wave=exp(-ring*ring/880.0);
-        float force=impulse.w*exp(-3.8*t);
-        p.z+=force*(local*(-20.0+14.0*sin(t*20.0))+wave*8.0*sin(radius*.083-t*12.0));
-        p.xy+=d/max(radius,9.0)*local*force*8.0;
-        aura+=(local*.36+wave*.15)*force;
+        float ring=(radius-t*106.0)/23.0, local=exp(-distanceSquared/3850.0), wave=exp(-ring*ring);
+        float force=impulse.w*exp(-3.25*t);
+        p.z+=force*(local*(-6.2)+wave*3.5*cos(ring*1.7));
+        p.xy+=d/max(radius,9.0)*local*force*2.7;
+        aura+=(local*.16+wave*.21)*force;
       }
     }
-    float scatter=(1.0-enter)*(1.0-enter);
-    p.xy+=vec2(sin(phase*56.1),cos(phase*52.0))*scatter*91.0;
-    p.z=p.z*mix(.36,1.0,enter)+(phase-.5)*scatter*76.0;
-    ink*=mix(.08,1.0,enter);
+    ink*=mix(.54,1.0,smoothstep(0.0,1.0,uMotion.y));
+  } else if(kind<1.5) {
+    aura=selected?.42:(hovered?.37*uHover:0.0);
+    if(uMotion.z>=0.0 && !selected) ink*=.55;
+    if(phase<.5) size+=aura*11.0;
+  } else if(kind<2.5) {
+    p=mix(peak.xyz,p,expand);
+    ink*=smoothstep(.18,.8,expand);
+    aura=exp(-length((p-uSkill.xyz)*vec3(.83,.83,.48))*.075)*.34*expand;
   }
   float x=p.x*uLens.z-p.y*uLens.w, y=p.x*uLens.w+p.y*uLens.z;
   float distanceToCamera=uCam.z-y*uLens.x-p.z*uLens.y;
-  float lens=uCam.z/distanceToCamera;
-  vec2 clip=(vec2(x,y*uLens.y-p.z*uLens.x)*lens*uFrame.z+uCam.xy)*vec2(1.0,uFrame.w)*2.0/uFrame.xy;
-  gl_Position=vec4(clip.x,-clip.y,(distanceToCamera-uCam.z)/1100.0,1.0);
-  float edge=(1.0-smoothstep(.84,1.0,abs(clip.x)))*(1.0-smoothstep(.84,1.0,abs(clip.y)));
-  float zoomSize=clamp(pow(max(uFrame.z,.15),.37),.74,1.48);
-  gl_PointSize=max(1.0,size*uSkill.w*(kind>=2.5?1.0:lens*zoomSize));
-  float warmth=kind>=2.5?.70:.28+phase*.33;
-  vec3 pearl=mix(vec3(.80,.855,.88),vec3(1.0,.895,.78),warmth);
-  float light=kind>=2.5?1.0:clamp(.76+aStyle.y*.28+tonal+aura,0.0,1.0);
-  vColor=vec4(pearl*light,clamp((ink+aura*.37)*edge,0.0,.98));
+  float magnification=uCam.z/max(uCam.z*.22,distanceToCamera);
+  vec2 clip=(vec2(x,y*uLens.y-p.z*uLens.x)*magnification*uFrame.z+uCam.xy)*vec2(1.0,uFrame.w)*2.0/uFrame.xy;
+  gl_Position=vec4(clip.x,-clip.y,0.0,1.0);
+  float edge=(1.0-smoothstep(.70,1.0,abs(clip.x)))*(1.0-smoothstep(.69,1.0,abs(clip.y)));
+  float zoomSize=clamp(pow(max(uFrame.z,.15),.29),.76,1.32);
+  gl_PointSize=max(1.0,size*uSkill.w*(kind<.5?clamp(magnification,.62,1.48)*zoomSize:1.0));
+  vec3 color;
+  if(kind<.5) {
+    float relief=smoothstep(-22.0,139.0,p.z);
+    float light=clamp(.51+relief*.28+phase*.16+tonal,0.0,1.0);
+    color=mix(uShadow,mix(uMuted,uLight,relief*.58+phase*.15),light);
+    color=mix(color,uAccent,clamp(.12+relief*.10+aura*.52,0.0,.60));
+    ink+=aura*.29;
+  } else {
+    color=mix(uAccent,uLight,kind>=2.5?phase*.78:phase*.79);
+    ink+=aura*(kind<1.5?.46:.73);
+  }
+  vColor=vec4(color,clamp(ink*fog*edge*smoothstep(uCam.z*.20,uCam.z*.39,distanceToCamera),0.0,1.0));
   vKind=kind;
 }
 `;
@@ -81,7 +95,8 @@ precision mediump float;
 varying vec4 vColor;
 varying float vKind;
 void main() {
-  float alpha=1.0-smoothstep(vKind>2.5?.22:.18,.51,length(gl_PointCoord-.5));
+  float radius=length(gl_PointCoord-.5);
+  float alpha=1.0-smoothstep(vKind>.5?.12:.16,.51,radius);
   if(alpha*vColor.a<.018) discard;
   gl_FragColor=vec4(vColor.rgb,vColor.a*alpha);
 }
@@ -114,12 +129,13 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   if(!gl) return null;
   const program=compile(gl);
   if(!program){gl.getExtension("WEBGL_lose_context")?.loseContext();return null;}
-  const particles=makeTerrainParticles(!compact);
+  const terrain = createTerrainTiles(!compact);
+  const markerData = makeAtlasMarkers();
+  const palette = readAtlasPalette(canvas);
   const field=gl.createBuffer()!,markers=gl.createBuffer()!,signals=gl.createBuffer()!;
-  for (const [buffer,values] of [[field,particles.field],[markers,particles.markers]] as const) {
-    gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
-    gl.bufferData(gl.ARRAY_BUFFER,values,gl.STATIC_DRAW);
-  }
+  gl.bindBuffer(gl.ARRAY_BUFFER,markers);
+  gl.bufferData(gl.ARRAY_BUFFER,markerData,gl.STATIC_DRAW);
+  let currentField: ReturnType<typeof terrain> | undefined;
   const paths=new Float32Array(16*180*8);
   gl.bindBuffer(gl.ARRAY_BUFFER,signals);
   gl.bufferData(gl.ARRAY_BUFFER,paths.byteLength,gl.DYNAMIC_DRAW);
@@ -130,13 +146,15 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   const attribs = [["aPosition",3,0],["aStyle",4,12],["aPhase",1,28]] as const;
   const attrs=attribs.map(([name,size,offset])=>({index:gl.getAttribLocation(program,name),size,offset}));
   attrs.forEach(({index}) => gl.enableVertexAttribArray(index));
-  const names=["uCam","uFrame","uMotion","uSkill","uLens","uHover","uImpulses[0]","uPeaks[0]"] as const;
+  const names=["uCam","uFrame","uMotion","uSkill","uLens","uHover","uGround","uShadow","uMuted","uLight","uAccent","uImpulses[0]","uPeaks[0]"] as const;
   const u=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
   gl.uniform4f(u.uLens,lens.COS,lens.SIN,lens.CY,lens.SY);
   const peaks=new Float32Array(32);
-  const count=particles.field.length / 8;
-  const markerCount=particles.markers.length / 8;
-  canvas.dataset.particles=String(count);
+  gl.uniform3fv(u.uShadow,palette.shadow.rgb);
+  gl.uniform3fv(u.uMuted,palette.muted.rgb);
+  gl.uniform3fv(u.uLight,palette.light.rgb);
+  gl.uniform3fv(u.uAccent,palette.accent.rgb);
+  const markerCount=markerData.length / 8;
   landmarkPositions.forEach((p,i)=>peaks.set([p.x,p.y,p.z,0],i*4));
   const draw=(buffer:WebGLBuffer,count:number)=>{
     gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
@@ -165,7 +183,16 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
       gl.uniform4fv(u["uImpulses[0]"],frame.impulses);
       for (let i=0;i<landmarkPositions.length;i++) peaks[i*4+3]=frame.expansion[i];
       gl.uniform4fv(u["uPeaks[0]"],peaks);
-      const visibleCount=Math.floor(count*frame.quality);
+      const center=terrainCenter(frame);
+      gl.uniform2f(u.uGround,center.x,center.y);
+      const nextField=terrain(center.x,center.y);
+      if(nextField!==currentField) {
+        currentField=nextField;
+        gl.bindBuffer(gl.ARRAY_BUFFER,field);
+        gl.bufferData(gl.ARRAY_BUFFER,nextField,gl.STATIC_DRAW);
+        canvas.dataset.particles=String(nextField.length/8);
+      }
+      const visibleCount=Math.floor(nextField.length/8*frame.quality);
       if(visibleCount!==lastCount){canvas.dataset.drawnParticles=String(visibleCount);lastCount=visibleCount;}
       draw(field,visibleCount);
       draw(markers,markerCount);
