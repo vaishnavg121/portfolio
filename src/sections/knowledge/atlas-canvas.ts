@@ -1,4 +1,4 @@
-import { clamp, landmarkPositions, lens, screenPoint, territoryIndex, type AtlasRenderer } from "./atlas-geometry";
+import { clamp, landmarkPositions, lens, screenPoint, TERRAIN_STRIDE, territoryIndex, type AtlasRenderer } from "./atlas-geometry";
 import { ATLAS_TERRITORIES } from "./atlas-model";
 import { connectedSkillPose, connectionEndpoint, connectionsFor, routeCurve, visibleProjects } from "./atlas-connections";
 import { readAtlasPalette } from "./atlas-palette";
@@ -19,8 +19,10 @@ export function makeCanvasAtlas(canvas: HTMLCanvasElement): AtlasRenderer | null
       const region = territoryIndex(frame.selection);
       const center = terrainCenter(frame);
       const field = terrain(center.x, center.y);
-      for (let i=0; i<field.length; i+=40) {
-        const x=field[i],y=field[i+1],z=field[i+2];
+      for (let i=0; i<field.length; i+=5*TERRAIN_STRIDE) {
+        const x=field[i],y=field[i+1];
+        const formation=field[i+8], owner=Math.floor(formation);
+        const z=field[i+2]+(formation-owner)*64*frame.expansion[owner];
         const depth = (x*lens.SY+y*lens.CY)*lens.COS+z*lens.SIN;
         if(depth>frame.perspective*.66)continue;
         const fog=clamp((FOG_FAR-Math.hypot(x-center.x,y-center.y))/(FOG_FAR-FOG_NEAR));

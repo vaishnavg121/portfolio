@@ -157,23 +157,30 @@ export function createAtlasScene(
       const top=clamp(anchor.y-popupHeight-42,15,Math.max(15,height-popupHeight-15));
       const bottom=clamp(anchor.y+42,15,Math.max(15,height-popupHeight-15));
       const middle=clamp(anchor.y-popupHeight*.44,15,Math.max(15,height-popupHeight-15));
+      const sides=[
+        {x:inset,y:middle},{x:width-inset-popupWidth,y:middle},
+      ];
       const zones=[
         {x:right,y:middle},{x:left,y:middle},{x:right,y:top},{x:left,y:top},{x:right,y:bottom},{x:left,y:bottom},
-        {x:inset,y:middle},{x:width-inset-popupWidth,y:middle},
+        ...sides,
       ];
       const linkSamples=connectionsFor(selection).filter(link=>link.weight>.4).flatMap(link=>{
         const a=connectionEndpoint(link.a,placementFrame),b=connectionEndpoint(link.b,placementFrame);
         const curve=routeCurve(a,b,link.bridge);
         return [.2,.4,.6,.8].map(t=>screenPoint(curve(t),placementFrame));
       });
-      const labelPoints = candidates.map(item => screenPoint(item.position, placementFrame));
+      const labelPoints = candidates.map(item => {
+        const id=item.key.slice(6);
+        const skill=motion&&item.key.startsWith("skill-")?SKILLS_BY_ID.get(id):undefined;
+        return screenPoint(skill?connectedSkillPose(skill,placementFrame):item.position,placementFrame);
+      });
       const score=({x,y}:Point)=>{
         const contains=(p:Point,margin:number)=>p.x>x-margin&&p.x<x+popupWidth+margin&&p.y>y-margin&&p.y<y+popupHeight+margin;
         return (contains(anchor,36)?32:0)
-          + candidates.reduce((sum,item,index)=>sum+(contains(labelPoints[index],25)?item.pinned?18:2:0),0)
+          + candidates.reduce((sum,item,index)=>sum+(contains(labelPoints[index],34)?item.pinned?22:4:0),0)
           + linkSamples.filter(p=>contains(p,4)).length*.65
           + Math.abs(y-middle)*.012
-          + Math.min(Math.abs(x-left),Math.abs(x-right))*.009;
+          + Math.min(Math.abs(x-left),Math.abs(x-right))*.003;
       };
       let best=score(zones[popupSlot]);
       zones.forEach((zone,index)=>{
@@ -446,7 +453,7 @@ export function createAtlasScene(
     let hit = at;
     if (!hit) {
       const screen = local(point);
-      hit = pickSurface({x:(screen.x-camera.x)/camera.z,y:(screen.y-camera.y)/camera.z},PERSPECTIVE) ?? undefined;
+      hit = pickSurface({x:(screen.x-camera.x)/camera.z,y:(screen.y-camera.y)/camera.z},PERSPECTIVE,expansion) ?? undefined;
     }
     lastImpulse=now;
     if(!hit)return;

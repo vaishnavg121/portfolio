@@ -1,4 +1,4 @@
-import { landmarkPositions, lens, screenPoint, territoryIndex, visibleSkills, type AtlasRenderer } from "./atlas-geometry";
+import { landmarkPositions, lens, screenPoint, TERRAIN_STRIDE, territoryIndex, visibleSkills, type AtlasRenderer } from "./atlas-geometry";
 import { connectedSkillPose, visibleProjects } from "./atlas-connections";
 import { createAtlasStreams, STREAM_STRIDE } from "./atlas-streams";
 import { readAtlasPalette } from "./atlas-palette";
@@ -10,6 +10,7 @@ precision highp float;
 attribute vec3 aPosition;
 attribute vec4 aStyle;
 attribute float aPhase;
+attribute float aFormation;
 uniform vec3 uCam;
 uniform vec4 uFrame, uMotion, uSkill, uLens;
 uniform float uHover;
@@ -26,6 +27,8 @@ void main() {
   float kind=aStyle.w, phase=aPhase, ink=aStyle.y, size=aStyle.z, time=uMotion.x;
   vec4 peak=uPeaks[id];
   float expand=peak.w, aura=0.0, tonal=0.0, fog=1.0;
+  float lift=fract(aFormation)*64.0;
+  float formationProgress=uPeaks[int(floor(aFormation))].w;
   bool hovered=abs(float(id)-uMotion.w)<.2;
   bool selected=abs(float(id)-uMotion.z)<.2;
   if(kind<.5) {
@@ -40,7 +43,7 @@ void main() {
     fog=1.0-smoothstep(${FOG_NEAR}.0,${FOG_FAR}.0,groundDistance);
     vec2 around=p.xy-peak.xy;
     float response=exp(-dot(around,around)/18800.0);
-    p.z+=expand*response*5.0;
+    p.z+=lift*formationProgress;
     aura+=response*(expand*.16+(hovered?.19*uHover:0.0));
     if(uMotion.z>=0.0) ink*=.70+.30*expand;
     if(time>=0.0) {
@@ -70,8 +73,8 @@ void main() {
     if(uMotion.z>=0.0 && !selected) ink*=.55;
     if(phase<.5) size+=aura*11.0;
   } else if(kind<2.5) {
-    p=mix(peak.xyz,p,expand);
-    ink*=smoothstep(.18,.8,expand);
+    p.z+=lift*formationProgress;
+    ink*=smoothstep(.20,.76,expand);
     aura=exp(-length((p-uSkill.xyz)*vec3(.83,.83,.48))*.075)*.34*expand;
   }
   float x=p.x*uLens.z-p.y*uLens.w, y=p.x*uLens.w+p.y*uLens.z;
@@ -108,6 +111,9 @@ void main() {
       vec3 rim=mix(mineral,mix(uPetal,uLight,.48),.16+face*.39+phase*.27);
       color=mix(veil,rim,contour);
       ink=aStyle.y*mix(uGrade.x*(.76+face*.28),uGrade.z*(.72+face*.45),contour)*(.55+.45*uMotion.y);
+      float detail=smoothstep(2.5,3.0,uSurfaceLayer);
+      float local=smoothstep(3.0,14.0,lift)*formationProgress;
+      ink*=mix(1.0-contour*local*.84,smoothstep(.16,.88,formationProgress),detail);
     }
   } else {
     color=mix(uAccent,mix(uPetal,uLight,.78),phase*.94);
@@ -241,7 +247,8 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   });
   let currentField: ReturnType<typeof terrain> | undefined;
   const streams=createAtlasStreams();
-  const pins=new Float32Array(32*8);
+  const pins=new Float32Array(32*TERRAIN_STRIDE);
+  const localContours = new Map<number,{buffer:WebGLBuffer; count:number}>();
   gl.bindBuffer(gl.ARRAY_BUFFER,streamBuffer);
   gl.bufferData(gl.ARRAY_BUFFER,streams.data.byteLength,gl.DYNAMIC_DRAW);
   gl.bindBuffer(gl.ARRAY_BUFFER,contextPins);
@@ -250,7 +257,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   gl.enable(gl.BLEND);
   gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA,gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
   gl.clearColor(0,0,0,0);
-  const attribs = [["aPosition",3,0],["aStyle",4,12],["aPhase",1,28]] as const;
+  const attribs = [["aPosition",3,0],["aStyle",4,12],["aPhase",1,28],["aFormation",1,32]] as const;
   const attrs=attribs.map(([name,size,offset])=>({index:gl.getAttribLocation(program,name),size,offset}));
 
   const streamAttribs = [["aPixels",2,0],["aFlow",4,8],["aState",3,24]] as const;
@@ -273,13 +280,13 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   gl.uniform3fv(stream.uAccent,palette.accent.rgb);
   gl.uniform3fv(stream.uLight,palette.light.rgb);
   gl.uniform3fv(stream.uPetal,palette.petal.rgb);
-  const markerCount=markerData.length / 8;
+  const markerCount=markerData.length / TERRAIN_STRIDE;
   landmarkPositions.forEach((p,i)=>peaks.set([p.x,p.y,p.z,0],i*4));
   const draw=(buffer:WebGLBuffer,count:number,primitive:number=gl.POINTS)=>{
     gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
     for (const {index,size,offset} of attrs) {
       gl.enableVertexAttribArray(index);
-      gl.vertexAttribPointer(index,size,gl.FLOAT,false,32,offset);
+      gl.vertexAttribPointer(index,size,gl.FLOAT,false,TERRAIN_STRIDE*Float32Array.BYTES_PER_ELEMENT,offset);
     }
     gl.drawArrays(primitive,0,count);
   };
@@ -309,14 +316,28 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
         currentField=nextField;
         gl.bindBuffer(gl.ARRAY_BUFFER,field);
         gl.bufferData(gl.ARRAY_BUFFER,nextField,gl.STATIC_DRAW);
-        canvas.dataset.particles=String(nextField.length/8);
+        canvas.dataset.particles=String(nextField.length/TERRAIN_STRIDE);
       }
-      const visibleCount=Math.floor(nextField.length/8*frame.quality);
+      const visibleCount=Math.floor(nextField.length/TERRAIN_STRIDE*frame.quality);
       if(visibleCount!==lastCount){canvas.dataset.drawnParticles=String(visibleCount);lastCount=visibleCount;}
       for(const layer of layers) {
         if(layer.pass===1&&frame.quality<.57)continue;
         gl.uniform1f(u.uSurfaceLayer,layer.pass);
         draw(layer.buffer,layer.count,layer.mode);
+      }
+      for(let index=0;index<frame.expansion.length;index++){
+        if(frame.expansion[index]<.17)continue;
+        let local=localContours.get(index);
+        if(!local){
+          const contours=makeAtlasSurface(compact,index).contours;
+          const buffer=gl.createBuffer()!;
+          gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+          gl.bufferData(gl.ARRAY_BUFFER,contours,gl.STATIC_DRAW);
+          local={buffer,count:contours.length/TERRAIN_STRIDE};
+          localContours.set(index,local);
+        }
+        gl.uniform1f(u.uSurfaceLayer,3);
+        draw(local.buffer,local.count,gl.LINES);
       }
       gl.uniform1f(u.uSurfaceLayer,0);
       draw(field,visibleCount);
@@ -346,8 +367,8 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
       if(frame.selection?.type==="skill") {
         let offset=0;
         const add=(p:{x:number;y:number;z:number},kind:number,size:number,opacity:number)=>{
-          pins.set([p.x,p.y,p.z,active,opacity,size,kind,1],offset);
-          offset+=8;
+          pins.set([p.x,p.y,p.z,active,opacity,size,kind,1,0],offset);
+          offset+=TERRAIN_STRIDE;
         };
         for(const project of visibleProjects(frame.selection))add(project.position,4,10,.89);
         const skills=visibleSkills(frame.selection);
@@ -358,13 +379,15 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
         if(offset) {
           gl.bindBuffer(gl.ARRAY_BUFFER,contextPins);
           gl.bufferSubData(gl.ARRAY_BUFFER,0,pins.subarray(0,offset));
-          draw(contextPins,offset/8);
+          draw(contextPins,offset/TERRAIN_STRIDE);
         }
       }
     },
     dispose(){
       for(const buffer of [field,markers,streamBuffer,contextPins])gl.deleteBuffer(buffer);
       for(const layer of layers)gl.deleteBuffer(layer.buffer);
+      for(const {buffer} of localContours.values())gl.deleteBuffer(buffer);
+      localContours.clear();
       gl.deleteProgram(program);
       gl.deleteProgram(streamProgram);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
