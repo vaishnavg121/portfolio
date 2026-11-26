@@ -115,7 +115,7 @@ for (const region of ATLAS_TERRITORIES) for (const skill of region.items) {
 export const OVERVIEW_BOUNDS = { left:-590, right:630, top:-300, bottom:249 };
 export type SceneFrame = {
   camera: Camera; width: number; height: number; stretch: number; progress: number; selection: Selection | null;
-  signal: number; time: number; perspective: number; hover: number; expansion: Float32Array;
+  time: number; perspective: number; hover: number; expansion: Float32Array;
   impulses: Float32Array; activeSkill: AtlasPosition | null; motion: boolean; quality: number; hoverStrength: number;
 };
 export type AtlasRenderer = { draw: (frame: SceneFrame) => void; dispose: () => void };

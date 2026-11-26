@@ -1,9 +1,29 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { cameraAt, constrainPan, fitCamera, moveCamera, reliefLens, resizeCamera, sampleGesture } from "../src/lib/knowledge-camera.ts";
+import { cameraAt, constrainPan, fitCamera, moveCamera, reliefLens, resizeCamera, sampleCameraTransition, sampleGesture } from "../src/lib/knowledge-camera.ts";
 
 const bounds = { left: -650, right: 700, top: -680, bottom: 135 };
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, String(actual));
+
+test("camera retargeting continues from the current view and finishes without overshoot", () => {
+  const from = { x: 0, y: 25, z: 1 };
+  const to = { x: 150, y: -60, z: 2 };
+  const moving = sampleCameraTransition({ from, to, start: 0, duration: 600 }, 190);
+  const next = { x: 190, y: 12, z: 1.4 };
+  const retargeted = { from: moving.position, to: next, start: 190, duration: 500, velocity: moving.speed };
+  const start = sampleCameraTransition(retargeted, 190);
+  assert.deepEqual(start.position, moving.position);
+  near(start.speed.x, moving.speed.x);
+  near(start.speed.y, 0);
+  for (let now = 190; now < 690; now += 8) {
+    const { position } = sampleCameraTransition(retargeted, now);
+    for (const axis of ["x", "y", "z"]) {
+      assert.ok(position[axis] >= Math.min(moving.position[axis], next[axis]));
+      assert.ok(position[axis] <= Math.max(moving.position[axis], next[axis]));
+    }
+  }
+  assert.deepEqual(sampleCameraTransition(retargeted, 690), { position: next, speed: { x: 0, y: 0, z: 0 }, done: true });
+});
 
 test("overview fits the graph in both orientations", () => {
   for (const frame of [{ width: 280, height: 540, scale: 0.3375 }, { width: 718, height: 263, scale: 0.3 }]) {

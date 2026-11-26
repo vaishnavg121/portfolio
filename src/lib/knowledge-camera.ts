@@ -28,6 +28,25 @@ export function reliefLens(pitch: number, yaw: number) {
 
 const clamp = (value: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, value));
 
+export type CameraTransition = {
+  from: Camera; to: Camera; start: number; duration: number; velocity?: Camera;
+};
+
+export function sampleCameraTransition({ from, to, start, duration, velocity }: CameraTransition, now: number) {
+  const t = clamp((now - start) / duration, 0, 1);
+  const position = { ...from }, speed = { x: 0, y: 0, z: 0 };
+  // A bounded Hermite tangent carries forward motion toward the new target,
+  // while keeping every axis monotonic and bringing it to rest at the destination.
+  for (const axis of ["x", "y", "z"] as const) {
+    const delta = to[axis] - from[axis];
+    if (!delta) continue;
+    const tangent = clamp((velocity?.[axis] ?? 0) * duration / delta, 0, 2.6);
+    position[axis] += delta * (t * t * (3 - 2 * t) + tangent * t * (1 - t) ** 2);
+    speed[axis] = delta / duration * (6 * t * (1 - t) + tangent * (1 - 4 * t + 3 * t * t));
+  }
+  return { position: t === 1 ? to : position, speed, done: t === 1 };
+}
+
 export function fitCamera(bounds: Bounds, frame: Frame): Camera {
   const padding = clamp(frame.width * 0.1, 20, 52);
   const z = Math.min(
