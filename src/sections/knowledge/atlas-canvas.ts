@@ -1,68 +1,72 @@
-import { ATLAS_TERRITORIES, SKILLS, projectAtlas } from "./atlas-model";
-import { atlasGeometry, getSceneRoutes, screenPoint, type AtlasRenderer, type SceneFrame } from "./atlas-geometry";
+import { ATLAS_TERRITORIES, SKILLS, projectAtlas, type AtlasPosition } from "./atlas-model";
+import { sampleAtlasTerrains, getSceneRoutes, territoryIndex, type AtlasRenderer, type SceneFrame } from "./atlas-geometry";
+
+function projectedPath(points: AtlasPosition[], close = false) {
+  const path = new Path2D();
+  points.forEach((point, index) => {
+    const {x,y} = projectAtlas(point);
+    if (index === 0) path.moveTo(x,y);
+    else path.lineTo(x,y);
+  });
+  if (close) path.closePath();
+  return path;
+}
 
 export function makeCanvasAtlas(canvas: HTMLCanvasElement): AtlasRenderer | null {
   const context = canvas.getContext("2d");
   if (!context) return null;
-  const { territoryRings } = atlasGeometry(true);
-  let width = 0;
-  let height = 0;
+  const territories = sampleAtlasTerrains(true).terrains.map(terrain =>
+    terrain.slice(2).reverse().map(ring => projectedPath(ring, true)));
+  const markerPaths = SKILLS.map(skill => {
+    const path = new Path2D();
+    path.arc(skill.anchor.x, skill.anchor.y, skill.rank === 0 ? 5 : 2.6, 0, Math.PI * 2);
+    return path;
+  });
   let routeKey = "";
-  let routes = getSceneRoutes(null, 0);
+  let routes: (ReturnType<typeof getSceneRoutes>[number] & {path: Path2D})[] = [];
+  let selected = -1;
+
   return {
     draw(frame: SceneFrame) {
       const key = [frame.selection?.type, frame.selection?.id, frame.level].join("/");
       if (key !== routeKey) {
         routeKey = key;
-        routes = getSceneRoutes(frame.selection, frame.level);
+        selected = territoryIndex(frame.selection);
+        routes = getSceneRoutes(frame.selection, frame.level).map(route => ({...route, path: projectedPath(route.points)}));
       }
       const ratio = Math.min(1.5, window.devicePixelRatio || 1);
-      if (width !== frame.width || height !== frame.height) {
-        width = frame.width;
-        height = frame.height;
-        canvas.width = Math.max(1, Math.round(width * ratio));
-        canvas.height = Math.max(1, Math.round(height * ratio));
+      const w = Math.max(1, Math.round(frame.width * ratio));
+      const h = Math.max(1, Math.round(frame.height * ratio));
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
       }
-      context.setTransform(ratio, 0, 0, ratio, 0, 0);
-      context.clearRect(0, 0, width, height);
-      context.lineWidth = 1;
+      const {camera, stretch, width, height} = frame;
+      const zoom = camera.z * ratio;
+      context.resetTransform();
+      context.clearRect(0,0,w,h);
+      context.setTransform(zoom,0,0,zoom * stretch,ratio * (width / 2 + camera.x),ratio * (height / 2 + camera.y * stretch));
+      context.setLineDash([]);
+      context.lineWidth = 0.82 / camera.z;
       for (const region of ATLAS_TERRITORIES) {
-        const rings = territoryRings[region.index];
-        for (let i = rings.length - 1; i >= 2; i--) {
-          const ring = rings[i];
-          context.beginPath();
-          ring.forEach((p, j) => {
-            const s = screenPoint(projectAtlas(p), frame);
-            if (j === 0) context.moveTo(s.x, s.y);
-            else context.lineTo(s.x, s.y);
-          });
-          context.closePath();
-          if (i === rings.length - 1) {
+        context.globalAlpha = selected === -1 || selected === region.index ? 1 : .49;
+        for (const [index, ring] of territories[region.index].entries()) {
+          if (index === 0) {
             context.fillStyle = region.color + "2e";
-            context.fill();
+            context.fill(ring);
           }
-          context.strokeStyle = region.color + (i === rings.length - 1 ? "91" : "55");
-          context.stroke();
+          context.strokeStyle = region.color + (index === 0 ? "91" : "55");
+          context.stroke(ring);
         }
       }
+      context.globalAlpha = 1;
       for (const route of routes) {
-        context.beginPath();
-        route.points.forEach((p, index) => {
-          const s = screenPoint(projectAtlas(p), frame);
-          if (index === 0) context.moveTo(s.x, s.y);
-          else context.lineTo(s.x, s.y);
-        });
-        context.setLineDash(route.bridge ? [4, 3] : []);
+        context.setLineDash(route.bridge ? [4 / camera.z, 3 / camera.z] : []);
         context.strokeStyle = route.active ? "#d6a28d" : "#8977748f";
-        context.stroke();
+        context.stroke(route.path);
       }
-      for (const skill of SKILLS) {
-        const p = screenPoint(skill.anchor, frame);
-        context.beginPath();
-        context.arc(p.x, p.y, skill.rank === 0 ? 2.4 : 1.35, 0, Math.PI * 2);
-        context.fillStyle = "#d9c2adbb";
-        context.fill();
-      }
+      context.fillStyle = "#d9c2adbb";
+      for (const marker of markerPaths) context.fill(marker);
     },
     dispose() { canvas.width = 1; canvas.height = 1; },
   };

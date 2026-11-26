@@ -76,14 +76,23 @@ function vertex(output: number[], p: AtlasPosition, color: Color, alpha: number,
   output.push(p.x, p.y, p.z, ...color, alpha, region);
 }
 
+export function sampleAtlasTerrains(compact: boolean) {
+  const segments = compact ? 44 : 64;
+  const rings = compact ? 9 : 13;
+  const terrains = ATLAS_TERRITORIES.map(region =>
+    Array.from({length: rings + 1}, (_, r) =>
+      Array.from({length: segments + 1}, (_, i) => terrainPoint(region, region.index, i / segments * Math.PI * 2, r / rings))),
+  );
+  return { segments, rings, terrains };
+}
+
 export function atlasGeometry(compact: boolean) {
   const surface: number[] = [];
+  const triangles: number[] = [];
   const contours: number[] = [];
   const points: number[] = [];
   const grid: number[] = [];
-  const territoryRings: AtlasPosition[][][] = [];
-  const segments = compact ? 44 : 64;
-  const rings = compact ? 9 : 13;
+  const { segments, rings, terrains } = sampleAtlasTerrains(compact);
   const gridColor: Color = [0.38, 0.33, 0.35];
   for (let x = -504; x <= 504; x += 36) {
     vertex(grid, {x, y: -345, z: -18}, gridColor, x % 144 === 0 ? .30 : .14);
@@ -96,9 +105,7 @@ export function atlasGeometry(compact: boolean) {
 
   for (const region of ATLAS_TERRITORIES) {
     const tint = colorOf(region.color);
-    const samples = Array.from({length: rings + 1}, (_, r) =>
-      Array.from({length: segments + 1}, (_, i) => terrainPoint(region, region.index, i / segments * Math.PI * 2, r / rings)));
-    territoryRings.push(samples);
+    const samples = terrains[region.index];
     const paint = (p: AtlasPosition, angle: number, radius: number, side = false) => {
       const light = 0.5 - Math.cos(angle - 0.98) * 0.5;
       const slope = Math.sin(Math.PI * radius);
@@ -106,11 +113,16 @@ export function atlasGeometry(compact: boolean) {
       const color = tint.map((channel, index) => mix([0.073, 0.061, 0.068][index], channel, amount)) as Color;
       vertex(surface, p, color, 1, region.index);
     };
-    const emit = (ring: number, i: number) => paint(samples[ring][i], i / segments * Math.PI * 2, ring / rings);
+    const base = surface.length / 8;
+    const stride = segments + 1;
+    for (let r = 0; r <= rings; r++) {
+      for (let i = 0; i <= segments; i++) paint(samples[r][i], i / segments * Math.PI * 2, r / rings);
+    }
     for (let r = 0; r < rings; r++) {
       for (let i = 0; i < segments; i++) {
-        emit(r, i); emit(r + 1, i); emit(r + 1, i + 1);
-        emit(r, i); emit(r + 1, i + 1); emit(r, i + 1);
+        const a = base + r * stride + i;
+        const b = a + stride;
+        triangles.push(a, b, b + 1, a, b + 1, a + 1);
       }
     }
     for (let i = 0; i < segments; i++) {
@@ -119,7 +131,9 @@ export function atlasGeometry(compact: boolean) {
       const lowA = { ...a, z: -11 };
       const lowB = { ...b, z: -11 };
       const angle = i / segments * Math.PI * 2;
-      for (const p of [a, lowA, b, b, lowA, lowB]) paint(p, angle, 1, true);
+      const side = surface.length / 8;
+      for (const p of [a, lowA, b, lowB]) paint(p, angle, 1, true);
+      triangles.push(side, side + 1, side + 2, side + 2, side + 1, side + 3);
       for (const p of [lowA, lowB]) vertex(contours, p, tint, .22, region.index);
       for (let r = 2; r <= rings; r++) {
         const strength = r === rings ? .63 : r % 3 === 0 ? .48 : .27;
@@ -137,5 +151,5 @@ export function atlasGeometry(compact: boolean) {
       vertex(points, {...p, z:p.z + 1.7 + noise(sample + 41) * 5.5}, tint, .19 + noise(sample + 8) * .60, region.index);
     }
   }
-  return { surface, contours, points, grid, territoryRings };
+  return { surface, contours, points, grid, triangles: new Uint16Array(triangles) };
 }

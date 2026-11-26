@@ -169,12 +169,16 @@
   gap: 0.5rem;
   inset: 0.75rem auto auto 0.75rem;
 }
-.atlas-state > span {
+.atlas-state > i {
   width: 0.36rem;
   height: 0.36rem;
   border: 1px solid #d4a38f;
   transform: rotate(45deg);
 }
+.atlas-state [data-level]:not([data-level="0"]) { display: none; }
+.atlas-map:is([data-atlas-level="1"], [data-atlas-level="2"]) .atlas-state [data-level="0"] { display: none; }
+.atlas-map[data-atlas-level="1"] .atlas-state [data-level="1"],
+.atlas-map[data-atlas-level="2"] .atlas-state [data-level="2"] { display: inline; }
 .atlas-orientation {
   display: flex;
   align-items: center;
@@ -203,6 +207,7 @@
   align-items: center;
   justify-content: center;
   width: max-content;
+  min-width: 1.5rem;
   min-height: 2.75rem;
   gap: 0.37rem;
   padding-inline: 0.32rem;

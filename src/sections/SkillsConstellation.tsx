@@ -69,7 +69,6 @@ function SkillList({ skills, bridges, select }: {
 }
 
 export const SkillsConstellation = () => {
-  const section = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const webgl = useRef<HTMLCanvasElement>(null);
   const fallback = useRef<HTMLCanvasElement>(null);
@@ -191,7 +190,7 @@ export const SkillsConstellation = () => {
 
   return (
     <section
-      id="knowledge" ref={section} aria-label="Knowledge Landscape" className="atlas-section portfolio-chapter"
+      id="knowledge" aria-label="Knowledge Landscape" className="atlas-section portfolio-chapter"
       onKeyDown={event => {
         if (event.key !== "Escape") return;
         if (query) { setQuery(""); queryInput.current?.focus(); }
@@ -209,7 +208,7 @@ export const SkillsConstellation = () => {
             <span className="portfolio-link-label">Continue to experience</span><ArrowDown className="portfolio-link-arrow" aria-hidden="true" />
           </a>
         </header>
-        <div className="atlas-toolbar" data-familiar-protect>
+        <div className="atlas-toolbar" data-familiar-protect data-familiar-yield>
           <form role="search" className="atlas-search" onSubmit={event => {
             event.preventDefault();
             if (search[0]) choose(search[0], true, queryInput.current ?? undefined);
@@ -269,7 +268,7 @@ export const SkillsConstellation = () => {
           <div className="atlas-main">
             <div
               className="atlas-map" id="knowledge-map" ref={stage} data-knowledge-canvas data-exploring={exploring || undefined}
-              data-atlas-renderer="pending" data-familiar-protect data-familiar-margin="8"
+              data-atlas-renderer="pending" data-familiar-protect data-familiar-margin="8" data-familiar-yield
               role="region" aria-label="Interactive knowledge map" aria-describedby="atlas-instructions" tabIndex={0}
               onKeyDown={mapKeys}
               onPointerDown={startPointer}
@@ -290,7 +289,9 @@ export const SkillsConstellation = () => {
               <canvas ref={webgl} className="atlas-webgl" aria-hidden="true" />
               <canvas ref={fallback} className="atlas-fallback" aria-hidden="true" />
               <div className="atlas-state" aria-hidden="true">
-                <span />{skill ? "Skill focus" : territory ? "Region focus" : "Regional overview"}
+                <i />{skill ? "Skill focus" : territory ? "Region focus" : (
+                  <><span data-level="0">Regional overview</span><span data-level="1">Regional detail</span><span data-level="2">Skill layer</span></>
+                )}
               </div>
               <span className="atlas-orientation" aria-hidden="true"><Crosshair size={15} /><small>XY</small></span>
               <div className="atlas-markers" ref={labels}>
@@ -327,7 +328,7 @@ export const SkillsConstellation = () => {
             </div>
           </div>
           <aside className="atlas-inspector" aria-label={selection ? "Atlas details" : "Region index"} ref={detail}
-            data-selection={selection?.type} data-familiar-protect data-familiar-margin="8">
+            data-selection={selection?.type} data-familiar-protect data-familiar-margin="8" data-familiar-yield>
             {territory ? (
               <div className="atlas-detail-content" key={skill?.id ?? territory.id} style={{"--territory-color":territory.color} as CSSProperties}>
                 <div className="atlas-panel-head">

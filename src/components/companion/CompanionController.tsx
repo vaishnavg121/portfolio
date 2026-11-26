@@ -32,6 +32,7 @@ export const CompanionController = () => {
   
   const profileRef = useRef<CompanionProfile>(COMPANION_PROFILES.home);
   const protectedRectsRef = useRef<{rect: DOMRect, margin: number}[]>([]);
+  const priorityRectsRef = useRef<DOMRect[]>([]);
   const activeHoverTargetRef = useRef<HTMLElement | null>(null);
 
   const activeRequestRef = useRef<StateRequest>({
@@ -111,6 +112,7 @@ export const CompanionController = () => {
       const els = Array.from(document.querySelectorAll("[data-familiar-protect], h1, h2, h3, p, a, button, img, figure, table, pre, .project-card, .project-scene, .protected-zone"));
       
       const newRects: {rect: DOMRect, margin: number}[] = [];
+      const priorityRects: DOMRect[] = [];
       els.forEach((el) => {
         if (el.closest("#familiar-root")) return;
         if (el.tagName === "A" && el.parentElement?.tagName === "P") return;
@@ -120,8 +122,10 @@ export const CompanionController = () => {
         
         const margin = parseInt(el.getAttribute("data-familiar-margin") || "24", 10);
         newRects.push({ rect, margin });
+        if (el.hasAttribute("data-familiar-yield")) priorityRects.push(rect);
       });
       protectedRectsRef.current = newRects;
+      priorityRectsRef.current = priorityRects;
     };
 
     const throttledUpdate = () => {
@@ -131,6 +135,8 @@ export const CompanionController = () => {
 
     window.addEventListener("scroll", throttledUpdate, { passive: true });
     window.addEventListener("resize", throttledUpdate, { passive: true });
+    const priorityResize = new ResizeObserver(throttledUpdate);
+    document.querySelectorAll("[data-familiar-yield]").forEach(el => priorityResize.observe(el));
     
     updateRects(); 
     const initTimer = setTimeout(updateRects, 1000); 
@@ -138,6 +144,7 @@ export const CompanionController = () => {
     return () => {
       window.removeEventListener("scroll", throttledUpdate);
       window.removeEventListener("resize", throttledUpdate);
+      priorityResize.disconnect();
       clearTimeout(timeoutId);
       clearTimeout(initTimer);
     };
@@ -254,6 +261,7 @@ export const CompanionController = () => {
     let lastTime = performance.now();
     const coarsePointer = window.matchMedia("(pointer: coarse)");
     const writtenPosition = { x: -Infinity, y: -Infinity };
+    let yielded = containerRef.current?.hasAttribute("data-familiar-yielding") ?? false;
     
     const isColliding = (x: number, y: number) => {
       const size = 30; // approx half size of familiar
@@ -378,6 +386,15 @@ export const CompanionController = () => {
       if (Math.hypot(posRef.current.x - writtenPosition.x, posRef.current.y - writtenPosition.y) >= 0.08) {
         Object.assign(writtenPosition, posRef.current);
         containerRef.current.style.transform = `translate3d(${writtenPosition.x}px, ${writtenPosition.y}px, 0)`;
+      }
+
+      const { x, y } = posRef.current;
+      const yieldToContent = priorityRectsRef.current.some(rect =>
+        x + 26 > rect.left && x - 26 < rect.right && y + 26 > rect.top && y - 26 < rect.bottom,
+      );
+      if (yielded !== yieldToContent) {
+        yielded = yieldToContent;
+        containerRef.current.toggleAttribute("data-familiar-yielding", yielded);
       }
 
       // Direction Hysteresis

@@ -105,8 +105,12 @@ export function makeWebGLAtlas(canvas: HTMLCanvasElement, compact: boolean): Atl
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW);
     return { buffer, count: data.length / 8 };
   };
-  const { surface, contours, points, grid } = atlasGeometry(compact);
+  const { surface, contours, points, grid, triangles } = atlasGeometry(compact);
   const surfaceBuffer = bufferFor(surface);
+  const terrainIndices = gl.createBuffer()!;
+  buffers.push(terrainIndices);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, terrainIndices);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, triangles, gl.STATIC_DRAW);
   const contourBuffer = bufferFor(contours);
   const particleBuffer = bufferFor(points);
   const gridBuffer = bufferFor(grid);
@@ -131,14 +135,15 @@ export function makeWebGLAtlas(canvas: HTMLCanvasElement, compact: boolean): Atl
   gl.enableVertexAttribArray(color);
   gl.enableVertexAttribArray(region);
 
-  const draw = (entry: ReturnType<typeof bufferFor>, mode: number, layer: number) => {
+  const draw = (entry: ReturnType<typeof bufferFor>, mode: number, layer: number, indexed = false) => {
     if (!entry.count) return;
     gl.uniform1f(uniform.uLayer, layer);
     gl.bindBuffer(gl.ARRAY_BUFFER, entry.buffer);
     gl.vertexAttribPointer(position, 3, gl.FLOAT, false, 32, 0);
     gl.vertexAttribPointer(color, 4, gl.FLOAT, false, 32, 12);
     gl.vertexAttribPointer(region, 1, gl.FLOAT, false, 32, 28);
-    gl.drawArrays(mode, 0, entry.count);
+    if (indexed) gl.drawElements(mode, triangles.length, gl.UNSIGNED_SHORT, 0);
+    else gl.drawArrays(mode, 0, entry.count);
   };
   const update = (entry: ReturnType<typeof bufferFor>, data: number[] | Float32Array, count = data.length) => {
     gl.bindBuffer(gl.ARRAY_BUFFER, entry.buffer);
@@ -189,7 +194,7 @@ export function makeWebGLAtlas(canvas: HTMLCanvasElement, compact: boolean): Atl
       draw(gridBuffer, gl.LINES, 3);
       gl.enable(gl.DEPTH_TEST);
       gl.depthMask(true);
-      draw(surfaceBuffer, gl.TRIANGLES, 0);
+      draw(surfaceBuffer, gl.TRIANGLES, 0, true);
       gl.depthMask(false);
       draw(contourBuffer, gl.LINES, 1);
       draw(particleBuffer, gl.POINTS, 2);

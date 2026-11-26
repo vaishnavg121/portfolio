@@ -13,7 +13,7 @@ type AtlasElements = {
   labels: HTMLDivElement;
   scale: HTMLSpanElement;
 };
-type Marker = { element: HTMLButtonElement; width: number; visible: boolean };
+type Marker = { element: HTMLButtonElement; width: number; visible: boolean; anchor: number };
 type Motion = { start: number; from: Camera; to: Camera; duration: number };
 type Pointer = { x: number; y: number; pointerId: number; pointerType: string };
 
@@ -31,13 +31,14 @@ export function createAtlasScene(
   let height = 1;
   let stretch = 1;
   let selection: Selection | null = null;
-  let overview = true;
+  let fitted = true;
   let level = 0;
   let motion: Motion | null = null;
   let visible = false;
   let progress = 0;
   let formationStart = -1;
   let signalStart = -1;
+  let labelView = "";
   let frameId = 0;
   let selectionTime = 0;
   let disposed = false;
@@ -46,7 +47,8 @@ export function createAtlasScene(
   let rendererType = "pending";
   let setupWebGL: typeof import("./atlas-webgl")["makeWebGLAtlas"] | undefined;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const compact = window.matchMedia("(pointer: coarse)").matches;
+  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+  const compact = window.matchMedia("(pointer: coarse)").matches || (memory !== undefined && memory <= 4);
   stage.toggleAttribute("data-atlas-touch", navigator.maxTouchPoints > 0);
   const marks = new Map<string, Marker>();
   const touches = new Map<number, Point>();
@@ -55,7 +57,7 @@ export function createAtlasScene(
   let dragged = false;
 
   for (const element of labels.querySelectorAll<HTMLButtonElement>("[data-atlas-marker]")) {
-    marks.set(element.dataset.atlasMarker!, { element, width: 0, visible: false });
+    marks.set(element.dataset.atlasMarker!, { element, width: 0, visible: false, anchor: 0 });
   }
 
   const zoomLimits = () => [defaultView.z, Math.max(defaultView.z * 6, 3)] as const;
@@ -83,13 +85,16 @@ export function createAtlasScene(
   };
 
   const displayLabels = (state: SceneFrame) => {
+    const earliest = selection?.type === "skill" ? .88 : .74;
+    const labelKey = [width, height, camera.x, camera.y, camera.z, selection?.id, selection?.type, level, progress >= earliest].join("/");
+    if (labelView === labelKey) return;
+    labelView = labelKey;
     const visibleSkills = getVisibleSkills(selection, level);
     const candidates = visibleSkills.length
       ? visibleSkills.map(skill => ({ key: "skill-" + skill.id, position: skill.anchor, pinned: selection?.id === skill.id }))
       : ATLAS_TERRITORIES.map(region => ({ key: "territory-" + region.id, position: region.marker, pinned: false }));
     const accepted: {l:number; r:number; t:number; b:number}[] = [];
     const shown = new Set<string>();
-    const earliest = selection?.type === "skill" ? .88 : .74;
     if (progress >= earliest) for (const target of candidates) {
       const mark = marks.get(target.key);
       if (!mark) continue;
@@ -97,8 +102,10 @@ export function createAtlasScene(
       const position = screenPoint(target.position, state);
       const region = target.key.startsWith("territory");
       // Keep labels close to their anchors. Prefer their previous arrangement as the camera passes thresholds.
-      const offsets = region ? [[0, -24], [0, 21]] : [[0, -20], [0, 22], [13, 0], [-13, 0]];
-      for (const [index, [dx, dy]] of offsets.entries()) {
+      const offsets = region ? [[0, -24], [0, 22], [13, 0], [-13, 0]] : [[0, -20], [0, 22], [13, 0], [-13, 0]];
+      const placements = [mark.anchor, ...offsets.keys()].filter((value, i, all) => all.indexOf(value) === i);
+      for (const index of placements) {
+        const [dx, dy] = offsets[index];
         const x = position.x + dx + (index < 2 ? 0 : (index === 2 ? 0.5 : -0.5) * mark.width);
         const y = position.y + dy;
         const w = mark.width / 2;
@@ -109,6 +116,7 @@ export function createAtlasScene(
         if (!target.pinned && accepted.some(a => rect.l < a.r && rect.r > a.l && rect.t < a.b && rect.b > a.t)) continue;
         mark.element.style.transform = "translate3d(" + x.toFixed(1) + "px," + y.toFixed(1) + "px,0) translate(-50%,-50%)";
         mark.element.dataset.anchor = String(index);
+        mark.anchor = index;
         shown.add(target.key);
         accepted.push(rect);
         break;
@@ -145,9 +153,12 @@ export function createAtlasScene(
     displayLabels(state);
     const magnification = relative.toFixed(1) + "×";
     if (scale.textContent !== magnification) scale.textContent = magnification;
-    stage.dataset.atlasLevel = String(level);
-    stage.dataset.atlasFormation = progress < 1 ? "assembling" : "settled";
-    if (motion || progress < 1 || (signal >= 0 && signal < 1)) schedule();
+    if (stage.dataset.atlasLevel !== String(level)) stage.dataset.atlasLevel = String(level);
+    const formation = progress < 1 ? "assembling" : "settled";
+    if (stage.dataset.atlasFormation !== formation) stage.dataset.atlasFormation = formation;
+    const signalling = signal >= 0 && signal < 1;
+    stage.toggleAttribute("data-atlas-signal", signalling);
+    if (motion || progress < 1 || signalling) schedule();
   }
 
   function schedule() {
@@ -187,6 +198,10 @@ export function createAtlasScene(
     try {
       setupWebGL = (await import("./atlas-webgl")).makeWebGLAtlas;
       if (disposed) return;
+      if (!visible) {
+        started = false;
+        return;
+      }
       const initial = setupWebGL(webgl, compact || width < 680);
       if (initial) {
         formationStart = -1;
@@ -204,17 +219,16 @@ export function createAtlasScene(
     const h = stage.clientHeight;
     if (!w || !h || (w === width && h === height)) return;
     const wasUnmeasured = width === 1;
-    const oldStretch = stretch;
     width = w;
     height = h;
-    stretch = width < 580 ? 1.40 : 1;
+    // On short landscape screens, flatten the projection enough to use the width without clipping the atlas.
+    stretch = height < 320 && width / height > 1.55 ? .76 : width < 580 ? 1.40 : 1;
     world = { width, height: height / stretch, scale: 1 };
     defaultView = fitCamera(ATLAS_BOUNDS, world);
-    if (selection && (overview || motion || !dragged)) camera = fit();
-    else if (overview || wasUnmeasured) camera = defaultView;
+    if (fitted || wasUnmeasured) camera = fit();
     else {
       const [min,max] = zoomLimits();
-      camera = constrainPan(resizeCamera(camera, oldStretch, stretch, min, max), ATLAS_BOUNDS, world);
+      camera = constrainPan(resizeCamera(camera, 1, 1, min, max), ATLAS_BOUNDS, world);
     }
     motion = null;
     for (const mark of marks.values()) mark.width = 0;
@@ -267,7 +281,7 @@ export function createAtlasScene(
   function move(from: GestureSample, to: GestureSample) {
     const [min,max] = zoomLimits();
     camera = constrainPan(moveCamera(camera, from, to, min, max), ATLAS_BOUNDS, world);
-    overview = false;
+    fitted = false;
     schedule();
   }
 
@@ -287,7 +301,7 @@ export function createAtlasScene(
       selection = next;
       selectionTime = now;
       dragged = false;
-      overview = !next;
+      fitted = true;
       signalStart = next ? now : -1;
       animateTo(fit(), next ? 610 : 560);
     },

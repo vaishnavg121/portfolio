@@ -72,6 +72,8 @@ body {
   pointer-events: none;
 }
 
+.companion-position[data-familiar-yielding] { opacity: 0.18; }
+
 .companion-position {
   transform: translate3d(-200px, -200px, 0);
 }
