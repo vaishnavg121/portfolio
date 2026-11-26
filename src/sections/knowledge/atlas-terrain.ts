@@ -1,4 +1,4 @@
-import { clamp, heightField, landmarkPositions, lens, skillPositions, type SceneFrame } from "./atlas-geometry";
+import { clamp, heightField, landmarkPositions, lens, mix, skillPositions, type SceneFrame } from "./atlas-geometry";
 import { ATLAS_TERRITORIES } from "./atlas-model";
 
 const TILE_SIZE = 416;
@@ -49,12 +49,19 @@ export function createTerrainTiles(detailed: boolean) {
         const n = (first + i) % samples;
         const phase = seed(hash + n * 1.62 + 1);
         if (n !== first && phase > detail * .82) continue;
-        const px = x + (n % subdivisions + seed(hash + n * 3.17 + 4)) * step;
-        const py = y + (Math.floor(n / subdivisions) + seed(hash + n * 2.63 + 7)) * step;
+        const jitterX = seed(hash + n * 3.17 + 4);
+        const jitterY = seed(hash + n * 2.63 + 7);
+        const sx = x + (n % subdivisions + mix(.13,.87,jitterX)) * step;
+        const sy = y + (Math.floor(n / subdivisions) + mix(.24,.76,jitterY)) * step;
+        // Warp the same global rows on either side of every tile boundary.
+        const px = sx + 4.8 * Math.sin(sy * .027 + sx * .009);
+        const py = sy + 5.4 * Math.sin(sx * .024 - sy * .011) + 2 * Math.cos(sx * .057);
         const { z, relief, region, tone, shade } = heightField(px, py);
         const contour = .5 + .5 * Math.cos(z * .255 + Math.sin(px * .014 + py * .021) * 1.18);
-        const opacity = (.21 + relief * .41 + detail * .14) * (.61 + contour * .17 + phase * .33);
-        const size = .88 + .83 * phase + (1 - detail) * .74;
+        if (i > 1 && phase > .64 + shade * .13 + contour * .09) continue;
+        const emphasis = .12 * shade + .13 * contour ** 3;
+        const opacity = (.24 + relief * .40 + detail * .12) * (.60 + phase * .36 + emphasis);
+        const size = 1.06 + .67 * phase + (1 - detail) * .58 + .28 * emphasis;
         // The fractional region index and negative point kind carry continuous tone and slope.
         points.push(px, py, z, region + tone, opacity, size, -shade, phase);
       }

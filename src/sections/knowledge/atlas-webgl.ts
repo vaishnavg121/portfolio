@@ -129,7 +129,7 @@ void main() {
   }
   vec2 fromCenter=abs(gl_PointCoord-.5);
   float radius=vKind>3.5?fromCenter.x+fromCenter.y:length(fromCenter);
-  float alpha=1.0-smoothstep(vKind>.5?.12:.16,.51,radius);
+  float alpha=vKind>.5?1.0-smoothstep(.14,.51,radius):1.0-smoothstep(.25,.52,radius);
   if(alpha*vColor.a<.018) discard;
   gl_FragColor=vec4(vColor.rgb,vColor.a*alpha);
 }
