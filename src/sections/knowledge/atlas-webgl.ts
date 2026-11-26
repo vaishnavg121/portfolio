@@ -168,16 +168,19 @@ void main() {
   float nearby=reach*reach*uPointer.z;
   float pulse=0.0;
   if(uTime>=0.0&&vState.y>.01) {
-    float phase=fract(uTime/max(2.6,vFlow.z/56.0)+vState.x);
+    float phase=fract(uTime/max(2.9,vFlow.z/59.0)+vState.x);
     float center=1.0-abs(2.0*phase-1.0);
-    float span=(t-center)*vFlow.z/28.0;
-    pulse=exp(-span*span)*smoothstep(.02,.12,center)*(1.0-smoothstep(.84,.98,center))*vState.y;
+    float direction=phase<.5?1.0:-1.0;
+    float span=(t-center)*vFlow.z;
+    float tail=(span+direction*21.0)/29.0;
+    float head=span/18.0;
+    pulse=(exp(-head*head)+exp(-tail*tail)*.36)*smoothstep(.02,.13,center)*(1.0-smoothstep(.87,.99,center))*vState.y;
   }
-  float core=1.0-smoothstep(.095,.38,abs(vFlow.x));
+  float core=1.0-smoothstep(.082,.32,abs(vFlow.x));
   float glow=exp(-vFlow.x*vFlow.x*6.0)*(1.0-smoothstep(.77,1.0,abs(vFlow.x)));
   float front=(t-vState.z+.035)*18.0;
   float leading=exp(-front*front)*(1.0-step(1.0,vState.z));
-  float alpha=edge*reveal*(core*(vFlow.w*(.64+.36*shoulder+nearby*.24+leading*.40)+pulse*.39)+glow*(vFlow.w*.13+pulse*.14));
+  float alpha=edge*reveal*(core*(vFlow.w*(.62+.38*shoulder+nearby*.20+leading*.40)+pulse*.44)+glow*(vFlow.w*.115+pulse*.13));
   if(alpha<.007)discard;
   vec3 tint=mix(uAccent,uPetal,.20+.66*shoulder);
   vec3 color=mix(tint,uLight,clamp(core*(.21+nearby*.11+pulse*.65+leading*.18),0.0,.85));

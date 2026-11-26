@@ -5,7 +5,7 @@ import {
 import { ATLAS_TERRITORIES, SKILLS_BY_ID, TERRITORIES_BY_ID, type AtlasPosition, type Selection } from "./atlas-model";
 import { OVERVIEW_BOUNDS, PAN_BOUNDS, PERSPECTIVE, landmarkPositions, pickSurface, projection, screenPoint, skillPose, territoryIndex, visibleSkills, type AtlasRenderer, type SceneFrame } from "./atlas-geometry";
 import { makeCanvasAtlas } from "./atlas-canvas";
-import { connectedSkillPose, connectionEndpoint, connectionsFor, routePoint, visibleProjects } from "./atlas-connections";
+import { connectedSkillPose, connectionEndpoint, connectionsFor, routeCurve, visibleProjects } from "./atlas-connections";
 
 type AtlasElements = {
   stage: HTMLDivElement;
@@ -158,7 +158,8 @@ export function createAtlasScene(
       ];
       const linkSamples=connectionsFor(selection).filter(link=>link.weight>.4).flatMap(link=>{
         const a=connectionEndpoint(link.a,state),b=connectionEndpoint(link.b,state);
-        return [.2,.4,.6,.8].map(t=>screenPoint(routePoint(a,b,t,link.bridge),state));
+        const curve=routeCurve(a,b,link.bridge);
+        return [.2,.4,.6,.8].map(t=>screenPoint(curve(t),state));
       });
       const score=({x,y}:Point)=>{
         const contains=(p:Point,margin:number)=>p.x>x-margin&&p.x<x+popupWidth+margin&&p.y>y-margin&&p.y<y+popupHeight+margin;

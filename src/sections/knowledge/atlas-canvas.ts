@@ -1,6 +1,6 @@
 import { clamp, landmarkPositions, lens, screenPoint, territoryIndex, type AtlasRenderer } from "./atlas-geometry";
 import { ATLAS_TERRITORIES } from "./atlas-model";
-import { connectedSkillPose, connectionEndpoint, connectionsFor, routePoint, visibleProjects } from "./atlas-connections";
+import { connectedSkillPose, connectionEndpoint, connectionsFor, routeCurve, visibleProjects } from "./atlas-connections";
 import { readAtlasPalette } from "./atlas-palette";
 import { createTerrainTiles, FOG_FAR, FOG_NEAR, terrainCenter } from "./atlas-terrain";
 
@@ -36,9 +36,10 @@ export function makeCanvasAtlas(canvas: HTMLCanvasElement): AtlasRenderer | null
       }
       for(const {a,b,bridge,weight} of connectionsFor(frame.selection)){
         const p=connectionEndpoint(a,frame),q=connectionEndpoint(b,frame);
+        const curve=routeCurve(p,q,bridge);
         ctx.beginPath();
         for(let i=0;i<=28;i++){
-          const v=screenPoint(routePoint(p,q,i/28,bridge),frame);
+          const v=screenPoint(curve(i/28),frame);
           if(i===0)ctx.moveTo(v.x,v.y);else ctx.lineTo(v.x,v.y);
         }
         const begin=screenPoint(p,frame),end=screenPoint(q,frame);

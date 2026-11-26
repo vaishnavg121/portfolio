@@ -1,4 +1,4 @@
-import { connectionEndpoint, connectionsFor, routePoint } from "./atlas-connections";
+import { connectionEndpoint, connectionsFor, routeCurve } from "./atlas-connections";
 import { clamp, screenPoint, type SceneFrame } from "./atlas-geometry";
 
 const STREAM_SEGMENTS = 28;
@@ -31,7 +31,7 @@ export function createAtlasStreams() {
         key = next;
       }
       const age = frame.motion ? frame.time - change : 1;
-      const phase = clamp(age / .42);
+      const phase = clamp(age / .46);
       const reveal = phase * phase * (3 - 2 * phase);
       const fade = clamp(1 - age / .25);
       lastReveal = reveal;
@@ -73,8 +73,9 @@ export function createAtlasStreams() {
           }
           let length = 0;
           let last = p;
+          const curve = routeCurve(p, q, bridge);
           for (let i = 0; i <= STREAM_SEGMENTS; i++) {
-            const point = routePoint(p, q, i / STREAM_SEGMENTS, bridge);
+            const point = curve(i / STREAM_SEGMENTS);
             const screen = screenPoint(point, frame);
             length += Math.hypot(point.x - last.x, point.y - last.y, point.z - last.z);
             centers[i * 3] = screen.x;
@@ -96,7 +97,8 @@ export function createAtlasStreams() {
           const seed = ((a.region * 13 + b.region * 7 + index * 9) % 41) / 41;
           const alpha = opacity * weight * clamp(length / 45) * visibility;
           const flow = retiring ? 0 : energy * visibility * opacity * clamp((progress - .68) / .32);
-          const tip = progress * 1.07 - .025;
+          const delay = (index % 4) * .026;
+          const tip = clamp((progress - delay) / (1 - delay)) * 1.07 - .025;
           for (let i = 0; i < STREAM_SEGMENTS; i++) {
             emit(i, -1, length, alpha, seed, flow, tip);
             emit(i, 1, length, alpha, seed, flow, tip);

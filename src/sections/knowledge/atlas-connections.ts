@@ -89,16 +89,25 @@ export function connectionEndpoint(anchor: Anchor, frame: SceneFrame) {
   return anchor.fixed ?? (anchor.skill ? skillPose(anchor.skill, frame.expansion[anchor.region]) : landmarkPositions[anchor.region]);
 }
 
-export function routePoint(a: AtlasPosition, b: AtlasPosition, t: number, bridge: boolean): AtlasPosition {
+export function routeCurve(a: AtlasPosition, b: AtlasPosition, bridge: boolean) {
   const dx = b.x - a.x, dy = b.y - a.y;
   const distance = Math.hypot(dx, dy);
-  const arch = clamp(distance * (bridge ? .064 : .105), 0, bridge ? 30 : 20);
-  const side = (bridge ? .075 : .15) * (b.y >= a.y ? 1 : -1);
-  const first = 3 * (1 - t) ** 2 * t, second = 3 * (1 - t) * t * t;
-  const bend = side * (first - .24 * second);
-  return {
-    x: a.x + dx * t - dy * bend,
-    y: a.y + dy * t + dx * bend,
-    z: a.z + (b.z - a.z) * t + arch * (first * 1.2 + second),
+  const arch = clamp(distance * .091, 0, 41);
+  const direction = b.y >= a.y ? 1 : -1;
+  const side = direction * (bridge ? .062 : .128);
+  const profile = (t: number) => {
+    const first = 3 * (1 - t) ** 2 * t, second = 3 * (1 - t) * t * t;
+    const bend = side * (first - .37 * second);
+    return { x: a.x + dx * t - dy * bend, y: a.y + dy * t + dx * bend, z: a.z + (b.z - a.z) * t, first, second };
+  };
+  const clearance = (t: number) => {
+    const point = profile(t);
+    return clamp((heightField(point.x, point.y).z + 10 - point.z) * 1.9, 0, 52);
+  };
+  const nearLift = arch * 1.15 + clearance(.32) * .66;
+  const farLift = arch + clearance(.70) * .66;
+  return (t: number): AtlasPosition => {
+    const { x, y, z, first, second } = profile(t);
+    return { x, y, z: z + nearLift * first + farLift * second };
   };
 }
