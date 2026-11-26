@@ -45,7 +45,10 @@ void main() {
         vec4 impulse=uImpulses[k];
         if(impulse.w<.006) continue;
         vec2 d=p.xy-impulse.xy;
-        float radius=length(d), t=impulse.z;
+        float distanceSquared=dot(d,d), t=impulse.z;
+        float reach=max(112.0,t*115.0+47.0);
+        if(distanceSquared>reach*reach)continue;
+        float radius=sqrt(distanceSquared);
         float ring=radius-t*115.0, local=exp(-radius*radius/5100.0), wave=exp(-ring*ring/880.0);
         float force=impulse.w*exp(-3.8*t);
         p.z+=force*(local*(-20.0+14.0*sin(t*20.0))+wave*8.0*sin(radius*.083-t*12.0));
@@ -132,6 +135,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   gl.uniform4f(u.uLens,lens.COS,lens.SIN,lens.CY,lens.SY);
   const peaks=new Float32Array(32);
   const count=particles.field.length / 8;
+  const markerCount=particles.markers.length / 8;
   canvas.dataset.particles=String(count);
   landmarkPositions.forEach((p,i)=>peaks.set([p.x,p.y,p.z,0],i*4));
   const draw=(buffer:WebGLBuffer,count:number)=>{
@@ -146,7 +150,8 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   let lastCount=0;
   return {
     draw(frame) {
-      const dpr=Math.min(window.devicePixelRatio||1,compact?1.25:1.55);
+      const deviceRatio=Math.min(window.devicePixelRatio||1,compact?1.25:1.55);
+      const dpr=deviceRatio*(frame.quality<.57 ? .78 : frame.quality<.8 ? .89 : 1);
       const w=Math.max(1,Math.round(frame.width*dpr)),h=Math.max(1,Math.round(frame.height*dpr));
       if (canvas.width!==w||canvas.height!==h) { canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h); }
       gl.clear(gl.COLOR_BUFFER_BIT);
@@ -163,7 +168,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
       const visibleCount=Math.floor(count*frame.quality);
       if(visibleCount!==lastCount){canvas.dataset.drawnParticles=String(visibleCount);lastCount=visibleCount;}
       draw(field,visibleCount);
-      draw(markers,particles.markers.length/8);
+      draw(markers,markerCount);
       const key=[frame.selection?.id,frame.selection?.type,frame.hover].join("/");
       if(key!==routeKey) {
         routeKey=key;retiring=routes;routes=sceneRoutes(frame.selection,frame.hover);routeTime=frame.time;

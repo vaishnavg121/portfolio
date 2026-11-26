@@ -57,6 +57,7 @@ export function createAtlasScene(
   let ambientTimer = 0;
   let quality = 1;
   let slowFrames = 0;
+  let healthyFrames = 0;
   let popupSide = 1;
   let popupWidth = 0;
   let popupHeight = 0;
@@ -209,9 +210,11 @@ export function createAtlasScene(
       if(Math.abs(lensAim-currentLens)<.6)currentLens=lensAim;
     } else currentLens=PERSPECTIVE;
     const isActive=Boolean(motion||expanding||disturbed||progress<1);
-    if(animated&&isActive&&lastRender>0&&range<160){
-      slowFrames=range>27?slowFrames+1:Math.max(0,slowFrames-1);
-      if(slowFrames>12&&quality>.56){quality=Math.max(.56,quality-.11);slowFrames=0;}
+    if (animated && isActive && lastRender > 0 && range < 190) {
+      slowFrames=range>26 ? slowFrames+1 : Math.max(0,slowFrames-1);
+      healthyFrames=range<18 ? healthyFrames+1 : 0;
+      if(slowFrames>=5 && quality>.54){quality=Math.max(.54,quality-.23);slowFrames=0;}
+      if(healthyFrames>=90 && quality<1){quality=Math.min(1,quality+.23);healthyFrames=0;}
     }
     lastRender=now;
     progress = reduced.matches || rendererType !== "webgl" ? 1 : clamp((now - formationStart) / 1120, 0, 1);
