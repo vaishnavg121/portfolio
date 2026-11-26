@@ -1,5 +1,6 @@
-import { clamp, landmarkPositions, lens, routePoint, sceneRoutes, screenPoint, skillPose, territoryIndex, type AtlasRenderer } from "./atlas-geometry";
-import { ATLAS_TERRITORIES, TERRITORIES_BY_ID } from "./atlas-model";
+import { clamp, landmarkPositions, lens, screenPoint, territoryIndex, type AtlasRenderer } from "./atlas-geometry";
+import { ATLAS_TERRITORIES } from "./atlas-model";
+import { connectedSkillPose, connectionEndpoint, connectionsFor, routePoint, visibleProjects } from "./atlas-connections";
 import { readAtlasPalette } from "./atlas-palette";
 import { createTerrainTiles, FOG_FAR, FOG_NEAR, terrainCenter } from "./atlas-terrain";
 
@@ -31,19 +32,19 @@ export function makeCanvasAtlas(canvas: HTMLCanvasElement): AtlasRenderer | null
         ctx.globalAlpha=edge*fog*fog*(3-2*fog)*field[i+4]*(region<0||region===field[i+3]?1:.62);
         ctx.fillRect(p.x,p.y,1.45,1.45);
       }
-      ctx.globalAlpha=.55;
-      ctx.strokeStyle=palette.accent.css;
-      for(const {a,b,bridge} of sceneRoutes(frame.selection,frame.hover)){
-        const pose=(skill:typeof a)=>{
-          const r=TERRITORIES_BY_ID.get(skill.territoryId)!;
-          return frame.expansion[r.index]>.5?skillPose(skill,1):landmarkPositions[r.index];
-        };
-        const p=pose(a),q=pose(b);
+      for(const {a,b,bridge,weight} of connectionsFor(frame.selection,frame.hover)){
+        const p=connectionEndpoint(a,frame),q=connectionEndpoint(b,frame);
         ctx.beginPath();
-        for(let i=0;i<=24;i++){
-          const v=screenPoint(routePoint(p,q,i/24,bridge),frame);
+        for(let i=0;i<=28;i++){
+          const v=screenPoint(routePoint(p,q,i/28,bridge),frame);
           if(i===0)ctx.moveTo(v.x,v.y);else ctx.lineTo(v.x,v.y);
         }
+        ctx.strokeStyle=palette.accent.css;
+        ctx.globalAlpha=weight*.18;
+        ctx.lineWidth=4;
+        ctx.stroke();
+        ctx.globalAlpha=weight;
+        ctx.lineWidth=1.2;
         ctx.stroke();
       }
       ctx.fillStyle=palette.accent.css;
@@ -59,7 +60,17 @@ export function makeCanvasAtlas(canvas: HTMLCanvasElement): AtlasRenderer | null
       ctx.fillStyle=palette.light.css;
       ctx.globalAlpha=.92;
       landmarkPositions.forEach(p=>node(p,2.8));
-      if(region>=0)ATLAS_TERRITORIES[region].items.forEach(skill=>node(skillPose(skill,1),1.8));
+      if(region>=0)ATLAS_TERRITORIES[region].items.forEach(skill=>node(connectedSkillPose(skill,frame),1.8));
+      for(const { position } of visibleProjects(frame.selection)) {
+        const p=screenPoint(position,frame);
+        ctx.fillStyle=palette.accent.css;
+        ctx.beginPath();
+        ctx.moveTo(p.x,p.y-4);
+        ctx.lineTo(p.x+4,p.y);
+        ctx.lineTo(p.x,p.y+4);
+        ctx.lineTo(p.x-4,p.y);
+        ctx.fill();
+      }
       ctx.globalAlpha=1;
     },
     dispose(){canvas.width=canvas.height=1;},

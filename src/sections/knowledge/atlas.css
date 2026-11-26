@@ -77,9 +77,16 @@
   border-left:1px solid var(--accent);opacity:.75;content:"";
 }
 .atlas-marker[data-anchor="1"]::after {top:auto;bottom:calc(50% + .62rem);}
+.atlas-marker[data-anchor="2"]::after,.atlas-marker[data-anchor="3"]::after {
+  position:absolute;top:50%;right:100%;width:.62rem;border-top:1px solid var(--accent);opacity:.75;content:"";
+}
+.atlas-marker[data-anchor="3"]::after {right:auto;left:100%;}
 .atlas-marker:hover,.atlas-marker:focus-visible,.atlas-marker[aria-pressed="true"] {color:var(--text-primary);z-index:2;}
 .atlas-marker:is(:hover,:focus-visible,[aria-pressed="true"])::before {background:var(--surface-elevated);box-shadow:inset 0 0 0 1px var(--accent);}
 .atlas-marker-compact {display:none;}
+.atlas-project-marker {gap:.23rem;color:var(--text-primary);font-size:.74rem;}
+.atlas-project-marker svg {color:var(--accent);}
+.atlas-project-marker::before {box-shadow:inset 0 0 0 1px var(--border-strong);}
 .atlas-skill-marker {font-family:var(--atlas-mono);font-size:clamp(.65rem,1vw,.78rem);}
 .atlas-map-caption {
   position:relative;margin-top:-.3rem;text-align:center;pointer-events:none;

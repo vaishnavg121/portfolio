@@ -107,16 +107,24 @@ export function skillReferences(skill: AtlasSkill): SkillDetail["usedIn"] {
   return Array.from(result.values());
 }
 
-const bridgePairs = new Set<string>();
 export const ATLAS_LINKS = CONNECTIONS.map(([from, to]) => {
   const a = SKILLS_BY_ID.get(from)!;
   const b = SKILLS_BY_ID.get(to)!;
-  const bridge = a.territoryId !== b.territoryId;
-  const pair = [a.territoryId, b.territoryId].sort().join("/");
-  const overview = bridge && !bridgePairs.has(pair);
-  if (overview) bridgePairs.add(pair);
-  return { a, b, bridge, overview };
+  return { a, b, bridge: a.territoryId !== b.territoryId };
 });
+
+const domainPairs = new Map<string, { from: number; to: number; count: number }>();
+for (const { a, b, bridge } of ATLAS_LINKS) {
+  if (!bridge) continue;
+  const left = TERRITORIES_BY_ID.get(a.territoryId)!.index;
+  const right = TERRITORIES_BY_ID.get(b.territoryId)!.index;
+  const from = Math.min(left, right), to = Math.max(left, right);
+  const key = from + "/" + to;
+  const entry = domainPairs.get(key) ?? { from, to, count: 0 };
+  entry.count++;
+  domainPairs.set(key, entry);
+}
+export const ATLAS_BRIDGES = [...domainPairs.values()];
 
 export function relatedSkills(skillId: string) {
   return ATLAS_LINKS.flatMap(({ a, b, bridge }) => {

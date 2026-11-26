@@ -1,4 +1,4 @@
-import { ATLAS_LINKS, ATLAS_TERRITORIES, SKILLS_BY_ID, TERRITORIES_BY_ID, type AtlasPosition, type AtlasSkill, type Selection } from "./atlas-model";
+import { ATLAS_BRIDGES, ATLAS_LINKS, ATLAS_TERRITORIES, SKILLS_BY_ID, TERRITORIES_BY_ID, type AtlasPosition, type AtlasSkill, type Selection } from "./atlas-model";
 import { reliefLens, type Camera, type Point } from "@/lib/knowledge-camera";
 
 export const PERSPECTIVE = 1450;
@@ -16,16 +16,7 @@ export const atlasPeaks = ATLAS_TERRITORIES.map((r, index) => ({
   ry: [101,112,122,111,102,113,112,117][index],
 }));
 
-const ridgePairs = new Map<string, { from: number; to: number; count: number }>();
-for (const { a, b, bridge } of ATLAS_LINKS) {
-  if (!bridge) continue;
-  const [from, to] = [TERRITORIES_BY_ID.get(a.territoryId)!.index, TERRITORIES_BY_ID.get(b.territoryId)!.index].sort((a, b) => a - b);
-  const key = from + "/" + to;
-  const pair = ridgePairs.get(key) ?? { from, to, count: 0 };
-  pair.count++;
-  ridgePairs.set(key, pair);
-}
-const ridges = Array.from(ridgePairs.values(), ({ from, to, count }) => {
+const ridges = ATLAS_BRIDGES.map(({ from, to, count }) => {
   const a = atlasPeaks[from], b = atlasPeaks[to];
   const dx = b.x - a.x, dy = b.y - a.y;
   const length = Math.hypot(dx, dy);
@@ -51,8 +42,9 @@ export function heightField(x: number, y: number) {
     const along = (u * dx + v * dy) / (length * length);
     if (along <= 0 || along >= 1) continue;
     const across = (u * dy - v * dx) / length;
-    if (Math.abs(across) > 170) continue;
-    saddle += lift * Math.sin(along * Math.PI) ** 2 * Math.exp(-across * across / 3650);
+    const width = Math.abs(across);
+    if (width > 170) continue;
+    saddle += lift * Math.sin(along * Math.PI) ** 2 * Math.exp(-across * across / 3650) * clamp((170 - width) / 28);
   }
   const extent = (1 - clamp((Math.abs(x) - 710) / 200)) * (1 - clamp((Math.abs(y) - 590) / 200));
   const relief = clamp((peaks + saddle * .7) / 120) * extent;
@@ -60,6 +52,13 @@ export function heightField(x: number, y: number) {
 }
 
 export const landmarkPositions = atlasPeaks.map(({x,y}) => ({ x, y, z: heightField(x,y).z + 9 }));
+const landmarkProjection = landmarkPositions.map(point => projection(point));
+export const PAN_BOUNDS = {
+  left: Math.min(...landmarkProjection.map(p => p.x)) - 46,
+  right: Math.max(...landmarkProjection.map(p => p.x)) + 46,
+  top: Math.min(...landmarkProjection.map(p => p.y)) - 32,
+  bottom: Math.max(...landmarkProjection.map(p => p.y)) + 32,
+};
 export const skillPositions = new Map<string, AtlasPosition>();
 for (const region of ATLAS_TERRITORIES) {
   const peak = atlasPeaks[region.index];
@@ -70,6 +69,20 @@ for (const region of ATLAS_TERRITORIES) {
     const y = peak.y + Math.sin(a) * r * 1.03;
     skillPositions.set(skill.id, { x, y, z: heightField(x,y).z + 30 + (i % 3) * 8 });
   });
+}
+// Draw related skills slightly toward one another while preserving each region's spacing.
+const layout = new Map(skillPositions);
+for (const region of ATLAS_TERRITORIES) for (const skill of region.items) {
+  const neighbors = ATLAS_LINKS.flatMap(({ a, b, bridge }) => {
+    if (bridge) return [];
+    const related = a.id === skill.id ? b : b.id === skill.id ? a : null;
+    return related ? [layout.get(related.id)!] : [];
+  });
+  if (neighbors.length === 0) continue;
+  const point = layout.get(skill.id)!;
+  const average = neighbors.reduce((sum, neighbor) => ({ x: sum.x + neighbor.x, y: sum.y + neighbor.y }), { x: 0, y: 0 });
+  const x = mix(point.x, average.x / neighbors.length, .12), y = mix(point.y, average.y / neighbors.length, .12);
+  skillPositions.set(skill.id, { x, y, z: point.z - heightField(point.x, point.y).z + heightField(x, y).z });
 }
 export const OVERVIEW_BOUNDS = { left:-590, right:630, top:-300, bottom:249 };
 export type SceneFrame = {
@@ -106,30 +119,6 @@ export function visibleSkills(selection: Selection | null) {
   const neighbors = ATLAS_LINKS.flatMap(({a,b}) => a.id === focus.id ? [b] : b.id === focus.id ? [a] : []);
   const ranked = [focus,...neighbors];
   return [...ranked, ...own.filter(skill=>!ranked.includes(skill))];
-}
-
-export function sceneRoutes(selection: Selection | null, hover: number) {
-  const region = territoryIndex(selection);
-  const overview = !selection;
-  const links = ATLAS_LINKS.filter(({ a,b,overview: representative }) => {
-    if (overview) return representative && hover >= 0 && (a.territoryId===ATLAS_TERRITORIES[hover].id || b.territoryId===ATLAS_TERRITORIES[hover].id);
-    if (selection.type === "skill") return a.id===selection.id || b.id===selection.id;
-    const id = ATLAS_TERRITORIES[region].id;
-    return (a.territoryId === id && b.territoryId === id) || (representative && (a.territoryId === id || b.territoryId === id));
-  });
-  return links.slice(0,overview ? 3 : 16).map(({a,b,bridge}) => {
-    const reverse = selection?.type==="skill" ? selection.id === b.id : (region >= 0 && b.territoryId===ATLAS_TERRITORIES[region].id);
-    return { a: reverse ? b : a, b: reverse ? a : b, bridge };
-  });
-}
-export function routePoint(a: AtlasPosition,b: AtlasPosition,t: number,bridge: boolean) {
-  const arc = Math.sin(t * Math.PI);
-  const swell = Math.sin(Math.PI * t * 2) * (bridge ? .018 : .035);
-  return {
-    x: mix(a.x,b.x,t) - (b.y-a.y) * swell,
-    y: mix(a.y,b.y,t) + (b.x-a.x) * swell,
-    z: mix(a.z,b.z,t) + (bridge ? 57 : 22) * arc,
-  };
 }
 
 // Undo perspective along a camera ray, then find its first intersection with the heightfield.

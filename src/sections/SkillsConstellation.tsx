@@ -8,6 +8,7 @@ import {
   ATLAS_TERRITORIES, SKILLS, SKILLS_BY_ID, TERRITORIES_BY_ID, atlasSearch, relatedSkills, skillReferences,
   type AtlasTerritory, type AtlasSkill, type Selection,
 } from "./knowledge/atlas-model";
+import { PROJECT_ANCHORS } from "./knowledge/atlas-connections";
 import { createAtlasScene } from "./knowledge/atlas-scene";
 import "./knowledge/atlas.css";
 
@@ -114,7 +115,13 @@ export const SkillsConstellation = () => {
     setQuery("");
     scene.current?.select(next);
     if (detail.current) detail.current.scrollTop = 0;
-    if (keyboard) requestAnimationFrame(() => closeButton.current?.focus({preventScroll:true}));
+    if (keyboard) {
+      const focused = document.activeElement;
+      requestAnimationFrame(() => {
+        if (queryInput.current?.value || document.activeElement !== focused && document.activeElement !== document.body) return;
+        closeButton.current?.focus({preventScroll:true});
+      });
+    }
   };
 
   const close = () => {
@@ -191,7 +198,8 @@ export const SkillsConstellation = () => {
         <div className="atlas-toolbar" data-familiar-protect data-familiar-yield>
           <form role="search" className="atlas-search" onSubmit={event => {
             event.preventDefault();
-            if (search[0]) choose(search[0], true, queryInput.current ?? undefined);
+            const match = atlasSearch(queryInput.current?.value ?? query)[0];
+            if (match) choose(match, true, queryInput.current ?? undefined);
           }}>
             <div className="atlas-search-field">
               <Search aria-hidden="true" size={16} />
@@ -257,7 +265,7 @@ export const SkillsConstellation = () => {
                 if (event.detail !== 0 && scene.current?.discardClick()) { event.preventDefault(); event.stopPropagation(); }
               }}
               onClick={event => {
-                if (event.detail === 0 || (event.target as Element).closest("button")) return;
+                if (event.detail === 0 || (event.target as Element).closest("button,a")) return;
                 const point = {x:event.clientX,y:event.clientY};
                 scene.current?.impulse(point);
                 const nearest = scene.current?.nearest(point);
@@ -285,6 +293,14 @@ export const SkillsConstellation = () => {
                     onClick={event => choose({type:"skill", id:item.id},event.detail === 0,event.currentTarget)}>
                     {item.label}
                   </button>
+                ))}
+                {PROJECT_ANCHORS.map(project => (
+                  <Link href={project.href} key={project.href} className="atlas-marker atlas-project-marker"
+                    data-atlas-marker={"project-" + project.href} aria-label={"Open project " + project.label}
+                    tabIndex={-1} inert prefetch={false}>
+                    <span>{project.label}</span>
+                    <ArrowUpRight size={12} aria-hidden="true" />
+                  </Link>
                 ))}
               </div>
               <div className="atlas-scale" aria-hidden="true"><span ref={scale}>1.0×</span></div>

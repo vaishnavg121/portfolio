@@ -1,5 +1,6 @@
-import { landmarkPositions, lens, mix, routePoint, sceneRoutes, skillPose, territoryIndex, type AtlasRenderer } from "./atlas-geometry";
-import { TERRITORIES_BY_ID } from "./atlas-model";
+import { landmarkPositions, lens, screenPoint, territoryIndex, visibleSkills, type AtlasRenderer } from "./atlas-geometry";
+import { connectedSkillPose, visibleProjects } from "./atlas-connections";
+import { createAtlasStreams } from "./atlas-streams";
 import { readAtlasPalette } from "./atlas-palette";
 import { createTerrainTiles, FOG_FAR, FOG_NEAR, makeAtlasMarkers, terrainCenter } from "./atlas-terrain";
 
@@ -95,17 +96,63 @@ precision mediump float;
 varying vec4 vColor;
 varying float vKind;
 void main() {
-  float radius=length(gl_PointCoord-.5);
+  vec2 fromCenter=abs(gl_PointCoord-.5);
+  float radius=vKind>3.5?fromCenter.x+fromCenter.y:length(fromCenter);
   float alpha=1.0-smoothstep(vKind>.5?.12:.16,.51,radius);
   if(alpha*vColor.a<.018) discard;
   gl_FragColor=vec4(vColor.rgb,vColor.a*alpha);
 }
 `;
 
-function compile(gl: WebGLRenderingContext) {
+const streamVertex = `
+attribute vec2 aPixels;
+attribute vec4 aFlow;
+attribute vec2 aState;
+uniform mediump vec2 uSize;
+varying mediump vec4 vFlow;
+varying mediump vec2 vState, vClip;
+void main() {
+  vClip=aPixels/uSize*2.0-1.0;
+  gl_Position=vec4(vClip.x,-vClip.y,0.0,1.0);
+  vFlow=aFlow;
+  vState=aState;
+}
+`;
+
+const streamFragment = `
+precision mediump float;
+uniform vec3 uAccent, uLight;
+uniform vec3 uPointer;
+uniform mediump vec2 uSize;
+uniform float uTime;
+varying vec4 vFlow;
+varying vec2 vState, vClip;
+void main() {
+  float t=vFlow.y;
+  float edge=(1.0-smoothstep(.82,1.0,abs(vClip.x)))*(1.0-smoothstep(.82,1.0,abs(vClip.y)));
+  float shoulder=sin(t*3.14159);
+  float reach=clamp(1.0-length((vClip-uPointer.xy)*uSize*.5)/136.0,0.0,1.0);
+  float nearby=reach*reach*uPointer.z;
+  float pulse=0.0;
+  if(uTime>=0.0&&vState.y>.01) {
+    float phase=fract(uTime/max(3.2,vFlow.z/64.0+1.2)+vState.x);
+    float center=1.0-abs(2.0*phase-1.0);
+    float span=(t-center)*vFlow.z/28.0;
+    pulse=exp(-span*span)*smoothstep(.02,.12,center)*(1.0-smoothstep(.84,.98,center))*vState.y;
+  }
+  float core=1.0-smoothstep(.095,.38,abs(vFlow.x));
+  float glow=exp(-vFlow.x*vFlow.x*6.0)*(1.0-smoothstep(.77,1.0,abs(vFlow.x)));
+  float alpha=edge*(core*(vFlow.w*(.70+.30*shoulder)+nearby*.11+pulse*.44)+glow*(vFlow.w*.14+pulse*.17));
+  if(alpha<.007)discard;
+  vec3 color=mix(uAccent,uLight,clamp(core*(.35+nearby*.16+pulse*.56),0.0,.9));
+  gl_FragColor=vec4(color,alpha);
+}
+`;
+
+function compile(gl: WebGLRenderingContext, vertexSource: string, fragmentSource: string) {
   const program=gl.createProgram();
   if (!program) return null;
-  for (const [type, source] of [[gl.VERTEX_SHADER,vertex],[gl.FRAGMENT_SHADER,fragment]] as const) {
+  for (const [type, source] of [[gl.VERTEX_SHADER,vertexSource],[gl.FRAGMENT_SHADER,fragmentSource]] as const) {
     const shader=gl.createShader(type);
     if(!shader) { gl.deleteProgram(program);return null; }
     gl.shaderSource(shader,source);
@@ -127,25 +174,38 @@ function compile(gl: WebGLRenderingContext) {
 export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRenderer|null {
   const gl=canvas.getContext("webgl",{alpha:true,depth:false,antialias:false,premultipliedAlpha:true,powerPreference:"low-power"});
   if(!gl) return null;
-  const program=compile(gl);
-  if(!program){gl.getExtension("WEBGL_lose_context")?.loseContext();return null;}
+  const program=compile(gl,vertex,fragment);
+  const streamProgram=compile(gl,streamVertex,streamFragment);
+  if(!program||!streamProgram) {
+    if(program)gl.deleteProgram(program);
+    if(streamProgram)gl.deleteProgram(streamProgram);
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return null;
+  }
   const terrain = createTerrainTiles(!compact);
   const markerData = makeAtlasMarkers();
   const palette = readAtlasPalette(canvas);
-  const field=gl.createBuffer()!,markers=gl.createBuffer()!,signals=gl.createBuffer()!;
+  const field=gl.createBuffer()!,markers=gl.createBuffer()!,streamBuffer=gl.createBuffer()!,contextPins=gl.createBuffer()!;
   gl.bindBuffer(gl.ARRAY_BUFFER,markers);
   gl.bufferData(gl.ARRAY_BUFFER,markerData,gl.STATIC_DRAW);
   let currentField: ReturnType<typeof terrain> | undefined;
-  const paths=new Float32Array(16*180*8);
-  gl.bindBuffer(gl.ARRAY_BUFFER,signals);
-  gl.bufferData(gl.ARRAY_BUFFER,paths.byteLength,gl.DYNAMIC_DRAW);
+  const streams=createAtlasStreams();
+  const pins=new Float32Array(32*8);
+  gl.bindBuffer(gl.ARRAY_BUFFER,streamBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER,streams.data.byteLength,gl.DYNAMIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER,contextPins);
+  gl.bufferData(gl.ARRAY_BUFFER,pins.byteLength,gl.DYNAMIC_DRAW);
   gl.useProgram(program);
   gl.enable(gl.BLEND);
   gl.blendFuncSeparate(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA,gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
   gl.clearColor(0,0,0,0);
   const attribs = [["aPosition",3,0],["aStyle",4,12],["aPhase",1,28]] as const;
   const attrs=attribs.map(([name,size,offset])=>({index:gl.getAttribLocation(program,name),size,offset}));
-  attrs.forEach(({index}) => gl.enableVertexAttribArray(index));
+
+  const streamAttribs = [["aPixels",2,0],["aFlow",4,8],["aState",2,24]] as const;
+  const streamAttrs=streamAttribs.map(([name,size,offset])=>({index:gl.getAttribLocation(streamProgram,name),size,offset}));
+  const streamUniforms=["uSize","uAccent","uLight","uTime","uPointer"] as const;
+  const stream=Object.fromEntries(streamUniforms.map(name=>[name,gl.getUniformLocation(streamProgram,name)]));
   const names=["uCam","uFrame","uMotion","uSkill","uLens","uHover","uGround","uShadow","uMuted","uLight","uAccent","uImpulses[0]","uPeaks[0]"] as const;
   const u=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
   gl.uniform4f(u.uLens,lens.COS,lens.SIN,lens.CY,lens.SY);
@@ -154,17 +214,19 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   gl.uniform3fv(u.uMuted,palette.muted.rgb);
   gl.uniform3fv(u.uLight,palette.light.rgb);
   gl.uniform3fv(u.uAccent,palette.accent.rgb);
+  gl.useProgram(streamProgram);
+  gl.uniform3fv(stream.uAccent,palette.accent.rgb);
+  gl.uniform3fv(stream.uLight,palette.light.rgb);
   const markerCount=markerData.length / 8;
   landmarkPositions.forEach((p,i)=>peaks.set([p.x,p.y,p.z,0],i*4));
   const draw=(buffer:WebGLBuffer,count:number)=>{
     gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
-    attrs.forEach(({index,size,offset})=>gl.vertexAttribPointer(index,size,gl.FLOAT,false,32,offset));
+    for (const {index,size,offset} of attrs) {
+      gl.enableVertexAttribArray(index);
+      gl.vertexAttribPointer(index,size,gl.FLOAT,false,32,offset);
+    }
     gl.drawArrays(gl.POINTS,0,count);
   };
-  let routeKey="";
-  let routes: ReturnType<typeof sceneRoutes> = [];
-  let retiring: typeof routes = [];
-  let routeTime=0;
   let lastCount=0;
   return {
     draw(frame) {
@@ -173,6 +235,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
       const w=Math.max(1,Math.round(frame.width*dpr)),h=Math.max(1,Math.round(frame.height*dpr));
       if (canvas.width!==w||canvas.height!==h) { canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h); }
       gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.useProgram(program);
       const active=territoryIndex(frame.selection);
       gl.uniform3f(u.uCam,frame.camera.x,frame.camera.y,frame.perspective);
       gl.uniform4f(u.uFrame,frame.width,frame.height,frame.camera.z,frame.stretch);
@@ -195,53 +258,52 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
       const visibleCount=Math.floor(nextField.length/8*frame.quality);
       if(visibleCount!==lastCount){canvas.dataset.drawnParticles=String(visibleCount);lastCount=visibleCount;}
       draw(field,visibleCount);
-      draw(markers,markerCount);
-      const key=[frame.selection?.id,frame.selection?.type,frame.hover].join("/");
-      if(key!==routeKey) {
-        routeKey=key;retiring=routes;routes=sceneRoutes(frame.selection,frame.hover);routeTime=frame.time;
+      const paths=streams.update(frame);
+      if(paths.count) {
+        gl.useProgram(streamProgram);
+        gl.uniform2f(stream.uSize,frame.width,frame.height);
+        gl.uniform1f(stream.uTime,frame.motion?frame.time:-1);
+        let impulse=-1, age=.78;
+        for(let i=0;i<frame.impulses.length;i+=4) {
+          if(frame.impulses[i+2]<age) { impulse=i;age=frame.impulses[i+2]; }
+        }
+        if(impulse>=0&&frame.motion) {
+          const p=screenPoint({x:frame.impulses[impulse],y:frame.impulses[impulse+1],z:18},frame);
+          gl.uniform3f(stream.uPointer,p.x/frame.width*2-1,p.y/frame.height*2-1,1-age/.78);
+        } else gl.uniform3f(stream.uPointer,0,0,0);
+        gl.bindBuffer(gl.ARRAY_BUFFER,streamBuffer);
+        if(paths.changed)gl.bufferSubData(gl.ARRAY_BUFFER,0,streams.data.subarray(0,paths.count*8));
+        for (const {index,size,offset} of streamAttrs) {
+          gl.enableVertexAttribArray(index);
+          gl.vertexAttribPointer(index,size,gl.FLOAT,false,32,offset);
+        }
+        gl.drawArrays(gl.TRIANGLES,0,paths.count);
       }
-      const age=frame.motion?frame.time-routeTime:1;
-      let written=0;
-      const emit=(p:{x:number;y:number;z:number},alpha:number,size:number,phase:number)=>{
-        paths[written++]=p.x;paths[written++]=p.y;paths[written++]=p.z;paths[written++]=-1;
-        paths[written++]=alpha;paths[written++]=size;paths[written++]=3;paths[written++]=phase;
-      };
-      const sample=(pathsToDraw:typeof routes,outgoing:boolean)=>{
-        pathsToDraw.forEach(({a,b,bridge},i)=>{
-          const ax=TERRITORIES_BY_ID.get(a.territoryId)!.index, bx=TERRITORIES_BY_ID.get(b.territoryId)!.index;
-          const ev=(skill:typeof a,index:number)=>frame.expansion[index]>.02 ? skillPose(skill,frame.expansion[index]) : landmarkPositions[index];
-          const p=ev(a,ax),q=ev(b,bx);
-          const traced=outgoing?Math.max(0,1-age*3.45):Math.min(1,Math.max(0,(age-(frame.selection?.type==="territory"?.16:0)-i*.013)/.53));
-          if(traced<=0)return;
-          const segments=bridge?67:41,trace=traced*traced*(3-2*traced);
-          for(let j=0;j<=segments*trace;j++){
-            const t=j/segments,span=bridge&&j%7>4?.40:1;
-            emit(routePoint(p,q,t,bridge),(frame.selection ? .61 : .28)*span*(outgoing?trace:1),bridge?1.85:1.9,t);
-          }
-          if(outgoing||!frame.selection||!frame.motion)return;
-          const beat=(frame.signal-.18-i*.032)*1.32;
-          for(let j=0;j<5;j++){
-            const t=beat-j*.024;
-            if(t<0||t>trace||t>1)continue;
-            emit(routePoint(p,q,t,bridge),mix(.95,.22,j/5),mix(4,1.65,j/5),t);
-          }
-          if(beat>.91&&beat<1.25){
-            const glow=Math.sin((beat-.91)/.34*Math.PI);
-            emit(q,glow*.89,3+glow*6,1);
-          }
-        });
-      };
-      if(age<.29)sample(retiring,true);
-      sample(routes,false);
-      if(written){
-        gl.bindBuffer(gl.ARRAY_BUFFER,signals);
-        gl.bufferSubData(gl.ARRAY_BUFFER,0,paths.subarray(0,written));
-        draw(signals,written/8);
+      gl.useProgram(program);
+      draw(markers,markerCount);
+      if(frame.selection?.type==="skill") {
+        let offset=0;
+        const add=(p:{x:number;y:number;z:number},kind:number,size:number,opacity:number)=>{
+          pins.set([p.x,p.y,p.z,active,opacity,size,kind,1],offset);
+          offset+=8;
+        };
+        for(const project of visibleProjects(frame.selection))add(project.position,4,10,.89);
+        const skills=visibleSkills(frame.selection);
+        const own=skills[0]?.territoryId;
+        for(const item of skills) {
+          if(item.territoryId!==own)add(connectedSkillPose(item,frame),3,5,.72);
+        }
+        if(offset) {
+          gl.bindBuffer(gl.ARRAY_BUFFER,contextPins);
+          gl.bufferSubData(gl.ARRAY_BUFFER,0,pins.subarray(0,offset));
+          draw(contextPins,offset/8);
+        }
       }
     },
     dispose(){
-      for(const buffer of [field,markers,signals])gl.deleteBuffer(buffer);
+      for(const buffer of [field,markers,streamBuffer,contextPins])gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
+      gl.deleteProgram(streamProgram);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     },
   };

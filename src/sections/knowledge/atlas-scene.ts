@@ -3,8 +3,9 @@ import {
   type Camera, type GestureSample, type Point,
 } from "@/lib/knowledge-camera";
 import { ATLAS_TERRITORIES, SKILLS_BY_ID, TERRITORIES_BY_ID, type AtlasPosition, type Selection } from "./atlas-model";
-import { OVERVIEW_BOUNDS, PERSPECTIVE, landmarkPositions, pickSurface, projection, screenPoint, skillPose, territoryIndex, visibleSkills, type AtlasRenderer, type SceneFrame } from "./atlas-geometry";
+import { OVERVIEW_BOUNDS, PAN_BOUNDS, PERSPECTIVE, landmarkPositions, pickSurface, projection, screenPoint, skillPose, territoryIndex, visibleSkills, type AtlasRenderer, type SceneFrame } from "./atlas-geometry";
 import { makeCanvasAtlas } from "./atlas-canvas";
+import { connectedSkillPose, connectionEndpoint, connectionsFor, routePoint, visibleProjects } from "./atlas-connections";
 
 type AtlasElements = {
   stage: HTMLDivElement;
@@ -14,7 +15,7 @@ type AtlasElements = {
   scale: HTMLSpanElement;
   popup: HTMLElement;
 };
-type Marker = { element: HTMLButtonElement; width: number; visible: boolean; anchor: number };
+type Marker = { element: HTMLElement; width: number; visible: boolean; anchor: number };
 type Motion = { start: number; from: Camera; to: Camera; duration: number };
 type Pointer = { x: number; y: number; pointerId: number; pointerType: string };
 
@@ -58,7 +59,7 @@ export function createAtlasScene(
   let quality = 1;
   let slowFrames = 0;
   let healthyFrames = 0;
-  let popupSide = 1;
+  let popupSlot = 0;
   let popupWidth = 0;
   let popupHeight = 0;
   let frameId = 0;
@@ -78,7 +79,7 @@ export function createAtlasScene(
   let lastGesture: GestureSample | null = null;
   let dragged = false;
 
-  for (const element of labels.querySelectorAll<HTMLButtonElement>("[data-atlas-marker]")) {
+  for (const element of labels.querySelectorAll<HTMLElement>("[data-atlas-marker]")) {
     marks.set(element.dataset.atlasMarker!, { element, width: 0, visible: false, anchor: 0 });
   }
 
@@ -111,7 +112,8 @@ export function createAtlasScene(
   const displayLabels = (state: SceneFrame) => {
     const regionIndex = territoryIndex(selection);
     const amount = regionIndex < 0 ? 1 : expansion[regionIndex];
-    const labelKey = [width,height,camera.x,camera.y,camera.z,currentLens,selection?.id,selection?.type,amount.toFixed(2),popupWidth,popupHeight].join("/");
+    const settledOverview = !selection && fitted && !motion;
+    const labelKey = [width,height,camera.x,camera.y,camera.z,currentLens,selection?.id,selection?.type,amount.toFixed(2),popupWidth,popupHeight,settledOverview].join("/");
     if (labelView === labelKey) return;
     labelView = labelKey;
     const skills = visibleSkills(selection);
@@ -121,26 +123,47 @@ export function createAtlasScene(
         const index=TERRITORIES_BY_ID.get(skill.territoryId)!.index;
         if(index!==regionIndex && (width<600 || counted.has(index)))return [];
         counted.add(index);
-        return [{key:"skill-"+skill.id,position:skillPose(skill,expansion[index]),pinned:selection?.id===skill.id}];
+        return [{key:"skill-"+skill.id,position:connectedSkillPose(skill,state),pinned:selection?.id===skill.id}];
       })
       : ATLAS_TERRITORIES.map(region => ({key:"territory-"+region.id,position:landmarkPositions[region.index],pinned:false}));
+    if (regionIndex >= 0) {
+      const region = ATLAS_TERRITORIES[regionIndex];
+      candidates.splice(selection?.type === "skill" ? 1 : 0, 0, {key:"territory-"+region.id,position:landmarkPositions[region.index],pinned:false});
+      candidates.splice(2, 0, ...visibleProjects(selection).map(project => ({key:"project-"+project.href,position:project.position,pinned:false})));
+    }
     const accepted: {l:number; r:number; t:number; b:number}[] = [];
     const shown = new Set<string>();
     if (popupWidth && window.innerWidth >= 864 && selection) {
       const focus = selection.type === "skill" ? SKILLS_BY_ID.get(selection.id) : null;
       const anchor = screenPoint(focus ? skillPose(focus,amount) : landmarkPositions[regionIndex],state);
       const inset = Math.max(12,width*.027);
-      const neat = (side:number) => clamp(side===1?anchor.x+56:anchor.x-popupWidth-56,inset,width-inset-popupWidth);
-      const left=neat(-1),right=neat(1);
-      const score = (x:number) => candidates.reduce((sum,item)=>{
-        const p=screenPoint(item.position,state);
-        return sum+(p.x>x-10&&p.x<x+popupWidth+10?item.pinned?12:1:0);
-      },0);
-      const alt = popupSide===1?left:right;
-      const current = popupSide===1?right:left;
-      if(score(alt)+2<score(current))popupSide*=-1;
-      const x=popupSide===1?right:left;
-      const y=clamp(anchor.y-popupHeight*.43,15,Math.max(15,height-popupHeight-15));
+      const left=clamp(anchor.x-popupWidth-69,inset,width-inset-popupWidth);
+      const right=clamp(anchor.x+69,inset,width-inset-popupWidth);
+      const top=clamp(anchor.y-popupHeight-42,15,Math.max(15,height-popupHeight-15));
+      const bottom=clamp(anchor.y+42,15,Math.max(15,height-popupHeight-15));
+      const middle=clamp(anchor.y-popupHeight*.44,15,Math.max(15,height-popupHeight-15));
+      const zones=[
+        {x:right,y:middle},{x:left,y:middle},{x:right,y:top},{x:left,y:top},{x:right,y:bottom},{x:left,y:bottom},
+        {x:inset,y:middle},{x:width-inset-popupWidth,y:middle},
+      ];
+      const linkSamples=connectionsFor(selection,-1).filter(link=>link.weight>.4).flatMap(link=>{
+        const a=connectionEndpoint(link.a,state),b=connectionEndpoint(link.b,state);
+        return [.2,.4,.6,.8].map(t=>screenPoint(routePoint(a,b,t,link.bridge),state));
+      });
+      const score=({x,y}:Point)=>{
+        const contains=(p:Point,margin:number)=>p.x>x-margin&&p.x<x+popupWidth+margin&&p.y>y-margin&&p.y<y+popupHeight+margin;
+        return (contains(anchor,36)?32:0)
+          + candidates.reduce((sum,item)=>sum+(contains(screenPoint(item.position,state),25)?item.pinned?18:2:0),0)
+          + linkSamples.filter(p=>contains(p,4)).length*.65
+          + Math.abs(y-middle)*.012
+          + Math.min(Math.abs(x-left),Math.abs(x-right))*.009;
+      };
+      let best=score(zones[popupSlot]);
+      zones.forEach((zone,index)=>{
+        const cost=score(zone)+.9;
+        if(cost<best){popupSlot=index;best=cost;}
+      });
+      const {x,y}=zones[popupSlot];
       popup.style.setProperty("--popup-x",x.toFixed(1)+"px");
       popup.style.setProperty("--popup-y",y.toFixed(1)+"px");
       accepted.push({l:x-7,r:x+popupWidth+7,t:y-7,b:y+popupHeight+7});
@@ -153,7 +176,7 @@ export function createAtlasScene(
       const region = target.key.startsWith("territory");
       // Keep labels close to their anchors. Prefer their previous arrangement as the camera passes thresholds.
       const offsets = region ? [[0, -24], [0, 22], [13, 0], [-13, 0]] : [[0, -20], [0, 22], [13, 0], [-13, 0]];
-      const placements = [mark.anchor, ...offsets.keys()].filter((value, i, all) => all.indexOf(value) === i);
+      const placements = settledOverview ? offsets.keys() : new Set([mark.anchor, ...offsets.keys()]);
       for (const index of placements) {
         const [dx, dy] = offsets[index];
         const x = position.x + dx + (index < 2 ? 0 : (index === 2 ? 0.5 : -0.5) * mark.width);
@@ -321,7 +344,7 @@ export function createAtlasScene(
     if (fitted || wasUnmeasured) camera = fit();
     else {
       const [min,max] = zoomLimits();
-      camera = constrainPan(resizeCamera(camera, 1, 1, min, max), OVERVIEW_BOUNDS, world);
+      camera = constrainPan(resizeCamera(camera, 1, 1, min, max), PAN_BOUNDS, world);
     }
     motion = null;
     for (const mark of marks.values()) mark.width = 0;
@@ -385,7 +408,7 @@ export function createAtlasScene(
 
   function move(from: GestureSample, to: GestureSample) {
     const [min,max] = zoomLimits();
-    camera = constrainPan(moveCamera(camera, from, to, min, max), OVERVIEW_BOUNDS, world);
+    camera = constrainPan(moveCamera(camera, from, to, min, max), PAN_BOUNDS, world);
     fitted = false;
     schedule();
   }
@@ -425,7 +448,7 @@ export function createAtlasScene(
       expandStart=now;
       selection = next;
       hover=-1;
-      popupSide=1;
+      popupSlot=0;
       if(next){
         const region=territoryIndex(next);
         if(region>=0)force({x:0,y:0},1.24,now,landmarkPositions[region]);
@@ -434,7 +457,7 @@ export function createAtlasScene(
       dragged = false;
       fitted = true;
       signalStart = next ? now : -1;
-      animateTo(fit(), next ? 690 : 620);
+      animateTo(fit(), next ? 625 : 530);
     },
     scaleBy(factor: number, point?: Point) {
       motion = null;

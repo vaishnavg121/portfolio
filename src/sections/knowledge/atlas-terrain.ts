@@ -4,7 +4,7 @@ import { ATLAS_TERRITORIES } from "./atlas-model";
 const TILE_SIZE = 416;
 const TILE_RADIUS = 3;
 export const FOG_NEAR = 515;
-export const FOG_FAR = TILE_SIZE * TILE_RADIUS - 40;
+export const FOG_FAR = TILE_SIZE * TILE_RADIUS - 120;
 const STRIDE = 8;
 const seed = (n: number) => {
   const value = Math.sin(n * 127.1 + 311.7) * 43758.5453123;
@@ -20,12 +20,12 @@ export function terrainCenter({ camera, perspective }: SceneFrame) {
 
 export function createTerrainTiles(detailed: boolean) {
   const tiles = new Map<string, Float32Array>();
-  const subdivisions = detailed ? 5 : 4;
+  const subdivisions = detailed ? 5 : 3;
   const cachedMargin = 18;
-  const cellsPerTile = 26;
+  const cellsPerTile = 20;
   const cellSize = TILE_SIZE / cellsPerTile;
   const step = cellSize / subdivisions;
-  let windowKey = "";
+  let windowX = Infinity, windowY = Infinity;
   let field: Float32Array<ArrayBuffer> = new Float32Array(0);
 
   function tile(tx: number, ty: number) {
@@ -39,19 +39,21 @@ export function createTerrainTiles(detailed: boolean) {
     const points: number[] = [];
     for (let iy = 0; iy < cellsPerTile; iy++) for (let ix = 0; ix < cellsPerTile; ix++) {
       const gx = tx * cellsPerTile + ix, gy = ty * cellsPerTile + iy;
-      const x = gx * cellSize, y = gy * cellSize;
+      const x = gx * cellSize - TILE_SIZE / 2, y = gy * cellSize - TILE_SIZE / 2;
       const hash = gx * 67.34 + gy * 191.47;
       const distance = Math.hypot(x / 565, y / 463);
       const detail = clamp((1.47 - distance) / .61);
-      const first = Math.floor(seed(hash + 8) * subdivisions ** 2);
-      for (let n = 0; n < subdivisions ** 2; n++) {
+      const samples = subdivisions ** 2;
+      const first = Math.floor(seed(hash + 8) * samples);
+      for (let i = 0; i < (detail > 0 ? samples : 1); i++) {
+        const n = (first + i) % samples;
         const phase = seed(hash + n * 1.62 + 1);
         if (n !== first && phase > detail * .82) continue;
         const px = x + (n % subdivisions + seed(hash + n * 3.17 + 4)) * step;
         const py = y + (Math.floor(n / subdivisions) + seed(hash + n * 2.63 + 7)) * step;
         const { z, relief, region } = heightField(px, py);
         const contour = .5 + .5 * Math.cos(z * .20 + Math.sin(px * .018 + py * .021) * .68);
-        const opacity = (.17 + relief * .41 + detail * .12) * (.62 + contour * .21 + phase * .38);
+        const opacity = (.19 + relief * .43 + detail * .14) * (.62 + contour * .21 + phase * .38);
         const size = .86 + .81 * phase + (1 - detail) * .82;
         points.push(px, py, z, region, opacity, size, 0, phase);
       }
@@ -63,27 +65,39 @@ export function createTerrainTiles(detailed: boolean) {
   }
 
   return (x: number, y: number) => {
-    const tx = Math.floor(x / TILE_SIZE), ty = Math.floor(y / TILE_SIZE);
-    const key = tx + "/" + ty;
-    if (windowKey === key) return field;
-    windowKey = key;
+    const positionX = x / TILE_SIZE, positionY = y / TILE_SIZE;
+    // Keep a margin around each tile center so small pointer changes don't rebuild the field.
+    const margin = .68;
+    const tx = Math.abs(positionX - windowX) <= margin ? windowX : Math.round(positionX);
+    const ty = Math.abs(positionY - windowY) <= margin ? windowY : Math.round(positionY);
+    if (windowX === tx && windowY === ty) return field;
+    windowX = tx;
+    windowY = ty;
     const visible: Float32Array[] = [];
     for (let iy = ty - TILE_RADIUS; iy <= ty + TILE_RADIUS; iy++) {
-      for (let ix = tx - TILE_RADIUS; ix <= tx + TILE_RADIUS; ix++) visible.push(tile(ix, iy));
+      for (let ix = tx - TILE_RADIUS; ix <= tx + TILE_RADIUS; ix++) {
+        const gapX = Math.max(0, Math.abs(ix - tx) - .5 - margin) * TILE_SIZE;
+        const gapY = Math.max(0, Math.abs(iy - ty) - .5 - margin) * TILE_SIZE;
+        if (Math.hypot(gapX, gapY) < FOG_FAR) visible.push(tile(ix, iy));
+      }
     }
     const length = visible.reduce((sum, points) => sum + points.length, 0);
     field = new Float32Array(length);
     // Interleave every tile by phase so reducing the draw count thins the whole surface.
     const bands = 6;
+    const bandFor = (phase: number) => {
+      const value = phase * 851.147;
+      return Math.floor((value - Math.floor(value)) * bands);
+    };
     const counts = new Uint32Array(bands);
     for (const points of visible) {
-      for (let i = 0; i < points.length; i += STRIDE) counts[Math.min(bands - 1, Math.floor(points[i + 7] * bands))]++;
+      for (let i = 0; i < points.length; i += STRIDE) counts[bandFor(points[i + 7])]++;
     }
     const offsets = new Uint32Array(bands);
     for (let i = 1; i < bands; i++) offsets[i] = offsets[i - 1] + counts[i - 1] * STRIDE;
     for (const points of visible) {
       for (let i = 0; i < points.length; i += STRIDE) {
-        const band = Math.min(bands - 1, Math.floor(points[i + 7] * bands));
+        const band = bandFor(points[i + 7]);
         for (let j = 0; j < STRIDE; j++) field[offsets[band] + j] = points[i + j];
         offsets[band] += STRIDE;
       }
