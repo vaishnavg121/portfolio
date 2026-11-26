@@ -1,9 +1,7 @@
 "use client";
 
-import { useRef } from 'react';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
-import { useReducedMotion } from 'framer-motion';
+import { useState, type CSSProperties } from 'react';
+import { MoveRight } from 'lucide-react';
 
 // --- CUSTOM SYMBOLS (25-38% of card area, animated via CSS) ---
 
@@ -96,44 +94,77 @@ const CARDS = [
   { id: 'contact', title: 'CONTACT', subtitle: 'LET’S CONNECT', num: '04', Icon: IconContact }
 ];
 
-export const HeroCards = () => {
-  const containerRef = useRef<HTMLElement>(null);
-  const reduced = useReducedMotion();
+// The original deck offset each card across the same stage and fanned its neighbors out on selection.
+const RESTING_ROTATIONS = [-2, 1, -1, 2];
 
-  useGSAP(() => {
-    const media = gsap.matchMedia();
-    media.add("(prefers-reduced-motion: no-preference)", () => {
-      gsap.fromTo(".hero-card", { y: 7, opacity: 0.84 }, {
-        y: 0, opacity: 1, delay: 0.22, duration: 0.43, stagger: 0.055,
-        ease: "power3.out", clearProps: "transform,opacity",
-      });
-    });
-    return () => media.revert();
-  }, { scope: containerRef });
+export const HeroCards = () => {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const [focused, setFocused] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
+  const active = hovered ?? focused ?? selected;
+  const compactActive = active ?? 0;
 
   return (
-    <nav ref={containerRef} className="hero-deck grid w-full grid-cols-2 gap-2.5 sm:grid-cols-4" aria-label="Quick Navigation">
-      {CARDS.map(card => (
-        <button
+    <nav
+      className="hero-deck"
+      aria-label="Quick Navigation"
+      onPointerLeave={() => setHovered(null)}
+      onBlur={event => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setFocused(null);
+      }}
+    >
+      {CARDS.map((card, index) => (
+        <div
           key={card.id}
-          type="button"
-          className="hero-card group relative flex min-w-0 flex-col justify-between overflow-hidden rounded-sm border p-3 text-left focus-visible:outline-1 focus-visible:outline-accent active:border-accent sm:p-3.5 lg:p-4"
-          onClick={() => document.getElementById(card.id)?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" })}
-          aria-label={`Scroll to ${card.title}`}
+          className="hero-card group"
+          data-active={active === index ? "" : undefined}
+          data-direction={active === null ? undefined : Math.sign(index - active)}
+          data-next={active !== null && index === active + 1 ? "" : undefined}
+          data-compact-active={compactActive === index ? "" : undefined}
+          data-compact-after={index > compactActive ? "" : undefined}
+          style={{
+            "--deck-order": index,
+            "--deck-progress": index / (CARDS.length - 1),
+            "--deck-turn": `${RESTING_ROTATIONS[index]}deg`,
+            "--deck-settle": index % 2 === 0 ? "6px" : "15px",
+          } as CSSProperties}
+          onPointerMove={event => {
+            if (event.pointerType === "mouse" && window.matchMedia("(width >= 43rem) and (hover: hover) and (pointer: fine)").matches) {
+              setHovered(index);
+            }
+          }}
         >
-          <span className="font-mono text-[10px] tracking-widest text-accent/80">{card.num}</span>
-          <div className="hero-card-symbol pointer-events-none absolute" aria-hidden="true">
-            <card.Icon />
+          <div className="hero-card-heading">
+            <span className="hero-card-number">{card.num}</span>
+            <span className="hero-card-title">{card.title}</span>
           </div>
-          <div className="relative mt-auto">
-            <div className="mb-1.5 h-px w-5 bg-white/20 group-hover:bg-accent/70" />
-            <span className="block font-display text-xs tracking-wide text-text-primary lg:text-[0.935rem]">{card.title}</span>
-            <div className="mt-1 flex items-start justify-between gap-1">
-              <span className="font-mono text-[9px] leading-snug tracking-wide text-text-muted xl:text-[10px]">{card.subtitle}</span>
-              <span aria-hidden="true" className="font-mono text-xs leading-none text-accent">↗</span>
-            </div>
-          </div>
-        </button>
+          <div className="hero-card-symbol" aria-hidden="true"><card.Icon /></div>
+          <span className="hero-card-subtitle">{card.subtitle}</span>
+          <button
+            type="button"
+            className="hero-card-select"
+            aria-label={`Select ${card.title}`}
+            aria-pressed={compactActive === index}
+            onClick={() => setSelected(index)}
+          />
+          <a
+            className="hero-card-open"
+            href={`#${card.id}`}
+            aria-label={`Go to ${card.title}`}
+            onFocus={event => {
+              if (event.currentTarget.matches(":focus-visible")) {
+                setHovered(null);
+                setFocused(index);
+              }
+            }}
+            onClick={() => {
+              setHovered(null);
+              setFocused(null);
+            }}
+          >
+            <MoveRight size={16} aria-hidden="true" />
+          </a>
+        </div>
       ))}
     </nav>
   );
