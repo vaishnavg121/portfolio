@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 535" fill="none">
+  <defs>
+    <linearGradient id="silk" x1="18" y1="353" x2="1107" y2="113" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#cea79d" stop-opacity="0"/>
+      <stop offset=".14" stop-color="#cea79d" stop-opacity=".67"/>
+      <stop offset=".39" stop-color="#c7a8b5" stop-opacity=".35"/>
+      <stop offset=".68" stop-color="#ad95a8" stop-opacity=".12"/>
+      <stop offset=".85" stop-color="#cfb5a0" stop-opacity=".36"/>
+      <stop offset="1" stop-color="#cfb5a0" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <g stroke="url(#silk)" stroke-width=".79">
+    <path d="M-18 487C130 440 151 292 270 272c168-28 215 110 399 38 146-56 187-217 477-192"/>
+    <path d="M-40 472c157-41 173-195 298-218 169-31 227 106 406 37 146-56 194-211 476-191"/>
+    <path d="M-42 458c151-45 154-190 280-220 160-39 241 106 422 35 139-55 189-205 473-190"/>
+    <path d="M-54 442c145-33 159-187 271-217 178-49 261 110 435 31 145-66 191-200 484-190"/>
+    <path d="M-53 426c128-30 142-182 251-217 181-58 284 106 450 27 141-67 195-194 488-183"/>
+    <path d="M-59 409C60 377 71 236 176 194c175-70 282 105 466 24C788 154 843 28 1120 38"/>
+    <path d="M-65 393C44 370 60 224 154 178c172-84 299 106 481 25C779 139 825 10 1130 25"/>
+    <path d="M-73 372C31 350 44 215 133 164c156-90 319 106 498 22C775 118 832-5 1123 12"/>
+  </g>
+</svg>

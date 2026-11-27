@@ -5,6 +5,7 @@ import { ExperienceTimeline } from "@/sections/ExperienceTimeline";
 import { ThriveForceSection } from "@/sections/robotics/ThriveForceSection";
 import { EngineeringNotes } from "@/sections/EngineeringNotes";
 import { ContactFooter } from "@/sections/ContactFooter";
+import "./atmosphere.css";
 
 export default function Home() {
   return (
