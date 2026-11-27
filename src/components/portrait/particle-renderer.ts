@@ -25,7 +25,7 @@ void main() {
     vec2 curl = vec2(.63, -.77) * cos(phase + uTime * .74)
       + vec2(.86, .51) * sin(crossPhase - uTime * .43) * .52;
     float drift = sin(phase * .68 + uTime * .58);
-    position.xy += (curl * .43 + aFlow.xy * drift * .94) * aFlow.z;
+    position.xy += (curl * .43 + aFlow.xy * drift * 1.88) * aFlow.z;
     position.z += sin(crossPhase + uTime * .65) * aFlow.z * .76;
   }
   float x = position.x * uCamera.x + position.z * uCamera.y;
@@ -55,6 +55,7 @@ void main() {
   if (peripheral) {
     vec2 edge = abs(gl_Position.xy);
     alpha *= (1. - smoothstep(.79, .995, max(edge.x, edge.y)));
+    alpha *= mix(.73, 1., smoothstep(-.34, .15, z / size));
   }
   vInk = vec4(warm, alpha);
 }
@@ -101,7 +102,6 @@ function link(gl: WebGLRenderingContext) {
 }
 
 export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuffer) {
-  const field = createParticleField(data);
   const gl = canvas.getContext("webgl", {
     alpha: true,
     antialias: false,
@@ -110,6 +110,7 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
     powerPreference: "low-power",
   });
   if (!gl) return null;
+  const field = createParticleField(data);
   const program = link(gl);
   if (!program) return null;
 
@@ -158,7 +159,7 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
   gl.bindBuffer(gl.ARRAY_BUFFER, flow);
   gl.bufferData(gl.ARRAY_BUFFER, field.flow, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(flowAttribute);
-  gl.vertexAttribPointer(flowAttribute, 3, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribPointer(flowAttribute, 3, gl.BYTE, true, 0, 0);
   gl.bindBuffer(gl.ARRAY_BUFFER, position);
   gl.bufferData(gl.ARRAY_BUFFER, field.positions, gl.DYNAMIC_DRAW);
   gl.enableVertexAttribArray(positionAttribute);

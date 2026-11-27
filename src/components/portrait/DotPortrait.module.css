@@ -1,11 +1,21 @@
 .portrait {
   --portrait-bleed: 10%;
+  --portrait-shade: 25%;
   position: relative;
   width: 100%;
   aspect-ratio: 1;
   margin: 0;
   touch-action: pan-y pinch-zoom;
   user-select: none;
+}
+
+.portrait::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 29% 36% at 61% 34%,
+    color-mix(in srgb, var(--background) var(--portrait-shade), transparent) 8%, transparent);
 }
 
 .picture,
@@ -16,6 +26,7 @@
   height: 100%;
 }
 
+.picture { position: relative; }
 .picture img { pointer-events: none; }
 
 .surface {
@@ -27,7 +38,7 @@
   pointer-events: none;
 }
 @media (width >= 64rem) {
-  .portrait { --portrait-bleed: 15%; }
+  .portrait { --portrait-bleed: 15%; --portrait-shade: 39%; }
 }
 
 .portrait[data-dot-ready] .picture { opacity: 0; }

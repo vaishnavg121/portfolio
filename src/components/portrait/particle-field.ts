@@ -7,6 +7,7 @@ const YAW_RANGE = 0.205;
 const PITCH_RANGE = 0.145;
 const CAMERA_DRAG = 0.873;
 const QUIET = 0.009;
+const FLOW_DIRECTION_SCALE = 127 / 2;
 
 export type Disturbance = {
   x: number;
@@ -38,7 +39,7 @@ export function createParticleField(data: ArrayBuffer) {
   const velocities = new Float32Array(home.length);
   const targets = new Float32Array(home.length);
   const inks = new Float32Array(home.length);
-  const flow = new Float32Array(home.length);
+  const flow = new Int8Array(home.length);
   const normals = new Float32Array(count * 2);
   const springs = new Float32Array(count);
   const damping = new Float32Array(count);
@@ -84,9 +85,10 @@ export function createParticleField(data: ArrayBuffer) {
     inks[slot] = -.01 - .98 * tone;
     inks[slot + 1] = opacity;
     inks[slot + 2] = radius;
-    flow[slot] = flowX;
-    flow[slot + 1] = flowY;
-    flow[slot + 2] = mobility;
+    // Direction spans ±2 units and mobility 0–1. The shader reads normalized bytes.
+    flow[slot] = Math.round(flowX * FLOW_DIRECTION_SCALE);
+    flow[slot + 1] = Math.round(flowY * FLOW_DIRECTION_SCALE);
+    flow[slot + 2] = Math.round(mobility * 127);
     springs[index] = .099 + .035 * opacity;
     damping[index] = .889;
   }
@@ -198,12 +200,13 @@ export function createParticleField(data: ArrayBuffer) {
       const distance = Math.sqrt(distanceSquared);
       let envelope = 1 - distanceSquared / reachSquared;
       if (force.pulse !== undefined) envelope *= Math.max(0, 1 - Math.abs(distance - waveRadius) / (reach * .45));
-      const mobility = flow[slot + 2];
+      const flowX = flow[slot] / FLOW_DIRECTION_SCALE, flowY = flow[slot + 1] / FLOW_DIRECTION_SCALE;
+      const mobility = flow[slot + 2] / 127;
       const pressure = envelope * envelope * force.strength * (.31 + .81 * mobility);
-      const curl = .12 + .11 * (force.vx * flow[slot + 1] - force.vy * flow[slot]);
+      const curl = .12 + .11 * (force.vx * flowY - force.vy * flowX);
       const transport = size * .049;
-      targets[slot] += (dx * .24 - dy * curl + force.vx * transport + flow[slot] * .81) * pressure;
-      targets[slot + 1] += (dy * .24 + dx * curl + force.vy * transport + flow[slot + 1] * .81) * pressure;
+      targets[slot] += (dx * .24 - dy * curl + force.vx * transport + flowX * .81) * pressure;
+      targets[slot + 1] += (dy * .24 + dx * curl + force.vy * transport + flowY * .81) * pressure;
       const lift = force.pulse === undefined ? -.041 : .070;
       targets[slot + 2] += (lift + .018 * mobility * (dy / reach)) * size * pressure;
     }
@@ -224,11 +227,11 @@ export function createParticleField(data: ArrayBuffer) {
       for (let slot = 0; slot < home.length; slot += 3) {
         const index = slot / 3;
         const phase = ((index * 149) % 251) / 251;
-        const mobility = flow[slot + 2];
+        const mobility = flow[slot + 2] / 127;
         const spread = 1 + phase * .033;
         const drift = size * mobility * (.019 + .043 * phase);
-        positions[slot] = home[slot] * spread + flow[slot] * drift;
-        positions[slot + 1] = home[slot + 1] * spread + flow[slot + 1] * drift;
+        positions[slot] = home[slot] * spread + flow[slot] / FLOW_DIRECTION_SCALE * drift;
+        positions[slot + 1] = home[slot + 1] * spread + flow[slot + 1] / FLOW_DIRECTION_SCALE * drift;
         positions[slot + 2] = home[slot + 2] - size * (.024 + .061 * phase) + drift * .32;
       }
     },
