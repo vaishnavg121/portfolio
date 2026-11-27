@@ -13,6 +13,8 @@ export type Disturbance = {
   y: number;
   strength: number;
   tilt: number;
+  vx: number;
+  vy: number;
   pulse?: number;
 };
 
@@ -151,12 +153,12 @@ export function createParticleField(data: ArrayBuffer) {
     const centerY = home[hit + 1];
     const centerZ = home[hit + 2];
     const pulse = force.pulse;
-    const reach = size * (pulse === undefined ? 0.145 : 0.197);
+    const reach = size * (pulse === undefined ? 0.136 : 0.197);
     const waveRadius = pulse === undefined ? 0 : reach * pulse;
     const scale = force.strength * size;
     const rangeSquared = reach * reach;
 
-    for (let slot = 0; slot < home.length; slot += 3) {
+    for (let slot = 0; slot < coreCount * 3; slot += 3) {
       const dx = home[slot] - centerX;
       const dy = home[slot + 1] - centerY;
       const dz = home[slot + 2] - centerZ;
@@ -166,10 +168,11 @@ export function createParticleField(data: ArrayBuffer) {
       const distance = Math.sqrt(distanceSquared);
       let envelope = 1 - distance / reach;
       if (pulse !== undefined) envelope *= Math.max(0, 1 - Math.abs(distance - waveRadius) / (reach * 0.38));
-      const amount = scale * envelope * envelope;
-      const direction = amount * 0.035 / Math.max(distance, 0.01);
-      const lift = amount * (pulse === undefined ? -0.043 : 0.078);
-      const n = slot / 3 * 2;
+      const index = slot / 3;
+      const amount = scale * envelope * envelope * (.56 + .44 * edge[index]);
+      const direction = amount * .031 / Math.max(distance, .01);
+      const lift = amount * (pulse === undefined ? -.042 : .068);
+      const n = index * 2;
       targets[slot] += dx * direction + lift * normals[n] * 0.65;
       targets[slot + 1] += dy * direction + lift * normals[n + 1] * 0.65;
       targets[slot + 2] += dz * direction + lift;
@@ -178,17 +181,31 @@ export function createParticleField(data: ArrayBuffer) {
 
   function disturbFringe(force: Disturbance) {
     const cursorX = (force.x - .5) * size, cursorY = force.y * size - centerY;
-    const reach = size * .188;
+    const reach = size * (force.pulse === undefined ? .19 : .225);
+    const waveRadius = reach * (force.pulse ?? 0);
+    const reachSquared = reach * reach;
+    const [cosYaw, sinYaw, cosPitch, sinPitch] = camera;
+
     for (let slot = coreCount * 3; slot < home.length; slot += 3) {
-      const depth = home[slot + 2];
-      const zoom = focal / (focal - depth);
-      const dx = home[slot] * zoom - cursorX, dy = home[slot + 1] * zoom - cursorY;
-      const weight = Math.max(0, 1 - (dx * dx + dy * dy) / (reach * reach));
-      if (!weight) continue;
-      const push = weight * weight * force.strength;
-      targets[slot] += dx * .29 * push + .48 * push;
-      targets[slot + 1] += dy * .26 * push - 1.45 * push;
-      targets[slot + 2] -= (force.pulse === undefined ? .032 : .048) * size * push;
+      const x = home[slot], y = home[slot + 1], z = home[slot + 2];
+      const yawDepth = z * cosYaw - x * sinYaw;
+      const zoom = focal / (focal - y * sinPitch - yawDepth * cosPitch);
+      const dx = (x * cosYaw + z * sinYaw) * zoom - cursorX;
+      const dy = (y * cosPitch - yawDepth * sinPitch) * zoom - cursorY;
+      const distanceSquared = dx * dx + dy * dy;
+      if (distanceSquared >= reachSquared) continue;
+
+      const distance = Math.sqrt(distanceSquared);
+      let envelope = 1 - distanceSquared / reachSquared;
+      if (force.pulse !== undefined) envelope *= Math.max(0, 1 - Math.abs(distance - waveRadius) / (reach * .45));
+      const mobility = flow[slot + 2];
+      const pressure = envelope * envelope * force.strength * (.31 + .81 * mobility);
+      const curl = .12 + .11 * (force.vx * flow[slot + 1] - force.vy * flow[slot]);
+      const transport = size * .049;
+      targets[slot] += (dx * .24 - dy * curl + force.vx * transport + flow[slot] * .81) * pressure;
+      targets[slot + 1] += (dy * .24 + dx * curl + force.vy * transport + flow[slot + 1] * .81) * pressure;
+      const lift = force.pulse === undefined ? -.041 : .070;
+      targets[slot + 2] += (lift + .018 * mobility * (dy / reach)) * size * pressure;
     }
   }
 
@@ -207,16 +224,18 @@ export function createParticleField(data: ArrayBuffer) {
       for (let slot = 0; slot < home.length; slot += 3) {
         const index = slot / 3;
         const phase = ((index * 149) % 251) / 251;
-        const spread = 1 + phase * 0.105;
-        positions[slot] = home[slot] * spread;
-        positions[slot + 1] = home[slot + 1] * spread;
-        positions[slot + 2] = home[slot + 2] - size * (0.04 + 0.135 * phase);
+        const mobility = flow[slot + 2];
+        const spread = 1 + phase * .033;
+        const drift = size * mobility * (.019 + .043 * phase);
+        positions[slot] = home[slot] * spread + flow[slot] * drift;
+        positions[slot + 1] = home[slot + 1] * spread + flow[slot + 1] * drift;
+        positions[slot + 2] = home[slot + 2] - size * (.024 + .061 * phase) + drift * .32;
       }
     },
     advance(step: number, force: Disturbance | null) {
       accumulated = Math.min(2.5, accumulated + step);
       const ticks = Math.floor(accumulated / TICK);
-      if (!ticks) return true;
+      if (!ticks) return "waiting";
       accumulated -= ticks * TICK;
 
       const tilt = force?.tilt ?? 0;
@@ -253,7 +272,7 @@ export function createParticleField(data: ArrayBuffer) {
         }
       }
       if (!moving) accumulated = 0;
-      return moving;
+      return moving ? "moving" : "settled";
     },
   };
 }

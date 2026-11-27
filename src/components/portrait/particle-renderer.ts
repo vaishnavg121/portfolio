@@ -198,9 +198,9 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
     for (let i = 0; i < field.count; i++) order[counts[buckets[i]]++] = i;
   }
 
-  const paintAmbient = () => {
+  const paintAmbient = (elapsed: number) => {
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.uniform1f(time, performance.now() / 1000);
+    gl.uniform1f(time, elapsed);
     gl.drawElements(gl.POINTS, field.count, gl.UNSIGNED_SHORT, 0);
   };
 
@@ -215,13 +215,13 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
       gl.uniform1f(pixelScale, Math.min(w, h) * fit / field.size);
       gl.uniform1f(framing, fit);
     },
-    paint() {
+    paint(elapsed: number) {
       sortBackToFront();
       gl.uniform4fv(camera, field.camera);
       gl.bindBuffer(gl.ARRAY_BUFFER, position);
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, field.positions);
       gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, order);
-      paintAmbient();
+      paintAmbient(elapsed);
     },
     paintAmbient,
     advance(step: number, force: Disturbance | null) {

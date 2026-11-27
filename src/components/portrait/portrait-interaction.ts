@@ -29,12 +29,20 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
   let frame = 0;
   let ambientTimer = 0;
   let lastFrame = 0;
+  let lastPaint = 0;
+  let elapsed = 0;
   let contact: Contact | undefined;
   let pointer: Disturbance | null = null;
   let pointerSample: { x: number; y: number; time: number } | undefined;
   let tap: { point: Disturbance; until: number } | undefined;
 
   const canPresent = () => visible && !document.hidden && !reduced.matches;
+
+  function animationTime(now: number) {
+    if (lastPaint) elapsed += Math.max(0, Math.min(.15, (now - lastPaint) / 1000));
+    lastPaint = now;
+    return elapsed;
+  }
 
   function schedule() {
     window.clearTimeout(ambientTimer);
@@ -47,7 +55,7 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     ambientTimer = window.setTimeout(() => {
       ambientTimer = 0;
       if (!presented || !renderer || !canPresent()) return;
-      renderer.paintAmbient();
+      renderer.paintAmbient(animationTime(performance.now()));
       idle();
     }, wide.matches ? 65 : 100);
   }
@@ -60,14 +68,18 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     lastFrame = now;
     if (tap && now >= tap.until) tap = undefined;
     let force = pointer;
+    if (pointer && pointerSample) {
+      const wake = Math.exp(-Math.max(0, now - pointerSample.time) / 95);
+      force = { ...pointer, vx: pointer.vx * wake, vy: pointer.vy * wake };
+    }
     if (tap) {
       const progress = Math.max(0, 1 - (tap.until - now) / TAP_MS);
       force = { ...tap.point, strength: tap.point.strength * (1 - progress * progress), pulse: progress };
     }
-    const moving = renderer.advance(step, force);
-    renderer.paint();
+    const state = renderer.advance(step, force);
+    if (state !== "waiting") renderer.paint(animationTime(now));
 
-    if (moving || tap) schedule();
+    if (state !== "settled" || tap) schedule();
     else {
       lastFrame = 0;
       idle();
@@ -87,6 +99,7 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     ambientTimer = 0;
     frame = 0;
     lastFrame = 0;
+    lastPaint = 0;
     presented = false;
     resetInput();
     renderer?.reset();
@@ -105,7 +118,7 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     if (!width || !height) return;
     const portrait = root.getBoundingClientRect();
     renderer.resize(width, height, Math.min(portrait.width / width, portrait.height / height));
-    renderer.paint();
+    renderer.paint(animationTime(performance.now()));
   }
 
   function present() {
@@ -187,11 +200,32 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
       y: (event.clientY - box.top) / box.height,
       strength,
       tilt,
+      vx: 0,
+      vy: 0,
     };
   }
 
+  function follow(event: PointerEvent, point: Disturbance) {
+    const time = event.timeStamp;
+    if (pointerSample) {
+      const duration = Math.max(6, time - pointerSample.time) * 2.3;
+      point.vx = Math.max(-1, Math.min(1, (event.clientX - pointerSample.x) / duration));
+      point.vy = Math.max(-1, Math.min(1, (event.clientY - pointerSample.y) / duration));
+    }
+    pointerSample = { x: event.clientX, y: event.clientY, time };
+    pointer = point;
+    schedule();
+  }
+
   function onPress(event: PointerEvent) {
-    if (!presented || !event.isPrimary) return;
+    if (!presented) return;
+    if (!event.isPrimary) {
+      if (contact && event.pointerType !== "mouse") {
+        resetInput();
+        schedule();
+      }
+      return;
+    }
     if (event.pointerType === "mouse") {
       if (event.button === 0) {
         tap = { point: at(event, 1.20, 0.85), until: performance.now() + TAP_MS };
@@ -200,32 +234,37 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
       return;
     }
     contact = { id: event.pointerId, x: event.clientX, y: event.clientY, direction: "pending" };
+    follow(event, at(event, .43, .17));
+  }
+
+  function onHover(event: PointerEvent) {
+    if (!presented || !event.isPrimary || event.pointerType !== "mouse" || contact) return;
+    const point = at(event, .86, 1);
+    if (point.x < -.13 || point.x > 1.13 || point.y < -.10 || point.y > 1.06) {
+      if (pointer) onLeave(event);
+      return;
+    }
+    follow(event, point);
   }
 
   function onMove(event: PointerEvent) {
     if (!presented || !event.isPrimary) return;
-    if (event.pointerType === "mouse") {
-      const time = event.timeStamp;
-      const speed = pointerSample
-        ? Math.hypot(event.clientX - pointerSample.x, event.clientY - pointerSample.y) / Math.max(4, time - pointerSample.time)
-        : 0;
-      pointerSample = { x: event.clientX, y: event.clientY, time };
-      pointer = at(event, 0.78 + Math.min(0.43, speed * 0.15), 1);
-      schedule();
-      return;
-    }
     if (contact?.id !== event.pointerId) return;
 
     if (contact.direction === "pending") {
       const dx = Math.abs(event.clientX - contact.x);
       const dy = Math.abs(event.clientY - contact.y);
       if (dx >= 8 && dx > dy * 1.3) contact.direction = "horizontal";
-      else if (dy >= 8 && dy >= dx) contact.direction = "vertical";
+      else if (dy >= 8 && dy >= dx) {
+        contact.direction = "vertical";
+        pointer = null;
+        pointerSample = undefined;
+        schedule();
+      }
     }
     if (contact.direction === "horizontal") {
       tap = undefined;
-      pointer = at(event, 0.92, 0.72);
-      schedule();
+      follow(event, at(event, .98, .62));
     }
   }
 
@@ -233,10 +272,11 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     if (contact?.id !== event.pointerId) return;
     const travel = Math.hypot(event.clientX - contact.x, event.clientY - contact.y);
     if (contact.direction === "pending" && travel < 10) {
-      tap = { point: at(event, 1.30), until: performance.now() + TAP_MS };
+      tap = { point: at(event, 1.42, .26), until: performance.now() + TAP_MS };
     }
     contact = undefined;
     pointer = null;
+    pointerSample = undefined;
     schedule();
   }
 
@@ -262,10 +302,12 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
   size.observe(root);
 
   const passive = { signal, passive: true };
+  const hoverArea = root.closest<HTMLElement>("#hero") ?? root;
   root.addEventListener("pointerdown", onPress, passive);
   root.addEventListener("pointermove", onMove, passive);
   root.addEventListener("pointerup", onRelease, passive);
-  root.addEventListener("pointerleave", onLeave, passive);
+  hoverArea.addEventListener("pointermove", onHover, passive);
+  hoverArea.addEventListener("pointerleave", onLeave, passive);
   root.addEventListener("pointercancel", onCancel, passive);
   root.addEventListener("lostpointercapture", onCancel, passive);
   document.addEventListener("visibilitychange", reconcile, { signal });
