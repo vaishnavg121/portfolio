@@ -6,3 +6,4 @@ export const studioBays = [
 ] as const;
 
 export const learningBay = studioBays[3];
+export const learningPhases = ["Ingest observations", "Condition & encode", "Build a forecast", "Route the result"] as const;

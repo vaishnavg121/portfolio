@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ArrowUpRight, ScanLine } from "lucide-react";
 import type { startStudio } from "./studio-runtime";
-import { learningBay, studioBays } from "./studio-plan";
+import { learningBay, learningPhases, studioBays } from "./studio-plan";
 import styles from "./ResearchStudio.module.css";
 
 type Stage = NonNullable<ReturnType<typeof startStudio>>;
@@ -13,10 +14,11 @@ export function ResearchStudio() {
   const canvas = useRef<HTMLCanvasElement>(null);
   const overview = useRef<HTMLButtonElement>(null);
   const runtime = useRef<Stage | null>(null);
-  const touch = useRef<{ id: number; x: number; y: number } | null>(null);
+  const touch = useRef<{ id: number; x: number; y: number; rotating: boolean } | null>(null);
   const [ready, setReady] = useState(false);
   const [focused, setFocused] = useState(false);
   const [hover, setHover] = useState(false);
+  const [phase, setPhase] = useState(0);
 
   useEffect(() => {
     const surface = canvas.current;
@@ -29,7 +31,7 @@ export function ResearchStudio() {
       const token = ++request;
       import("./studio-runtime").then(({ startStudio }) => {
         if (stopped || request !== token || !seen) return;
-        runtime.current = startStudio(surface, () => setReady(true));
+        runtime.current = startStudio(surface, () => setReady(true), setPhase);
         runtime.current?.visible(seen);
       }).catch(() => {
         if (!stopped) setReady(false);
@@ -79,7 +81,8 @@ export function ResearchStudio() {
 
   return (
     <section id="research-studio" className={styles.studio} aria-labelledby="studio-title"
-      data-studio-renderer={ready ? "webgl" : "fallback"} data-studio-view={focused ? "focus" : "overview"}>
+      data-studio-renderer={ready ? "webgl" : "fallback"} data-studio-view={focused ? "focus" : "overview"}
+      onKeyDown={event => { if (event.key === "Escape" && focused) reset(); }}>
       <header className={styles.heading}>
         <div>
           <h2 id="studio-title">The Research Studio</h2>
@@ -91,8 +94,13 @@ export function ResearchStudio() {
           {focused ? "Overview" : "Inspect AI / ML"}
         </button>
       </header>
-      <div className={styles.stage} data-studio-stage data-hover={hover ? "" : undefined}
-        onKeyDown={event => { if (event.key === "Escape" && focused) reset(); }}>
+      <div className={styles.stage} data-studio-stage data-hover={hover ? "" : undefined}>
+        {!ready && <div className={styles.fallback}>
+          <Image fill unoptimized
+            src={focused ? "/images/research-studio/station.webp" : "/images/research-studio/overview.webp"}
+            alt={focused ? "Forecasting workstation showing the sensor manifold, observation chamber, and plot planes"
+              : "A four-bay architectural cutaway with a forecasting workstation in the front bay"} />
+        </div>}
         <canvas ref={canvas} className={styles.canvas} data-studio-canvas aria-hidden
           onPointerMove={event => {
             if (!runtime.current) return;
@@ -100,24 +108,39 @@ export function ResearchStudio() {
               const bounds = event.currentTarget.getBoundingClientRect();
               runtime.current.lean((event.clientX - bounds.left) / bounds.width * 2 - 1);
               const over = runtime.current.hit(event.clientX, event.clientY);
+              runtime.current.highlight(over);
               setHover(value => value === over ? value : over);
+            } else {
+              const start = touch.current;
+              if (start?.id !== event.pointerId) return;
+              const dx = event.clientX - start.x, dy = event.clientY - start.y;
+              if (Math.abs(dx) > 11 && Math.abs(dx) > Math.abs(dy) * 1.4) start.rotating = true;
+              if (start.rotating) runtime.current.lean(Math.max(-.8, Math.min(.8, dx / 135)));
             }
           }}
-          onPointerLeave={() => { runtime.current?.lean(0); setHover(false); }}
+          onPointerLeave={() => { runtime.current?.lean(0); runtime.current?.highlight(false); setHover(false); }}
           onPointerDown={event => {
-            if (event.isPrimary && event.button === 0) touch.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+            if (event.isPrimary && event.button === 0) touch.current = {
+              id: event.pointerId, x: event.clientX, y: event.clientY, rotating: false,
+            };
           }}
-          onPointerCancel={() => { touch.current = null; }}
+          onPointerCancel={() => { touch.current = null; runtime.current?.lean(0); }}
           onPointerUp={event => {
             const start = touch.current;
             touch.current = null;
-            if (start?.id === event.pointerId && Math.hypot(event.clientX - start.x, event.clientY - start.y) < 9
+            if (start?.rotating) runtime.current?.lean(0);
+            if (!start?.rotating && start?.id === event.pointerId && Math.hypot(event.clientX - start.x, event.clientY - start.y) < 9
               && runtime.current?.hit(event.clientX, event.clientY)) inspect();
           }} />
         {focused && <aside id="studio-details" className={styles.details}>
           <p className={styles.kicker}>Conceptual sequence</p>
           <h3>Sensor to forecast</h3>
           <p>Follow observations through conditioning, model inference and a visibility forecast. The animation illustrates the pipeline.</p>
+          <ol className={styles.phases} aria-label="Forecasting stages">
+            {learningPhases.map((label, index) => (
+              <li key={label} aria-current={ready && phase === index ? "step" : undefined} data-studio-phase={index}>{label}</li>
+            ))}
+          </ol>
           <div className={styles.links}>
             <Link className="portfolio-text-link" href="/work/imdpune">Vertical Visibility <ArrowUpRight size={12} aria-hidden /></Link>
             <Link className="portfolio-text-link" href="/work/windy">Windy <ArrowUpRight size={12} aria-hidden /></Link>
