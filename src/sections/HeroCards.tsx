@@ -181,6 +181,10 @@ export const HeroCards = () => {
           onPointerMove={event => {
             if (event.pointerType === "mouse" && window.matchMedia("(width >= 43rem) and (hover: hover) and (pointer: fine)").matches) {
               setHovered(index);
+              const card = event.currentTarget;
+              const bounds = card.getBoundingClientRect();
+              card.style.setProperty("--glint-x", ((event.clientX - bounds.left) / bounds.width * 100).toFixed(1) + "%");
+              card.style.setProperty("--glint-y", ((event.clientY - bounds.top) / bounds.height * 100).toFixed(1) + "%");
             }
           }}
         >

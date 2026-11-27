@@ -9,7 +9,7 @@ import { ContactFooter } from "@/sections/ContactFooter";
 
 export default function Home() {
   return (
-    <main className="relative bg-background">
+    <main className="portfolio-atmosphere relative">
       <Hero />
       <SelectedWork />
       <SkillsConstellation />
