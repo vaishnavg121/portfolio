@@ -31,7 +31,7 @@
 .atlas-search-results {
   position:absolute;inset:calc(100% + .42rem) auto auto 0;z-index:6;width:min(20rem,calc(100vw - 2.65rem));
   max-height:min(22rem,54svh);overflow-y:auto;overscroll-behavior:contain;
-  border:1px solid var(--edge-soft);border-radius:var(--radius-surface);background:var(--surface-gradient);box-shadow:var(--shadow-floating);
+  border:1px solid var(--edge-soft);border-radius:var(--radius-surface);background:var(--glass-panel),var(--surface);box-shadow:var(--glass-shadow);
 }
 .atlas-search-results button {
   display:grid;min-height:44px;width:100%;grid-template-columns:minmax(0,1fr) 1rem;align-items:center;
@@ -103,13 +103,13 @@
 .atlas-inspector {
   --popup-x:0px;--popup-y:0px;position:relative;z-index:3;max-width:32rem;
   margin:.8rem auto 0;border:1px solid var(--edge-soft);border-radius:var(--radius-panel);
-  color:var(--text-primary);background:var(--surface-gradient);
+  color:var(--text-primary);background:var(--glass-panel),var(--surface);
   box-shadow:var(--glass-shadow);
 }
 @supports (backdrop-filter: blur(8px)) {
-  .atlas-search-results {background:var(--glass-panel);backdrop-filter:blur(8px);}
+  .atlas-search-results {background:var(--glass-panel);backdrop-filter:blur(var(--glass-panel-blur));}
   @media (width >= 54rem) {
-    .atlas-inspector {background:var(--glass-panel);backdrop-filter:blur(8px);}
+    .atlas-inspector {background:var(--glass-panel);backdrop-filter:blur(var(--glass-panel-blur));}
   }
 }
 .atlas-inspector[hidden] {display:none;}

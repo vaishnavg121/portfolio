@@ -21,15 +21,22 @@
   --atmosphere-rose: color-mix(in srgb, var(--accent-petal) 12%, var(--background));
   --atmosphere-stone: color-mix(in srgb, var(--accent-stone) 10%, var(--background));
   --surface-gradient: linear-gradient(150deg, var(--surface-tinted), var(--surface) 82%);
-  --glass-compact: linear-gradient(164deg, color-mix(in srgb, var(--accent-petal) 6%, transparent), transparent 46%),
-    linear-gradient(157deg, color-mix(in srgb, var(--surface-tinted) 87%, transparent),
-    color-mix(in srgb, var(--surface) 95%, transparent) 85%);
-  --glass-panel: linear-gradient(172deg, color-mix(in srgb, var(--accent-mauve) 9%, transparent), transparent 43%),
+  --glass-light: color-mix(in srgb, var(--accent-stone) 48%, var(--accent-petal));
+  --glass-rim: color-mix(in srgb, var(--glass-light) 25%, var(--border));
+  --glass-compact:
+    linear-gradient(172deg, color-mix(in srgb, var(--glass-light) 18%, transparent), transparent 56%),
+    linear-gradient(155deg, color-mix(in srgb, var(--surface-elevated) 81%, transparent), color-mix(in srgb, var(--surface) 92%, transparent));
+  --glass-panel:
+    radial-gradient(ellipse 87% 48% at 11% 0%, color-mix(in srgb, var(--glass-light) 16%, transparent), transparent 82%),
+    radial-gradient(ellipse 86% 42% at 100% 100%, color-mix(in srgb, var(--accent-mauve) 9%, transparent), transparent),
     linear-gradient(151deg, color-mix(in srgb, var(--surface-tinted) 94%, transparent),
-    color-mix(in srgb, var(--surface) 97%, transparent) 82%);
+      color-mix(in srgb, var(--surface) 96%, transparent) 82%);
   --glass-editorial: linear-gradient(145deg, color-mix(in srgb, var(--surface-tinted) 70%, transparent),
     color-mix(in srgb, var(--surface) 42%, transparent) 84%);
-  --glass-shadow: inset 0 1px 0 rgb(255 244 251 / .09), inset 0 -1px 0 rgb(0 0 0 / .28), var(--shadow-floating);
+  --glass-shadow: inset 0 1px 0 rgb(255 244 251 / .16), inset 0 -1px 0 rgb(0 0 0 / .39), var(--shadow-floating);
+  --glass-reflection: linear-gradient(145deg, transparent 35%,
+    color-mix(in srgb, var(--accent-mauve) 9%, transparent) 54%, transparent 74%);
+  --glass-panel-blur: 7px;
   --shadow-soft: 0 12px 38px rgb(0 0 0 / .26);
   --shadow-floating: 0 18px 52px rgb(0 0 0 / .42);
   --radius-control: .75rem;
@@ -134,10 +141,10 @@ body {
 .notes-section { --chapter-glow-x: 48%; }
 
 :is(.portfolio-control, .atlas-controls button) {
-  border: 1px solid var(--edge-soft);
+  border: 1px solid var(--glass-rim);
   border-radius: var(--radius-control);
   background: var(--glass-compact);
-  box-shadow: inset 0 1px 0 rgb(255 244 251 / .05);
+  box-shadow: inset 0 1px 0 rgb(255 244 251 / .15), inset 0 -1px rgb(0 0 0 / .38), 0 2px 5px rgb(0 0 0 / .19);
   color: var(--text-primary);
   transition: border-color var(--duration-feedback) ease, background-color var(--duration-feedback) ease,
     scale 330ms var(--ease-tactile), translate 330ms var(--ease-tactile);
@@ -165,14 +172,14 @@ body {
 .portfolio-popover {
   border: 1px solid var(--edge-soft);
   border-radius: var(--radius-panel);
-  background: var(--surface-gradient);
+  background: var(--glass-panel), var(--surface);
   box-shadow: var(--glass-shadow);
 }
 
 @supports (backdrop-filter: blur(8px)) {
   .portfolio-popover {
     background: var(--glass-panel);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(var(--glass-panel-blur));
   }
 }
 
@@ -294,13 +301,13 @@ body {
   inset-inline: 0.5rem;
   z-index: calc(var(--deck-order) + 1);
   height: var(--deck-card-height);
-  border: 1px solid var(--edge-soft);
+  border: 1px solid var(--glass-rim);
   border-radius: var(--radius-card);
-  background: radial-gradient(ellipse 67% 102% at var(--glint-x, 76%) var(--glint-y, 18%),
-      color-mix(in srgb,var(--accent-petal) var(--glint-strength, 8%),transparent), transparent 81%),
-    linear-gradient(125deg, transparent 36%, color-mix(in srgb,var(--accent-mauve) 6%,transparent) 63%, transparent 79%),
+  background: radial-gradient(ellipse 63% 97% at var(--glint-x, 76%) var(--glint-y, 18%),
+      color-mix(in srgb,var(--glass-light) var(--glint-strength, 14%),transparent), transparent 82%),
+    var(--glass-reflection),
     var(--glass-compact);
-  box-shadow: inset 0 1px 0 rgb(255 244 251 / .10), inset 0 -1px 0 rgb(0 0 0 / .34), 0 7px 21px rgb(0 0 0 / .29);
+  box-shadow: inset 0 1px 0 rgb(255 244 251 / .15), inset 0 -1px 0 rgb(0 0 0 / .44), 0 9px 23px rgb(0 0 0 / .29);
   transform: perspective(850px) translate(var(--card-x), var(--card-y)) rotate(var(--card-roll)) rotateY(var(--card-yaw)) scale(var(--card-scale));
   transition: transform 430ms var(--deck-spring), border-color 200ms ease;
 }
@@ -313,9 +320,9 @@ body {
   --card-roll: 0deg;
   z-index: 5;
   border-color: var(--border-strong);
-  --glint-strength: 12%;
+  --glint-strength: 19%;
 }
-.hero-card[data-active] { --glint-strength: 16%; }
+.hero-card[data-active] { --glint-strength: 25%; }
 .hero-card-open svg { transition: translate 330ms var(--ease-tactile), scale 190ms var(--ease-tactile); }
 .hero-card-open:active svg { scale: .87; translate: .1rem 0; }
 
@@ -603,7 +610,12 @@ body:has(.case-image-dialog[open]) { overflow: hidden; }
 }
 
 @media (width < 64rem) {
-  .project-slide { border: 1px solid var(--edge-soft); border-radius: var(--radius-card); background: var(--surface-gradient); }
+  .project-slide {
+    border: 1px solid var(--edge-soft);
+    border-radius: var(--radius-card);
+    background: var(--glass-editorial);
+    box-shadow: inset 0 1px 0 rgb(255 244 251 / .08);
+  }
   .project-scene { margin-inline: .55rem; flex: 1; }
   .project-card-action { padding-block: 0.65rem; }
 }
@@ -676,7 +688,7 @@ body:has(.case-image-dialog[open]) { overflow: hidden; }
     z-index: 45;
     padding-top: env(safe-area-inset-top);
     border-bottom: 1px solid var(--border);
-    background: var(--background);
+    background: linear-gradient(160deg, var(--surface-elevated), var(--background) 85%);
   }
 
   .mobile-menu {
@@ -694,18 +706,20 @@ body:has(.case-image-dialog[open]) { overflow: hidden; }
 .chat-window {
   inset: auto auto 2rem 2rem;
 }
-.chat-panel { background: var(--surface-gradient); }
-.chat-heading, .chat-compose { background: color-mix(in srgb, var(--surface) 72%, transparent); }
+.chat-panel { background: var(--glass-panel), var(--surface); }
+.chat-heading, .chat-compose { background: color-mix(in srgb, var(--surface) 52%, transparent); }
+.chat-suggestion { background: var(--glass-editorial); }
 .chat-suggestion, .chat-compose textarea { border-radius: var(--radius-control); }
 
 @media (width >= 64rem) {
   .chat-panel { border-radius: var(--radius-panel); border-color: var(--edge-soft); box-shadow: var(--glass-shadow); }
   @supports (backdrop-filter: blur(8px)) {
-    .chat-panel { background: var(--glass-panel); backdrop-filter: blur(8px); }
+    .chat-panel { background: var(--glass-panel); backdrop-filter: blur(var(--glass-panel-blur)); }
   }
 }
 
 @media (width < 64rem) {
+  :root { --glass-panel-blur: 4px; }
   .chat-window {
     inset: var(--chat-top, 0px) 0 auto;
     width: 100%;
