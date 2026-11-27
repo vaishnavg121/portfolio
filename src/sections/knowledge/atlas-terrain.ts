@@ -1,4 +1,4 @@
-import { clamp, landmarkPositions, lens, mix, skillPositions, terrainSample, type SceneFrame } from "./atlas-geometry";
+import { clamp, CONTOUR_FLOOR, contourInterval, landmarkPositions, lens, mix, skillPositions, terrainSample, type SceneFrame } from "./atlas-geometry";
 import { ATLAS_TERRITORIES } from "./atlas-model";
 
 const TILE_SIZE = 416;
@@ -32,6 +32,7 @@ export function createTerrainTiles(detailed: boolean) {
   const cellsPerTile = 20;
   const cellSize = TILE_SIZE / cellsPerTile;
   const step = cellSize / subdivisions;
+  const interval = contourInterval(!detailed);
   let windowX = Infinity, windowY = Infinity;
   let field: Float32Array<ArrayBuffer> = new Float32Array(0);
 
@@ -58,17 +59,18 @@ export function createTerrainTiles(detailed: boolean) {
         if (n !== first && phase > detail * .82) continue;
         const jitterX = seed(hash + n * 3.17 + 4);
         const jitterY = seed(hash + n * 2.63 + 7);
-        const sx = x + (n % subdivisions + mix(.13,.87,jitterX)) * step;
-        const sy = y + (Math.floor(n / subdivisions) + mix(.24,.76,jitterY)) * step;
+        const sx = x + (n % subdivisions + mix(.07,.93,jitterX)) * step;
+        const sy = y + (Math.floor(n / subdivisions) + mix(.11,.89,jitterY)) * step;
         // Warp the same global rows on either side of every tile boundary.
         const px = sx + 4.8 * Math.sin(sy * .027 + sx * .009);
         const py = sy + 5.4 * Math.sin(sx * .024 - sy * .011) + 2 * Math.cos(sx * .057);
         const { z, relief, region, tone, shade } = terrainSample(px, py);
-        const contour = .5 + .5 * Math.cos(z * .255 + Math.sin(px * .014 + py * .021) * 1.18);
-        if (i > 1 && phase > .64 + shade * .13 + contour * .09) continue;
-        const emphasis = .12 * shade + .13 * contour ** 3;
-        const opacity = (.24 + relief * .40 + detail * .12) * (.60 + phase * .36 + emphasis);
-        const size = 1.06 + .67 * phase + (1 - detail) * .58 + .28 * emphasis;
+        const band = (z - CONTOUR_FLOOR - interval) / (interval * 3);
+        const contour = clamp(1 - Math.abs(band - Math.round(band)) * 6);
+        if (i > 1 && phase > .68 + shade * .14 + contour * .08) continue;
+        const emphasis = .16 * shade + .16 * contour ** 2;
+        const opacity = (.25 + relief * .44 + detail * .17) * (.56 + phase * .41 + emphasis);
+        const size = 1.03 + .73 * phase + (1 - detail) * .47 + .22 * emphasis;
         // The fractional region index and negative point kind carry continuous tone and slope.
         bands[densityBand(phase)].push(px, py, z, region + tone, opacity, size, -shade, phase);
       }

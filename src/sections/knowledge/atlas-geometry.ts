@@ -10,14 +10,14 @@ export function projection(p: AtlasPosition, perspective = PERSPECTIVE): Point {
 }
 
 const profiles: Record<string, { height: number; width: number; depth: number; angle: number; shelf: number; rose: number }> = {
-  cs: { height: 80, width: 146, depth: 107, angle: -.26, shelf: .62, rose: .29 },
-  ai: { height: 133, width: 149, depth: 122, angle: .15, shelf: .32, rose: .76 },
-  data: { height: 98, width: 165, depth: 100, angle: .28, shelf: .84, rose: .41 },
-  agents: { height: 95, width: 132, depth: 113, angle: .74, shelf: .30, rose: .86 },
-  web: { height: 63, width: 158, depth: 103, angle: .99, shelf: .73, rose: .57 },
-  finance: { height: 85, width: 145, depth: 112, angle: -.19, shelf: .48, rose: .16 },
-  infra: { height: 64, width: 164, depth: 90, angle: -.43, shelf: .65, rose: .23 },
-  robotics: { height: 113, width: 154, depth: 115, angle: .52, shelf: .45, rose: .68 },
+  cs: { height: 68, width: 182, depth: 112, angle: -.38, shelf: .77, rose: .29 },
+  ai: { height: 110, width: 183, depth: 139, angle: .27, shelf: .56, rose: .76 },
+  data: { height: 79, width: 182, depth: 105, angle: .41, shelf: .90, rose: .41 },
+  agents: { height: 75, width: 164, depth: 104, angle: .78, shelf: .41, rose: .86 },
+  web: { height: 52, width: 171, depth: 103, angle: 1.04, shelf: .77, rose: .57 },
+  finance: { height: 74, width: 191, depth: 105, angle: -.22, shelf: .60, rose: .16 },
+  infra: { height: 49, width: 178, depth: 98, angle: -.57, shelf: .72, rose: .23 },
+  robotics: { height: 89, width: 168, depth: 125, angle: .49, shelf: .41, rose: .68 },
 };
 
 export const atlasPeaks = ATLAS_TERRITORIES.map(({ id, x, y }) => {
@@ -50,6 +50,13 @@ const formations: Record<string, readonly Formation[]> = {
   robotics: [[-.55,-.22,.50,.18,42,.37],[.30,-.32,.43,.16,42,-.43],[.26,.36,.59,.22,34,.52],[.63,.09,.26,.15,27,-.21]],
 };
 const strata = ATLAS_TERRITORIES.map(({id})=>formations[id]);
+// Long ranges run through the spaces between the domain anchors.
+const ranges = [
+  { x: -316, y: -148, angle: -.51, span: 440, breadth: 86, bend: 43, rise: 34 },
+  { x: 196, y: -249, angle: .37, span: 465, breadth: 71, bend: -54, rise: 40 },
+  { x: -140, y: 176, angle: .29, span: 492, breadth: 97, bend: 36, rise: 32 },
+  { x: 367, y: 111, angle: -.87, span: 363, breadth: 64, bend: -42, rise: 39 },
+].map(range => ({ ...range, sin: Math.sin(range.angle), cos: Math.cos(range.angle) }));
 
 export function heightField(x: number, y: number) {
   const fold = x * .009 + y * .011, basin = y * .013 - x * .006, grain = x * .027 - y * .018;
@@ -71,7 +78,7 @@ export function heightField(x: number, y: number) {
     const cap = Math.exp(-(.96 + .17 * v) * q - .19 * q * q);
     const table = .57 * (1 - smooth(.19 + p.shelf * .26, .65 + p.shelf * .28, q))
       + .27 * (1 - smooth(.72, 1.24, q)) + .16 * foothill;
-    const influence = mix(cap * .86 + foothill * .14, table, .76 * p.shelf);
+    const influence = mix(cap * .72 + foothill * .28, table, .88 * p.shelf);
     if (influence > weight) { weight = influence; region = i; }
     peaks += p.height * influence;
     const gradient = 2 * (u * (p.cos * .62 + p.sin * .78) / p.width + v * (p.cos * .78 - p.sin * .62) / p.depth);
@@ -85,12 +92,23 @@ export function heightField(x: number, y: number) {
       const raised = Math.exp(-footprint * .74);
       const shelf = 1 - smooth(.24, 1.55, footprint);
       const form = mix(raised, shelf, .27 * p.shelf);
-      geology += rise * form * mask;
+      geology += rise * form * mask * .84;
       slope -= rise * bank * .048 * raised;
     }
     shoulder += foothill;
     warmth += p.rose * foothill;
     mass += foothill;
+  }
+  for (const range of ranges) {
+    const xLocal = x - range.x, yLocal = y - range.y;
+    const along = (xLocal * range.cos + yLocal * range.sin) / range.span;
+    if (Math.abs(along) >= 1) continue;
+    const bank = (yLocal * range.cos - xLocal * range.sin - range.bend * Math.sin(along * 3.4)) / range.breadth;
+    const taper = (1 - along * along) ** 2;
+    const ridge = Math.exp(-bank * bank * 1.3);
+    const shelf = Math.exp(-((bank + .76) ** 2)) * .36;
+    geology += range.rise * taper * (ridge + shelf) * (1 - weight * .48);
+    slope -= .42 * taper * bank * ridge;
   }
   let saddle = 0;
   for (const { a, dx, dy, length, lift } of ridges) {
@@ -120,7 +138,9 @@ export function heightField(x: number, y: number) {
   const crease = Math.cos(fabric);
   const finer = Math.sin(y * .125 - x * .091 + folds * 2.8);
   const roughness = clamp(.24 + shoulder * .58);
-  const textureRise = ((crease * crease - .43) * 5.7 + finer * 1.6) * roughness;
+  const rock = Math.sin(x * .173 + y * .121 + Math.sin(y * .061 - x * .033) * 2.1)
+    * Math.cos(y * .159 - x * .081 + folds);
+  const textureRise = ((crease * crease - .43) * 7 + finer * 2.0 + rock * 1.45) * roughness;
   slope += (-Math.sin(fabric) * crease * .49 + Math.cos(y * .125 - x * .091 + folds * 2.8) * .12) * roughness;
   const relief = clamp((peaks + geology + saddle * .8 + near + far - valley * .38) / 135) * extent;
   return {
@@ -217,6 +237,8 @@ export function terrainHeight(x: number, y: number) {
 }
 
 export const TERRAIN_STRIDE = 8;
+export const CONTOUR_FLOOR = -20;
+export const contourInterval = (compact: boolean) => compact ? 9 : 7;
 
 export const landmarkPositions = atlasPeaks.map(({ x, y }) => ({ x, y, z: terrainHeight(x, y) + 9 }));
 const landmarkProjection = landmarkPositions.map(point => projection(point));

@@ -3,7 +3,7 @@ import { visibleProjects } from "./atlas-connections";
 import { TERRITORIES_BY_ID } from "./atlas-model";
 import { createAtlasStreams, STREAM_STRIDE } from "./atlas-streams";
 import { readAtlasPalette } from "./atlas-palette";
-import { makeAtlasSurface } from "./atlas-surface";
+import { CONTOUR_STRIDE, makeAtlasSurface } from "./atlas-surface";
 import { terrainRippleGLSL } from "./atlas-motion";
 import { createTerrainTiles, FOG_FAR, FOG_NEAR, makeAtlasMarkers, terrainCenter } from "./atlas-terrain";
 
@@ -12,6 +12,7 @@ precision highp float;
 attribute vec3 aPosition;
 attribute vec4 aStyle;
 attribute float aPhase;
+attribute vec4 aRibbon;
 uniform vec3 uCam;
 uniform vec4 uFrame, uMotion, uSkill, uLens;
 uniform vec4 uInteraction;
@@ -22,13 +23,16 @@ uniform vec3 uShadow, uMuted, uLight, uAccent, uPetal, uStone;
 uniform vec4 uImpulses[4], uPeaks[8];
 varying mediump vec4 vColor;
 varying mediump float vKind;
+varying mediump vec2 vRibbon;
 ${terrainRippleGLSL}
 void main() {
   vec3 p=aPosition;
+  vRibbon=vec2(0.0);
   int id=int(max(0.0,aStyle.x));
   float kind=aStyle.w, phase=aPhase, ink=aStyle.y, size=aStyle.z, time=uMotion.x;
   vec4 peak=uPeaks[id];
-  float expand=peak.w, aura=0.0, tonal=0.0, fog=1.0;
+  float emphasis=peak.w, aura=0.0, fog=1.0;
+  bool ribbon=uSurfaceLayer>2.5;
   bool hovered=abs(float(id)-uMotion.w)<.2;
   bool selected=abs(float(id)-uMotion.z)<.2;
   if(kind<.5) {
@@ -43,23 +47,18 @@ void main() {
     fog=1.0-smoothstep(${FOG_NEAR}.0,${FOG_FAR}.0,groundDistance);
     vec2 around=p.xy-peak.xy;
     float response=exp(-dot(around,around)/18800.0);
-    aura+=response*expand*.16;
+    aura+=response*emphasis*.11;
     vec2 hoverOffset=p.xy-uInteraction.xy;
-    aura+=exp(-dot(hoverOffset,hoverOffset)/6200.0)*uInteraction.z*.36;
-    if(uMotion.z>=0.0) ink*=.87+.13*expand;
-    if(time>=0.0) {
-      float drift=sin(p.x*.013+p.y*.017-time*.64);
-      float sheen=smoothstep(.28,.98,sin(p.x*.009-p.y*.020-time*.57));
-      tonal=drift*.043+sheen*.054*clamp(-kind,0.0,1.0);
-    }
+    aura+=exp(-dot(hoverOffset,hoverOffset)/6200.0)*uInteraction.z*(ribbon?.29:.12);
+    if(uMotion.z>=0.0) ink*=.90+.10*emphasis;
     ink*=mix(.54,1.0,smoothstep(0.0,1.0,uMotion.y));
   } else if(kind<1.5) {
     aura=selected?.42:(hovered?.37*uInteraction.z:0.0);
     if(uMotion.z>=0.0 && !selected) ink*=.55;
     if(phase<.5) size+=aura*11.0;
   } else if(kind<2.5) {
-    ink*=smoothstep(.20,.76,expand);
-    aura=exp(-length((p-uSkill.xyz)*vec3(.83,.83,.48))*.075)*.34*expand;
+    ink*=smoothstep(.20,.76,emphasis);
+    aura=exp(-length((p-uSkill.xyz)*vec3(.83,.83,.48))*.075)*.34*emphasis;
   }
   float disturbance=uInteraction.w>.5?ripple(p):0.0;
   aura+=disturbance;
@@ -67,6 +66,17 @@ void main() {
   float distanceToCamera=uCam.z-y*uLens.x-p.z*uLens.y;
   float magnification=uCam.z/max(uCam.z*.22,distanceToCamera);
   vec2 clip=(vec2(x,y*uLens.y-p.z*uLens.x)*magnification*uFrame.z+uCam.xy)*vec2(1.0,uFrame.w)*2.0/uFrame.xy;
+  if(ribbon) {
+    vec2 tangent=vec2(aRibbon.x*uLens.z-aRibbon.y*uLens.w,aRibbon.x*uLens.w+aRibbon.y*uLens.z);
+    vec2 forward=vec2(x+tangent.x,(y+tangent.y)*uLens.y-p.z*uLens.x)
+      *uCam.z/max(uCam.z*.22,distanceToCamera-tangent.y*uLens.x);
+    vec2 dir=(forward-vec2(x,y*uLens.y-p.z*uLens.x)*magnification)*vec2(1.0,uFrame.w);
+    vec2 normal=vec2(-dir.y,dir.x)/max(length(dir),.0001);
+    float wave=.5+.5*cos(6.2831853*(aRibbon.w-(time>=0.0?time*.091:0.0)));
+    float illumination=pow(wave,3.0)*(.53+.47*phase);
+    clip+=normal*aRibbon.z*(4.4+illumination*.85)/uFrame.xy;
+    vRibbon=vec2(aRibbon.z,illumination);
+  }
   gl_Position=vec4(clip.x,-clip.y,0.0,1.0);
   float edge=(1.0-smoothstep(.70,1.0,abs(clip.x)))*(1.0-smoothstep(.69,1.0,abs(clip.y)));
   float zoomSize=clamp(pow(max(uFrame.z,.15),.29),.76,1.32);
@@ -77,9 +87,7 @@ void main() {
     float shade=clamp(-kind,0.0,1.0);
     float face=smoothstep(.20,.91,shade);
     float distanceWash=1.0-smoothstep(-725.0,-120.0,y);
-    float stratum=abs(fract((aPosition.z+4.0*sin(p.x*.018+p.y*.012))/17.0)-.5);
-    float facet=(1.0-smoothstep(.033,.13,stratum))*relief;
-    float light=clamp(.32+face*.37+relief*.21+phase*.09+tonal+facet*uGrade.y*.32,0.0,1.0);
+    float light=clamp(.37+face*.40+relief*.20+phase*.12,0.0,1.0);
     float hue=smoothstep(.07,.88,fract(aStyle.x)+.11*sin(p.x*.009-p.y*.006));
     vec3 mineral=mix(uStone,uPetal,hue);
     vec3 surface=mix(uMuted,mineral,.69+relief*.22);
@@ -87,8 +95,8 @@ void main() {
     surface=mix(surface,uStone,distanceWash*uGrade.w*.35);
     color=mix(uShadow,surface,light);
     color=mix(color,uPetal,aura*.43);
-    ink*=(.72+.49*face+facet*uGrade.y*.41)*(1.0-distanceWash*.13);
-    ink+=aura*.29;
+    ink*=(.80+.45*face)*(1.0-distanceWash*.13);
+    ink+=aura*.19;
     if(uSurfaceLayer>.5) {
       float contour=step(1.5,uSurfaceLayer);
       vec3 soil=mix(uShadow,uAccent,.13+.14*hue);
@@ -98,21 +106,32 @@ void main() {
       color=mix(veil,rim,contour);
       ink=aStyle.y*mix(uGrade.x*(.76+face*.28),uGrade.z*(.72+face*.45),contour)*(.55+.45*uMotion.y);
       color=mix(color,uPetal,clamp(aura*.70,0.0,.65));
-      ink+=aStyle.y*aura*(contour*.96+.37);
+      ink+=aStyle.y*aura*(contour*.92+.20);
+      if(ribbon) color=mix(color,uLight,.14+vRibbon.y*.26);
     }
   } else {
     color=mix(uAccent,mix(uPetal,uLight,.78),phase*.94);
     ink+=aura*(kind<1.5?.46:.73);
   }
   vColor=vec4(color,clamp(ink*fog*edge*smoothstep(uCam.z*.20,uCam.z*.39,distanceToCamera),0.0,1.0));
-  vKind=uSurfaceLayer>.5?-2.0:kind;
+  vKind=ribbon?-3.0:uSurfaceLayer>.5?-2.0:kind;
 }
 `;
 const fragment = `
 precision mediump float;
 varying vec4 vColor;
 varying float vKind;
+varying vec2 vRibbon;
 void main() {
+  if(vKind< -2.5) {
+    float edge=abs(vRibbon.x);
+    float core=1.0-smoothstep(.06,.33,edge);
+    float halo=(1.0-smoothstep(.09,1.0,edge))*(.11+.19*vRibbon.y);
+    float alpha=vColor.a*(core*(.70+.44*vRibbon.y)+halo);
+    if(alpha<.002)discard;
+    gl_FragColor=vec4(vColor.rgb,alpha);
+    return;
+  }
   if(vKind< -1.5){
     if(vColor.a<.003)discard;
     gl_FragColor=vColor;
@@ -222,13 +241,14 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   gl.bindBuffer(gl.ARRAY_BUFFER,markers);
   gl.bufferData(gl.ARRAY_BUFFER,markerData,gl.STATIC_DRAW);
   const layers = [
-    { points: surface.veil, mode: gl.TRIANGLE_STRIP, pass: 1 },
-    { points: surface.contours, mode: gl.LINES, pass: 2 },
+    { points: surface.veil, mode: gl.TRIANGLE_STRIP, pass: 1, stride: TERRAIN_STRIDE },
+    { points: surface.contours, mode: gl.LINES, pass: 2, stride: TERRAIN_STRIDE },
+    { points: surface.ribbons, mode: gl.TRIANGLE_STRIP, pass: 3, stride: CONTOUR_STRIDE },
   ].map(layer => {
     const buffer = gl.createBuffer()!;
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, layer.points, gl.STATIC_DRAW);
-    return { buffer, mode: layer.mode, pass: layer.pass, count: layer.points.length / TERRAIN_STRIDE };
+    return { buffer, mode: layer.mode, pass: layer.pass, stride: layer.stride, count: layer.points.length / layer.stride };
   });
   let currentField: ReturnType<typeof terrain> | undefined;
   const streams=createAtlasStreams();
@@ -243,6 +263,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   gl.clearColor(0,0,0,0);
   const attribs = [["aPosition",3,0],["aStyle",4,12],["aPhase",1,28]] as const;
   const attrs=attribs.map(([name,size,offset])=>({index:gl.getAttribLocation(program,name),size,offset}));
+  const ribbonAttr=gl.getAttribLocation(program,"aRibbon");
 
   const streamAttribs = [["aPixels",2,0],["aFlow",4,8],["aState",3,24]] as const;
   const streamAttrs=streamAttribs.map(([name,size,offset])=>({index:gl.getAttribLocation(streamProgram,name),size,offset}));
@@ -259,19 +280,24 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   gl.uniform3fv(u.uPetal,palette.petal.rgb);
   gl.uniform3fv(u.uStone,palette.stone.rgb);
   // Surface body, directional crest light, contour intensity, and distance wash.
-  gl.uniform4f(u.uGrade,1.48,.94,1.18,.93);
+  gl.uniform4f(u.uGrade,1.24,.89,1.43,.93);
   gl.useProgram(streamProgram);
   gl.uniform3fv(stream.uAccent,palette.accent.rgb);
   gl.uniform3fv(stream.uLight,palette.light.rgb);
   gl.uniform3fv(stream.uPetal,palette.petal.rgb);
   const markerCount=markerData.length / TERRAIN_STRIDE;
   landmarkPositions.forEach((p,i)=>peaks.set([p.x,p.y,p.z,0],i*4));
-  const draw=(buffer:WebGLBuffer,count:number,primitive:number=gl.POINTS)=>{
+  const draw=(buffer:WebGLBuffer,count:number,primitive:number=gl.POINTS,stride=TERRAIN_STRIDE)=>{
     gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+    const strideBytes=stride*Float32Array.BYTES_PER_ELEMENT;
     for (const {index,size,offset} of attrs) {
       gl.enableVertexAttribArray(index);
-      gl.vertexAttribPointer(index,size,gl.FLOAT,false,TERRAIN_STRIDE*Float32Array.BYTES_PER_ELEMENT,offset);
+      gl.vertexAttribPointer(index,size,gl.FLOAT,false,strideBytes,offset);
     }
+    if(stride===CONTOUR_STRIDE) {
+      gl.enableVertexAttribArray(ribbonAttr);
+      gl.vertexAttribPointer(ribbonAttr,4,gl.FLOAT,false,strideBytes,TERRAIN_STRIDE*Float32Array.BYTES_PER_ELEMENT);
+    } else gl.disableVertexAttribArray(ribbonAttr);
     gl.drawArrays(primitive,0,count);
   };
   let lastCount=0;
@@ -307,7 +333,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
       for(const layer of layers) {
         if(layer.pass===1&&frame.quality<.57)continue;
         gl.uniform1f(u.uSurfaceLayer,layer.pass);
-        draw(layer.buffer,layer.count,layer.mode);
+        draw(layer.buffer,layer.count,layer.mode,layer.stride);
       }
       gl.uniform1f(u.uSurfaceLayer,0);
       draw(field,visibleCount);
