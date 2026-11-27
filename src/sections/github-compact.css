@@ -50,13 +50,13 @@
 .github-calendar-grid {
   position: relative;
   width: max(100%, calc((var(--gh-weeks) + var(--gh-tail)) * var(--gh-unit)));
-  height: var(--gh-height);
+  height: calc(var(--gh-height) + 7px);
 }
 .github-canvas {
   position: absolute;
-  inset: 0;
+  inset: 0 0 auto;
   width: 100%;
-  height: 100%;
+  height: var(--gh-height);
   display: block;
   visibility: hidden;
   pointer-events: none;
@@ -81,11 +81,12 @@
   left: calc((var(--week) + .7) * var(--gh-unit));
   bottom: 0;
   color: var(--text-muted);
-  font: .6rem/1 var(--portfolio-mono), monospace;
+  font: .62rem/1 var(--portfolio-mono), monospace;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   pointer-events: none;
 }
+.github-month[data-month-collides] { visibility: hidden; }
 [data-sculpted] .github-month { left: calc((var(--week) + var(--gh-month-offset)) * var(--gh-unit)); }
 [data-sculpted] .github-month::before {
   content: "";

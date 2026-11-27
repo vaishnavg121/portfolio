@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { calendarDate, calendarKeyIndex, contributionAnchor, contributionColumns, parsePublicCalendar } from "../src/lib/github-calendar.ts";
+import { calendarDate, calendarKeyIndex, contributionAnchor, contributionColumns, contributionMonths, parsePublicCalendar } from "../src/lib/github-calendar.ts";
 
 test("public GitHub cells are sorted, grouped by UTC week and counted from source tooltips", () => {
   const cell = (id, date, level, count) => `<td id="contribution-day-component-${id}" data-date="${date}" data-level="${level}"></td>
@@ -32,4 +32,13 @@ test("sculpture preserves partial weeks, actual dates and zero days", () => {
   assert.deepEqual(columns.map(({intensity}) => intensity), [0, .25, .5, 1]);
   assert.ok(contributionAnchor(columns[3]).y < 0);
   assert.deepEqual(contributionColumns([]), []);
+});
+
+test("month labels use the week that actually contains the month boundary", () => {
+  const dates = (...values) => values.map(date => ({ date, count: 0, level: 0 }));
+  assert.deepEqual(contributionMonths([
+    dates("2026-11-29", "2026-11-30", "2026-12-01"), dates("2026-12-06"), dates("2027-01-01"),
+  ]), [
+    { date: "2026-11-29", week: 0 }, { date: "2026-12-01", week: 0 }, { date: "2027-01-01", week: 2 },
+  ]);
 });

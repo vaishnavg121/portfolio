@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { ArrowRightToLine, ArrowUpRight, GitCommitHorizontal, X } from "lucide-react";
 import { fetchGithubContributions } from "@/lib/actions/github";
 import {
-  calendarDate, calendarKeyIndex, contributionAnchor, contributionColumns, contributionMonthOffset, contributionView,
+  calendarDate, calendarKeyIndex, contributionAnchor, contributionColumns, contributionMonthOffset, contributionMonths, contributionView,
   type GithubCalendarData,
 } from "@/lib/github-calendar";
 import { socials } from "@/lib/profile";
@@ -64,6 +64,30 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
     observer.observe(element);
     return () => observer.disconnect();
   }, [last]);
+
+  useLayoutEffect(() => {
+    const board = viewport.current;
+    if (!board) return;
+    const labels = Array.from(board.querySelectorAll<HTMLElement>(".github-month"));
+    let active = true;
+    const fit = () => {
+      if (!active) return;
+      let next = board.scrollWidth;
+      // Later labels take precedence over an opening partial month in the same week.
+      for (let index = labels.length - 1; index >= 0; index--) {
+        const label = labels[index];
+        const left = label.offsetLeft;
+        const fits = left + label.offsetWidth <= next;
+        label.toggleAttribute("data-month-collides", !fits);
+        if (fits) next = left - 7;
+      }
+    };
+    fit();
+    const resize = new ResizeObserver(fit);
+    resize.observe(board);
+    document.fonts?.ready.then(fit);
+    return () => { active = false; resize.disconnect(); };
+  }, [weeks, sculpted]);
 
   useEffect(() => {
     const surface = canvas.current;
@@ -262,13 +286,10 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
       }} />;
   }), [columns, companion, focusDay, focused, last, sculpted, selected, toggle]);
 
-  const monthLabels = useMemo(() => weeks.map((week, index) => {
-    const date = calendarDate(week[0].date);
-    const previous = weeks[index - 1]?.[0];
-    if (previous && date.getUTCMonth() === calendarDate(previous.date).getUTCMonth()) return null;
-    return <span className="github-month" key={week[0].date} style={{ "--week": index } as CSSProperties}
-      aria-hidden="true">{monthFormat.format(date)}</span>;
-  }), [weeks]);
+  const monthLabels = useMemo(() => contributionMonths(weeks).map(({ date, week }) => (
+    <span className="github-month" key={date} data-month-date={date} style={{ "--week": week } as CSSProperties}
+      aria-hidden="true">{monthFormat.format(calendarDate(date))}</span>
+  )), [weeks]);
 
   return (
     <>

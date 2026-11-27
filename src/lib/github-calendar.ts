@@ -48,6 +48,18 @@ function sculptureView(x: number, y: number, z: number) {
 export const contributionView = sculptureView(-.49, .75, .65);
 export const contributionMonthOffset = contributionView.left + contributionView.right.z / contributionView.right.x * 6.58;
 
+export function contributionMonths(weeks: GithubContribution[][]) {
+  const months: { date: string; week: number }[] = [];
+  for (const [week, days] of weeks.entries()) {
+    for (const day of days) {
+      if (months.at(-1)?.date.slice(0, 7) !== day.date.slice(0, 7)) {
+        months.push({ date: day.date, week });
+      }
+    }
+  }
+  return months;
+}
+
 export function contributionAnchor(column: ContributionColumn) {
   const y = column.height * .68;
   const { right, up } = contributionView;
