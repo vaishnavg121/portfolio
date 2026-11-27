@@ -6,18 +6,20 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
 import { contributionView, type ContributionColumn } from "@/lib/github-calendar";
 
-const formationTime = .76;
+const formationTime = .81;
+const formationStagger = .31;
+const formationRise = .49;
 const footprintX = .71;
 const footprintZ = .69;
 const thickness = .115;
 
 const vertexShader = `
   attribute vec4 aDay;
-  uniform float uTime, uHover, uPinned, uLift;
+  uniform float uTime, uHover, uPinned, uPress, uLift, uMotion;
   varying vec3 vNormal, vLocal;
   varying vec4 vDay;
   void main() {
-    float wave = clamp((uTime - aDay.z * .24) / .49, 0., 1.);
+    float wave = clamp((uTime - aDay.z * ${formationStagger}) / ${formationRise}, 0., 1.);
     float rise = 1. - pow(1. - wave, 3.);
     float height = mix(.115, aDay.x, rise);
     float hovered = 1. - step(.5, abs(aDay.w - uHover));
@@ -25,16 +27,19 @@ const vertexShader = `
     float bevel = min(.106, height * .34);
     float cap = (.5 - abs(position.y)) * bevel / .12;
     float y = position.y < 0. ? cap : height - cap;
-    vec3 p = vec3(position.x, y + hovered * uLift, position.z);
+    float pressed = 1. - step(.5, abs(aDay.w - uPress));
+    float lift = uMotion * max(hovered * uLift, pinned * .044);
+    vec3 p = vec3(position.x, y * (1. - pressed * uMotion * .035) + lift, position.z);
     vNormal = normalize(vec3(normal.x, normal.y * .12 / bevel, normal.z));
     vLocal = position;
-    vDay = vec4(aDay.y, hovered, pinned, rise);
+    vDay = vec4(aDay.y, hovered, pinned, wave);
     gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.);
   }
 `;
 
 const fragmentShader = `
   uniform vec3 uNight, uRose, uStone, uIvory, uMauve, uView;
+  uniform float uSweep;
   varying vec3 vNormal, vLocal;
   varying vec4 vDay;
   void main() {
@@ -63,6 +68,9 @@ const fragmentShader = `
     vec3 color = mix(base, material, occupied);
     float focus = max(vDay.y * .71, vDay.z);
     color = mix(color, uIvory, focus * (.10 + top * .14 + rim * .1));
+    float beam = 1. - smoothstep(.04, .28, abs(vLocal.y + .5 - uSweep));
+    float forming = sin(vDay.w * 3.14159) * occupied;
+    color += uIvory * (forming * (.018 + .045 * top) + beam * focus * (.07 + .06 * top));
     gl_FragColor = vec4(color, 1.);
     #include <colorspace_fragment>
   }
@@ -102,7 +110,7 @@ const groundVertex = `
 
 const groundFragment = `
   uniform vec3 uNight, uMauve, uStone;
-  uniform float uWeeks;
+  uniform float uWeeks, uTime;
   varying vec2 vGrid;
   void main() {
     float left = smoothstep(-.68, .54, vGrid.x);
@@ -113,7 +121,9 @@ const groundFragment = `
     float vertical = 1. - smoothstep(0., .051, line.x);
     float front = 1. - smoothstep(.005, .072, abs(vGrid.y - 6.42));
     float field = left * right * sides;
-    float hue = max(horizontal * .115, vertical * .068) * field + front * left * right * .15;
+    float lineLight = max(horizontal * .115, vertical * .068) * field;
+    float wave = (1. - smoothstep(.0, .13, abs(vGrid.x / uWeeks - uTime / .66))) * step(.001, uTime);
+    float hue = lineLight * (1. + wave * .83) + front * left * right * .15;
     gl_FragColor = vec4(mix(uNight, mix(uMauve, uStone, .35), min(1., hue * 6.)), field * .065 + hue);
     #include <colorspace_fragment>
   }
@@ -124,10 +134,11 @@ type Artwork = {
   columns: ContributionColumn[];
   weekCount: number;
   reduced: boolean;
+  animateEntrance: boolean;
   ready: (rendered: boolean) => void;
 };
 
-export function createContributionSculpture({ canvas, columns, weekCount, reduced, ready }: Artwork) {
+export function createContributionSculpture({ canvas, columns, weekCount, reduced, animateEntrance, ready }: Artwork) {
   const context = canvas.getContext("webgl2", { alpha: true, antialias: true, powerPreference: "low-power" });
   if (!context) return null;
 
@@ -143,7 +154,7 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
   const view = contributionView;
   const tint = (name: string) => ({ value: new Color(color.getPropertyValue(name).trim()) });
   const uniforms = {
-    uTime: { value: reduced ? formationTime : 0 },
+    uTime: { value: reduced || !animateEntrance ? formationTime : 0 },
     uNight: tint("--background"),
     uRose: tint("--accent-source"),
     uStone: tint("--accent-stone"),
@@ -153,20 +164,26 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
     uView: { value: direction },
     uHover: { value: -1 },
     uPinned: { value: -1 },
+    uPress: { value: -1 },
     uLift: { value: 0 },
+    uSweep: { value: 2 },
+    uMotion: { value: reduced ? 0 : 1 },
   };
   const blank = new RoundedBoxGeometry(footprintX, 1, footprintZ, 2, .12);
   blank.deleteAttribute("uv");
   const geometry = mergeVertices(blank);
   blank.dispose();
   const attributes = new Float32Array(columns.length * 4);
+  const weekOffsets = new Uint16Array(weekCount + 1);
   const material = new ShaderMaterial({ uniforms, vertexShader, fragmentShader });
   const mesh = new InstancedMesh(geometry, material, columns.length);
   const transform = new Matrix4();
   for (const [id, column] of columns.entries()) {
     attributes.set([column.height, column.intensity, column.x / Math.max(1, weekCount - 1), id], id * 4);
     mesh.setMatrixAt(id, transform.makeTranslation(column.x, 0, column.z));
+    weekOffsets[column.x + 1]++;
   }
+  for (let i = 1; i < weekOffsets.length; i++) weekOffsets[i] += weekOffsets[i - 1];
   geometry.setAttribute("aDay", new InstancedBufferAttribute(attributes, 4));
   mesh.frustumCulled = false;
   scene.add(mesh);
@@ -192,7 +209,8 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
   const box = new Box3();
   const intersection = new Vector3();
   const projected = new Vector3();
-  let visible = false, frame = 0, start = -1, previous = 0, first = true;
+  let visible = false, frame = 0, previous = 0, first = true;
+  let sweep = 1, velocity = 0, springTime = 0;
   let width = 0, height = 0, pitch = 1;
 
   function pose() {
@@ -220,15 +238,27 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
   function paint(now: number) {
     frame = 0;
     if (!visible || document.hidden) return;
-    if (start < 0) start = now;
-    const time = reduced ? formationTime : Math.min(formationTime, (now - start) / 1000);
-    const ease = reduced ? 1 : 1 - Math.exp(-Math.min(80, now - (previous || now - 16)) / 45);
+    const seconds = previous ? Math.min(.05, (now - previous) / 1000) : 0;
+    const time = Math.min(formationTime, uniforms.uTime.value + seconds);
+    const ease = reduced ? 1 : 1 - Math.exp(-seconds / .045);
     previous = now;
-    const targetLift = uniforms.uHover.value < 0 || reduced ? 0 : .095;
+    const targetLift = uniforms.uHover.value < 0 || reduced ? 0 : .11;
     uniforms.uTime.value = time;
-    uniforms.uLift.value += (targetLift - uniforms.uLift.value) * ease;
-    lean.lerp(hover, ease);
-    pose();
+
+    // Fixed steps keep the short, damped spring consistent across refresh rates.
+    const step = 1 / 120;
+    springTime += seconds;
+    while (springTime >= step) {
+      velocity += ((targetLift - uniforms.uLift.value) * 445 - velocity * 34) * step;
+      uniforms.uLift.value += velocity * step;
+      springTime -= step;
+    }
+    if (sweep < 1) sweep = Math.min(1, sweep + seconds / .26);
+    uniforms.uSweep.value = reduced ? 2 : sweep * 1.56 - .27;
+    if (lean.distanceToSquared(hover) > .00008) {
+      lean.lerp(hover, ease);
+      pose();
+    }
     renderer.render(scene, camera);
     if (first) {
       first = false;
@@ -238,7 +268,10 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
         return;
       }
     }
-    if (time < formationTime || lean.distanceToSquared(hover) > .000015 || Math.abs(targetLift - uniforms.uLift.value) > .001) request();
+    const moving = time < formationTime || sweep < 1 || lean.distanceToSquared(hover) > .00008
+      || Math.abs(targetLift - uniforms.uLift.value) > .0011 || Math.abs(velocity) > .028;
+    if (moving) request();
+    else previous = 0;
   }
 
   return {
@@ -255,15 +288,23 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
     setVisible(next: boolean) {
       visible = next;
       if (visible) request();
-      else if (frame) {
-        cancelAnimationFrame(frame);
+      else {
+        if (frame) cancelAnimationFrame(frame);
         frame = 0;
+        previous = 0;
       }
     },
     emphasize(hot: number, pinned: number, x = 0, y = 0) {
+      if (!reduced && ((hot >= 0 && hot !== uniforms.uHover.value) || (pinned >= 0 && pinned !== uniforms.uPinned.value))) {
+        sweep = 0;
+      }
       uniforms.uHover.value = hot;
       uniforms.uPinned.value = pinned;
       hover.set(reduced ? 0 : x, reduced ? 0 : y);
+      request();
+    },
+    press(index: number) {
+      uniforms.uPress.value = index;
       request();
     },
     hit(x: number, y: number, touch: boolean) {
@@ -272,11 +313,15 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
       raycaster.setFromCamera(cursor, camera);
       const guess = x / pitch - view.left;
       let best = -1, nearest = Infinity, near = -1, distance = touch ? 95 : 26;
-      for (const [index, column] of columns.entries()) {
-        if (Math.abs(column.x - guess) > 4.25) continue;
-        const wave = Math.max(0, Math.min(1, (uniforms.uTime.value - attributes[index * 4 + 2] * .24) / .49));
-        const columnHeight = thickness + (column.height - thickness) * (1 - (1 - wave) ** 3);
-        const lift = index === uniforms.uHover.value ? uniforms.uLift.value : 0;
+      const first = weekOffsets[Math.max(0, Math.floor(guess - 4.25))];
+      const last = weekOffsets[Math.min(weekCount, Math.max(0, Math.ceil(guess + 4.25)))];
+      for (let index = first; index < last; index++) {
+        const column = columns[index];
+        const wave = Math.max(0, Math.min(1, (uniforms.uTime.value - attributes[index * 4 + 2] * formationStagger) / formationRise));
+        const compressed = !reduced && index === uniforms.uPress.value ? .965 : 1;
+        const columnHeight = (thickness + (column.height - thickness) * (1 - (1 - wave) ** 3)) * compressed;
+        const lift = reduced ? 0 : Math.max(index === uniforms.uHover.value ? uniforms.uLift.value : 0,
+          index === uniforms.uPinned.value ? .044 : 0);
         box.min.set(column.x - footprintX * .5, lift, column.z - footprintZ * .5);
         box.max.set(column.x + footprintX * .5, columnHeight + lift, column.z + footprintZ * .5);
         if (raycaster.ray.intersectBox(box, intersection)) {

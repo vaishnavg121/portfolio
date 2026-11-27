@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
-import { ArrowUpRight, X } from "lucide-react";
+import { ArrowRightToLine, ArrowUpRight, GitCommitHorizontal, X } from "lucide-react";
 import { fetchGithubContributions } from "@/lib/actions/github";
 import {
-  calendarDate, calendarKeyIndex, contributionAnchor, contributionColumns, contributionView, type GithubCalendarData,
+  calendarDate, calendarKeyIndex, contributionAnchor, contributionColumns, contributionMonthOffset, contributionView,
+  type GithubCalendarData,
 } from "@/lib/github-calendar";
 import { socials } from "@/lib/profile";
 import type { createContributionSculpture } from "./github-sculpture";
@@ -25,7 +26,8 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
   const [keyboard, setKeyboard] = useState(-1);
   const [flat, setFlat] = useState(false);
   const [ready, setReady] = useState(false);
-  const [available, setAvailable] = useState(true);
+  const [modeAvailable, setModeAvailable] = useState(false);
+  const [lastDetail, setLastDetail] = useState(-1);
   const viewport = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
@@ -34,10 +36,14 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
   const contact = useRef<{ id: number; x: number; y: number; index: number } | null>(null);
   const lean = useRef({ x: 0, y: 0 });
   const positioned = useRef(false);
+  const entered = useRef(false);
   const sculpted = ready && !flat;
   const hot = hovered < 0 ? keyboard : hovered;
-  const detail = hot < 0 ? selected : hot;
-  const item = columns[detail]?.day;
+  const detail = selected >= 0 ? selected : hot;
+  if (detail >= 0 && detail !== lastDetail) setLastDetail(detail);
+  const displayed = detail < 0 ? lastDetail : detail;
+  const item = columns[displayed]?.day;
+  const pinned = selected >= 0 && selected === detail;
   const firstYear = calendarDate(columns[0].day.date).getUTCFullYear();
   const lastYear = calendarDate(columns[last].day.date).getUTCFullYear();
 
@@ -82,20 +88,24 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
       import("./github-sculpture").then(({ createContributionSculpture }) => {
         if (canceled || request !== version) return;
         scene.current = createContributionSculpture({
-          canvas: surface!, columns, weekCount: weeks.length, reduced: reduced.matches,
+          canvas: surface!, columns, weekCount: weeks.length, reduced: reduced.matches, animateEntrance: !entered.current,
           ready: rendered => {
             if (canceled || request !== version) return;
             setReady(rendered);
+            if (rendered) {
+              entered.current = true;
+              setModeAvailable(true);
+            }
             if (!rendered) {
               failed = true;
-              setAvailable(false);
+              setModeAvailable(false);
               stop();
             }
           },
         });
         if (!scene.current) {
           failed = true;
-          setAvailable(false);
+          setModeAvailable(false);
           return;
         }
         scene.current.resize();
@@ -103,7 +113,7 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
       }).catch(() => {
         if (canceled || request !== version) return;
         failed = true;
-        setAvailable(false);
+        setModeAvailable(false);
       }).finally(() => {
         if (request === version) loading = false;
       });
@@ -159,11 +169,13 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
       const target = marker.getBoundingClientRect();
       const anchor = target.left + target.width / 2 - visible.left;
       const half = tip.offsetWidth / 2;
-      const clamped = Math.max(half, Math.min(visible.width - half, anchor));
+      const left = Math.max(2, 8 - visible.left) + half;
+      const right = Math.min(visible.width - 2, innerWidth - visible.left - 8) - half;
+      const clamped = Math.max(left, Math.min(right, anchor));
       tip.dataset.positioned = anchor >= 0 && anchor <= visible.width && target.bottom >= 0 && target.top <= innerHeight
         ? "visible" : "outside";
-      tip.style.left = clamped + "px";
-      tip.style.top = Math.max(6 - visible.top, Math.min(-4, target.top - visible.top - tip.offsetHeight - 6)) + "px";
+      tip.style.left = clamped - half + "px";
+      tip.style.top = Math.max(8 - visible.top, Math.min(-5, target.top - visible.top - tip.offsetHeight - 9)) + "px";
       tip.style.setProperty("--tooltip-notch", Math.max(11, Math.min(tip.offsetWidth - 11, half + anchor - clamped)) + "px");
     };
     position();
@@ -176,7 +188,7 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
       window.removeEventListener("scroll", position);
       resize.disconnect();
     };
-  }, [detail, sculpted]);
+  }, [detail, pinned, sculpted]);
 
   useEffect(() => {
     if (selected < 0 && hovered < 0 && keyboard < 0) return;
@@ -268,7 +280,8 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
         <div ref={viewport} className="github-calendar-viewport" role="region" aria-label="Contribution calendar"
           aria-describedby="github-description" data-anchor="github-calendar-center">
           <div className="github-calendar-grid" data-sculpted={sculpted ? "" : undefined}
-            style={{ "--gh-weeks": weeks.length, "--gh-tail": contributionView.tail } as CSSProperties}>
+            style={{ "--gh-weeks": weeks.length, "--gh-tail": contributionView.tail,
+              "--gh-month-offset": contributionMonthOffset } as CSSProperties}>
             <span className="github-edge-anchor" data-anchor="github-calendar-start" />
             <canvas ref={canvas} className="github-canvas" aria-hidden="true" data-github-sculpture
               onPointerMove={event => {
@@ -285,15 +298,27 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
                 }
                 scene.current?.emphasize(index < 0 ? keyboard : index, selected, lean.current.x, lean.current.y);
               }}
-              onPointerLeave={clearHover}
+              onPointerLeave={event => {
+                if (event.pointerType === "mouse") {
+                  contact.current = null;
+                  scene.current?.press(-1);
+                }
+                clearHover();
+              }}
               onPointerDown={event => {
                 if (!event.isPrimary || event.button !== 0) return;
-                contact.current = { id: event.pointerId, x: event.clientX, y: event.clientY, index: pointerIndex(event) };
+                const index = pointerIndex(event);
+                contact.current = { id: event.pointerId, x: event.clientX, y: event.clientY, index };
+                scene.current?.press(index);
               }}
-              onPointerCancel={() => { contact.current = null; }}
+              onPointerCancel={() => {
+                contact.current = null;
+                scene.current?.press(-1);
+              }}
               onPointerUp={event => {
                 const press = contact.current;
                 contact.current = null;
+                scene.current?.press(-1);
                 if (!press || press.id !== event.pointerId || Math.hypot(press.x - event.clientX, press.y - event.clientY) > 9) return;
                 const index = press.index;
                 setKeyboard(-1);
@@ -306,30 +331,35 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
             <span className="github-edge-anchor" data-anchor="github-calendar-end" />
           </div>
         </div>
-        {item && <div ref={tooltip} className="github-tooltip" role={selected === detail ? "group" : "tooltip"}
-          aria-label={selected === detail ? "Contribution details" : undefined}
-          data-github-tooltip data-pinned={selected === detail ? "" : undefined}>
+        {item && <div ref={tooltip} className="github-tooltip" role={pinned ? "group" : "tooltip"}
+          aria-label={pinned ? "Contribution details" : undefined} aria-hidden={detail < 0 ? true : undefined}
+          data-github-tooltip data-open={detail >= 0 ? "" : undefined} data-pinned={pinned ? "" : undefined}>
           <div>
             <time dateTime={item.date}>{dateFormat.format(calendarDate(item.date))}</time>
             <strong>{formatCount(item.count)}</strong>
           </div>
-          {selected === detail && <button type="button" className="tactile-quiet" aria-label="Dismiss contribution details"
+          {pinned && <button type="button" className="tactile-quiet" aria-label="Dismiss contribution details"
             onClick={() => { setSelected(-1); setHovered(-1); setKeyboard(-1); }}><X size={13} /></button>}
         </div>}
       </div>
       <footer className="github-compact-foot">
-        <p>{formatCount(calendar.totalContributions)} <span aria-hidden="true">·</span> {firstYear}{firstYear === lastYear ? "" : "–" + lastYear}</p>
+        <p><strong>{calendar.totalContributions.toLocaleString("en")}</strong>{" "}
+          {calendar.totalContributions === 1 ? "contribution" : "contributions"}
+          <span className="github-range">{firstYear}{firstYear === lastYear ? "" : "–" + lastYear}</span></p>
         <span className="sr-only" aria-live="polite">
           {selected >= 0 ? dateFormat.format(calendarDate(columns[selected].day.date)) + " · " + formatCount(columns[selected].day.count) : ""}
         </span>
         <div className="github-actions">
-          {available && (ready || flat) && <button type="button" className="github-mode tactile-quiet"
-            aria-label={flat ? "Show 3D contribution sculpture" : "Show 2D contribution calendar"}
-            onClick={() => { setReady(false); setFlat(!flat); clearHover(); }}>{flat ? "3D" : "2D"}</button>}
-          <button type="button" className="github-latest portfolio-control" aria-label="Show latest contributions"
+          {modeAvailable && <div className="github-mode" role="group" aria-label="Contribution calendar view">
+            <button type="button" className="tactile-quiet" aria-label="Show 2D contribution calendar"
+              aria-pressed={flat} onClick={() => { if (!flat) { setReady(false); setFlat(true); clearHover(); } }}>2D</button>
+            <button type="button" className="tactile-quiet" aria-label="Show 3D contribution sculpture"
+              aria-pressed={!flat} onClick={() => { if (flat) { setFlat(false); clearHover(); } }}>3D</button>
+          </div>}
+          <button type="button" className="github-latest tactile-quiet" aria-label="Show latest contributions"
             onClick={() => viewport.current?.scrollTo({
               left: viewport.current.scrollWidth, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-            })}>Latest</button>
+            })}>Latest <ArrowRightToLine aria-hidden="true" size={12} /></button>
         </div>
       </footer>
     </>
@@ -352,7 +382,7 @@ export function GithubActivity() {
   return (
     <section className="github-compact min-w-0" id="github" aria-labelledby="github-title" data-familiar-protect data-familiar-yield>
       <header className="github-compact-head">
-        <h2 id="github-title">GitHub activity</h2>
+        <h2 id="github-title"><GitCommitHorizontal aria-hidden="true" size={14} /> GitHub activity</h2>
         <a href={socials.github} className="portfolio-text-link" target="_blank" rel="noopener noreferrer" aria-label="Open GitHub profile">
           <span className="portfolio-link-label">@vaishnavg121</span><ArrowUpRight className="portfolio-link-arrow" aria-hidden="true" />
         </a>
