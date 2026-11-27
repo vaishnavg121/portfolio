@@ -22,6 +22,35 @@ export function calendarKeyIndex(index: number, count: number, key: string) {
   return move === undefined ? null : Math.max(0, Math.min(count - 1, index + move));
 }
 
+const baseHeight = .115;
+const heightRange = 2.62;
+
+export function contributionColumns(weeks: GithubContribution[][]) {
+  const maximum = weeks.reduce((peak, week) => week.reduce((value, day) => Math.max(value, day.count), peak), 1);
+  return weeks.flatMap((week, x) => week.map(day => {
+    const intensity = Math.sqrt(day.count / maximum);
+    return { day, x, z: calendarDate(day.date).getUTCDay(), intensity, height: baseHeight + intensity * heightRange };
+  }));
+}
+
+export type ContributionColumn = ReturnType<typeof contributionColumns>[number];
+
+// A rolled orthographic camera keeps the chronological axis horizontal.
+const eyeLength = Math.hypot(.30, .69, .66);
+const upLength = Math.hypot(.69, .66);
+const eye = { x: -.30 / eyeLength, y: .69 / eyeLength, z: .66 / eyeLength };
+const up = { x: 0, y: .66 / upLength, z: -.69 / upLength };
+const right = { x: up.y * eye.z - up.z * eye.y, y: up.z * eye.x, z: -up.y * eye.x };
+export const contributionView = { eye, up, right, left: 1.0, floor: 5.43, tail: 3.48 };
+
+export function contributionAnchor(column: ContributionColumn) {
+  const y = column.height * .68;
+  return {
+    x: contributionView.left + column.x + (right.y * y + right.z * column.z) / right.x,
+    y: -contributionView.floor - (up.y * y + up.z * column.z) / right.x,
+  };
+}
+
 const attribute = (tag: string, name: string) => new RegExp(`\\s${name}="([^"]*)"`).exec(tag)?.[1];
 
 export function parsePublicCalendar(html: string): GithubCalendarData | null {
