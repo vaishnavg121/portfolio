@@ -28,19 +28,21 @@ const sceneInfo = {
 type SceneId = keyof typeof sceneInfo;
 const range = (count: number) => Array.from({ length: count }, (_, index) => index);
 const random = (seed: number) => {
-  const value = Math.sin(seed * 127.1 + 19.3) * 43758.5453;
-  return value - Math.floor(value);
+  // Integer hashing keeps the server's SVG coordinates identical in other JS engines.
+  let value = Math.imul(seed + 17, 0x85ebca6b);
+  value = Math.imul(value ^ (value >>> 13), 0xc2b2ae35);
+  return ((value ^ (value >>> 16)) >>> 0) / 4294967296;
 };
 const clouds = range(125).map(i => ({
   x: 20 + random(i + 6) * 596,
-  y: 114 + random(i + 169) ** 1.6 * 116,
+  y: 114 + random(i + 169) * random(i + 169) * 116,
   radius: .4 + random(i + 280) * 1.85,
   alpha: .14 + random(i + 388) * .44,
 }));
 const groups = [
-  { x: 435, y: 213, color: "var(--study-tone)", angle: -.52 },
-  { x: 541, y: 138, color: "var(--accent-stone)", angle: .34 },
-  { x: 548, y: 245, color: "var(--accent-petal)", angle: -.17 },
+  { x: 435, y: 213, color: "var(--study-tone)", cos: .868, sin: -.497 },
+  { x: 541, y: 138, color: "var(--accent-stone)", cos: .943, sin: .333 },
+  { x: 548, y: 245, color: "var(--accent-petal)", cos: .986, sin: -.169 },
 ];
 const observations = range(72).map(i => {
   const group = groups[i % groups.length];
@@ -48,8 +50,8 @@ const observations = range(72).map(i => {
   const across = (random(182 + i) - .5) * 43;
   return {
     startX: 53 + random(444 + i) * 240, startY: 100 + random(272 + i) * 152,
-    x: group.x + along * Math.cos(group.angle) - across * Math.sin(group.angle),
-    y: group.y + along * Math.sin(group.angle) + across * Math.cos(group.angle),
+    x: group.x + along * group.cos - across * group.sin,
+    y: group.y + along * group.sin + across * group.cos,
     color: group.color, size: 1.05 + random(333 + i) * 1.7,
   };
 });
@@ -211,10 +213,10 @@ export function ProjectMotion({ slug, active, reduced }: { slug: string; active:
       </svg>
       <figcaption>
         <div><span className="study-caption">{info.caption}</span><span className="study-disclosure">Illustrative sequence</span></div>
-        {!reduced && <button type="button" disabled={!active} onClick={()=>setGeneration(value=>value+1)}
+        <button type="button" disabled={!active} onClick={()=>setGeneration(value=>value+1)}
           className="study-replay portfolio-control" aria-label="Replay project animation" title="Replay animation">
           <RotateCcw size={15} aria-hidden="true" />
-        </button>}
+        </button>
       </figcaption>
     </figure>
   );

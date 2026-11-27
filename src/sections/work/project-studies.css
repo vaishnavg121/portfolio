@@ -51,6 +51,10 @@ text.study-emphasis { fill: currentColor; }
 }
 .study-unit { fill: var(--text-muted); font: 14px var(--portfolio-mono), monospace; }
 
+@media (prefers-reduced-motion: reduce) {
+  .study-replay { display: none; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   [data-playing] .study-air { animation: study-air 2.6s var(--ease-reveal) both; transform-origin: 50% 55%; }
   [data-playing] .study-sensors { animation: study-emerge .8s .7s var(--ease-reveal) both; }
