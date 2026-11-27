@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion, useTransform } from "framer-motion";
+import type { ReactNode } from "react";
 import { ArrowUpRight, MoveRight } from "lucide-react";
 import Link from "next/link";
 import { profile, socials } from "@/lib/profile";
@@ -13,7 +14,7 @@ import { Interwoven } from "./interwoven/Interwoven";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-export const Hero = () => {
+export const Hero = ({ researchStudio }: { researchStudio?: ReactNode }) => {
   const reduced = useReducedMotion();
   const pointer = usePointer();
   const bgX = useTransform(pointer.sNX, [-1, 1], [-10, 10]);
@@ -82,7 +83,7 @@ export const Hero = () => {
           <GithubActivity />
         </motion.div>
 
-        <Interwoven />
+        {researchStudio ?? <Interwoven />}
 
         <div className="hero-deck-stage">
           <HeroCards />
