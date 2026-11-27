@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { X, Send, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { motionTokens } from "@/lib/motion";
 
 type Message = {
   id: string;
@@ -13,6 +14,7 @@ type Message = {
 };
 
 export const Chatbot = ({ onClose }: { onClose: () => void }) => {
+  const reduced = useReducedMotion();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -161,10 +163,9 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
     <dialog ref={dialogRef} aria-labelledby="chat-title" className="chat-window fixed z-50 m-0 max-h-none max-w-none overflow-visible border-0 bg-transparent p-0 text-text-primary"
       onCancel={(event) => { event.preventDefault(); onClose(); }}>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 20 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        initial={reduced ? false : { opacity: 0, y: 10, scale: .988 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={reduced ? { duration: 0 } : motionTokens.ease.panel}
         className="chat-panel w-full lg:w-[400px] bg-surface-elevated border-t lg:border border-border flex flex-col overflow-hidden h-full lg:h-[550px] lg:max-h-[calc(100vh-4rem)]"
         data-familiar-protect="true"
         onMouseEnter={() => {
@@ -192,7 +193,7 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
                   <button
                     key={i}
                     onClick={() => handleSend(s)}
-                    className="min-h-11 lg:min-h-0 text-left p-3 border border-border hover:border-text-muted transition-colors text-xs text-text-primary leading-tight"
+                    className="chat-suggestion min-h-11 lg:min-h-0 text-left p-3 border border-border hover:border-text-muted transition-colors text-xs text-text-primary leading-tight"
                   >
                     {s}
                   </button>

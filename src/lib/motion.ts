@@ -10,6 +10,7 @@ export const motionTokens = {
     sharp: [0.4, 0, 0.6, 1],
     soft: [0.2, 0, 0, 1],
     spring: { type: "spring", stiffness: 400, damping: 50 },
+    panel: { type: "spring", stiffness: 325, damping: 34, mass: .95 } as const,
     backOut: "back.out(1.7)",
     power3Out: "power3.out",
   },

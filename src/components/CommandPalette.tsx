@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { socials } from "@/lib/profile";
+import { motionTokens } from "@/lib/motion";
 
 type Navigate = (url: string) => void;
 
@@ -41,6 +42,7 @@ const COMMANDS = [
 const SECRET_COMMANDS = ["hamster", "breathing", "notes", "sudo hire vaishnav"];
 
 export const CommandPalette = () => {
+  const reduced = useReducedMotion();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -108,10 +110,10 @@ export const CommandPalette = () => {
             className="fixed inset-0 bg-black/60 backdrop-blur-sm"
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            initial={reduced ? false : { opacity: 0, scale: 0.985, y: -9 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            exit={{ opacity: 0, scale: reduced ? 1 : .99, y: reduced ? 0 : -5 }}
+            transition={reduced ? { duration: 0 } : motionTokens.ease.panel}
             role="dialog"
             aria-label="Command palette"
             className="portfolio-popover relative w-full max-w-lg overflow-hidden font-mono"
