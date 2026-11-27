@@ -12,7 +12,6 @@ const sections = [
   ["knowledge", "Skills landscape"],
   ["about", "Experience & education"],
   ["robotics", "ThriveForce robotics"],
-  ["beyond", "Beyond the Code"],
   ["notes", "Engineering notes"],
   ["contact", "Contact"],
 ];
