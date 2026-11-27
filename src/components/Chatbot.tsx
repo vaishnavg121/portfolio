@@ -178,7 +178,7 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
             <span className="w-2 h-2 rounded-full bg-accent" />
             <h3 id="chat-title" className="font-mono text-xs uppercase tracking-widest text-text-primary">ASK / VAISHNAV</h3>
           </div>
-          <button type="button" aria-label="Close chat" onClick={onClose} className="grid size-11 lg:size-auto place-items-center text-text-muted hover:text-text-primary transition-colors">
+          <button type="button" aria-label="Close chat" onClick={onClose} className="tactile-quiet grid size-11 place-items-center text-text-muted hover:text-text-primary">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -193,7 +193,7 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
                   <button
                     key={i}
                     onClick={() => handleSend(s)}
-                    className="chat-suggestion min-h-11 lg:min-h-0 text-left p-3 border border-border hover:border-text-muted transition-colors text-xs text-text-primary leading-tight"
+                    className="chat-suggestion tactile-quiet min-h-11 lg:min-h-0 text-left p-3 border border-border hover:border-text-muted text-xs text-text-primary leading-tight"
                   >
                     {s}
                   </button>
@@ -252,7 +252,7 @@ export const Chatbot = ({ onClose }: { onClose: () => void }) => {
               onClick={() => handleSend(input)}
               aria-label="Send message"
               disabled={isLoading || !input.trim()}
-              className="absolute bottom-2 right-1 grid size-11 lg:bottom-3 lg:right-3 lg:size-auto place-items-center text-text-muted hover:text-accent disabled:opacity-50 transition-colors"
+              className="tactile-quiet absolute bottom-2 right-1 grid size-11 lg:bottom-3 lg:right-3 lg:size-auto place-items-center text-text-muted hover:text-accent disabled:opacity-50"
             >
               <Send className="w-4 h-4" />
             </button>

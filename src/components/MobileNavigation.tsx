@@ -37,7 +37,7 @@ export function MobileNavigation() {
         <div className="flex items-center gap-2 lg:contents">
           <ChatbotLauncher />
           <button type="button" aria-haspopup="dialog" aria-controls="mobile-menu" onClick={() => menu.current?.showModal()}
-            className="inline-flex min-h-12 items-center gap-2 px-2 font-mono text-sm uppercase tracking-wider lg:hidden">
+            className="tactile-quiet inline-flex min-h-12 items-center gap-2 px-2 font-mono text-sm uppercase tracking-wider lg:hidden">
             Menu <Menu aria-hidden="true" size={19} />
           </button>
         </div>
@@ -50,14 +50,14 @@ export function MobileNavigation() {
         <div className="px-5 py-3">
           <div className="flex items-center justify-between border-b border-border">
             <h2 id="mobile-menu-title" className="font-mono text-sm uppercase tracking-widest text-text-muted">Navigate</h2>
-            <button type="button" aria-label="Close menu" onClick={() => menu.current?.close()} className="grid size-11 place-items-center">
+            <button type="button" aria-label="Close menu" onClick={() => menu.current?.close()} className="tactile-quiet grid size-11 place-items-center">
               <X aria-hidden="true" size={20} />
             </button>
           </div>
           <nav aria-label="Portfolio sections" className="divide-y divide-border">
             {sections.map(([id, label]) => (
               <Link key={id} href={`/#${id}`} onClick={() => menu.current?.close()}
-                className="flex min-h-12 items-center py-2 font-medium focus-visible:bg-surface-elevated hover:text-white focus-visible:text-white">
+                className="tactile-quiet flex min-h-12 items-center py-2 font-medium focus-visible:bg-surface-elevated hover:text-white focus-visible:text-white">
                 {label}
               </Link>
             ))}

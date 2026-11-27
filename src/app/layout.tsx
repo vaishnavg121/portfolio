@@ -5,6 +5,7 @@ import React from "react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { CommandPalette } from "@/components/CommandPalette";
 import { CustomCursor } from "@/components/CustomCursor";
+import { TouchFeedback } from "@/components/TouchFeedback";
 import { CompanionTester } from "@/components/companion/CompanionTester";
 import { PointerProvider, SystemRail } from "@/components/effects";
 import { Companion } from "@/components/companion";
@@ -52,6 +53,7 @@ export default function RootLayout({
         <div className="portfolio-content">
           <PointerProvider>
             <CustomCursor />
+            <TouchFeedback />
             <SystemRail />
             <MobileNavigation />
             {children}

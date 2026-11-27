@@ -49,7 +49,9 @@
   --portfolio-width: 94rem;
   --chapter-space: clamp(3rem, 7.8vw, 7.5rem);
   --ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-tactile: linear(0, .32 11%, .78 25%, 1.018 42%, 1.071 56%, 1.015 73%, .998 89%, 1);
+  --ease-tactile: linear(0, .35 10%, .77 21%, 1.015 39%, 1.095 52%, 1.031 67%, .993 85%, 1);
+  --duration-tactile: 285ms;
+  --duration-press: 72ms;
   --danger: #e63946;
   --blue-accent: #3b82f6;
 
@@ -146,8 +148,10 @@ body {
   background: var(--glass-compact);
   box-shadow: inset 0 1px 0 rgb(255 244 251 / .15), inset 0 -1px rgb(0 0 0 / .38), 0 2px 5px rgb(0 0 0 / .19);
   color: var(--text-primary);
+  touch-action: manipulation;
   transition: border-color var(--duration-feedback) ease, background-color var(--duration-feedback) ease,
-    scale 330ms var(--ease-tactile), translate 330ms var(--ease-tactile);
+    scale var(--duration-tactile) var(--ease-tactile), translate var(--duration-tactile) var(--ease-tactile),
+    box-shadow var(--duration-feedback) ease;
 }
 
 :is(.portfolio-control, .atlas-controls button):not(:disabled):focus-visible {
@@ -161,12 +165,30 @@ body {
     background-color: var(--selected-surface);
     scale: 1.03;
     translate: 0 -1px;
+    box-shadow: inset 0 1px 0 rgb(255 244 251 / .24), 0 4px 12px rgb(0 0 0 / .34);
   }
 }
-:is(.portfolio-control, .atlas-controls button):not(:disabled):active {
-  scale: .959;
-  translate: 0 0;
-  transition-duration: 85ms;
+:is(.portfolio-control, .atlas-controls button):not(:disabled):is(:active, [data-pressing]) {
+  scale: .966 .946;
+  translate: 0 1px;
+  border-color: var(--selected-edge);
+  box-shadow: inset 0 2px 5px rgb(0 0 0 / .32), 0 1px 2px rgb(0 0 0 / .2);
+  transition-duration: var(--duration-press);
+}
+
+.tactile-quiet {
+  border-radius: var(--radius-control);
+  transition: scale var(--duration-tactile) var(--ease-tactile), color var(--duration-feedback) ease,
+    background-color var(--duration-feedback) ease, border-color var(--duration-feedback) ease;
+}
+.tactile-quiet:not(:disabled):is(:active, [data-pressing]) {
+  scale: .974;
+  background-color: var(--accent-soft);
+  transition-duration: var(--duration-press);
+}
+.tactile-quiet:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .portfolio-popover {
@@ -217,10 +239,14 @@ body {
   transition: translate 330ms var(--ease-tactile), scale 330ms var(--ease-tactile);
 }
 
-.portfolio-text-link:is(:focus-visible, :active) { --link-underline: 1; color: var(--text-primary); }
+.portfolio-text-link:is(:focus-visible, :active, [data-pressing]) { --link-underline: 1; color: var(--text-primary); }
 .portfolio-text-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.portfolio-text-link:active .portfolio-link-arrow { scale: .88; transition-duration: 85ms; }
-.portfolio-text-link:active { color: var(--accent); }
+.portfolio-text-link:is(:active, [data-pressing]) .portfolio-link-arrow {
+  translate: calc(var(--link-arrow-x) - .13rem) var(--link-arrow-y);
+  scale: .88;
+  transition-duration: var(--duration-press);
+}
+.portfolio-text-link:is(:active, [data-pressing]) { color: var(--accent); }
 
 @media (hover: hover) and (pointer: fine) {
   .portfolio-text-link:hover { --link-underline: 1; --link-arrow-x: 0.24rem; color: var(--text-primary); }
@@ -229,7 +255,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .portfolio-text-link, .portfolio-link-label::after, .portfolio-link-arrow { transition: none; }
-  .portfolio-link-arrow { translate: none; }
+  :is(.portfolio-control, .atlas-controls button, .tactile-quiet):is(:hover,:active,[data-pressing]),
+  .portfolio-text-link:is(:hover,:active,[data-pressing]) .portfolio-link-arrow { scale: none; translate: none; }
 }
 
 .contact-profile-link {
@@ -309,10 +336,13 @@ body {
     var(--glass-compact);
   box-shadow: inset 0 1px 0 rgb(255 244 251 / .15), inset 0 -1px 0 rgb(0 0 0 / .44), 0 9px 23px rgb(0 0 0 / .29);
   transform: perspective(850px) translate(var(--card-x), var(--card-y)) rotate(var(--card-roll)) rotateY(var(--card-yaw)) scale(var(--card-scale));
-  transition: transform 430ms var(--deck-spring), border-color 200ms ease;
+  transition: scale var(--duration-tactile) var(--ease-tactile), transform 430ms var(--deck-spring), border-color 200ms ease;
 }
-.hero-card:has(.hero-card-select:active) { scale: .982; transition: scale 85ms ease, transform 430ms var(--deck-spring); }
-.hero-card:not(:has(.hero-card-select:active)) { transition: scale 330ms var(--ease-tactile), transform 430ms var(--deck-spring), border-color 200ms ease; }
+.hero-card:has(.hero-card-select:is(:active, [data-pressing])) {
+  scale: .978;
+  --glint-strength: 27%;
+  transition: scale var(--duration-press) ease, transform 430ms var(--deck-spring);
+}
 
 .hero-card[data-compact-after] { --card-y: calc(var(--deck-card-height) + (var(--deck-order) - 1) * var(--deck-step) - 0.15rem); }
 .hero-card[data-compact-active] {
@@ -324,7 +354,7 @@ body {
 }
 .hero-card[data-active] { --glint-strength: 25%; }
 .hero-card-open svg { transition: translate 330ms var(--ease-tactile), scale 190ms var(--ease-tactile); }
-.hero-card-open:active svg { scale: .87; translate: .1rem 0; }
+.hero-card-open:is(:active, [data-pressing]) svg { scale: .87; translate: .1rem 0; }
 
 .hero-card-heading {
   position: absolute;
@@ -462,6 +492,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .hero-card, .hero-card * { transition-duration: 0s !important; transition-delay: 0s !important; }
+  .hero-card:has(.hero-card-select:is(:active, [data-pressing])),
+  .hero-card-open:is(:active, [data-pressing]) svg { scale: none; translate: none; }
 }
 
 @media (width >= 43rem), (width >= 35rem) and (height <= 30rem) {
