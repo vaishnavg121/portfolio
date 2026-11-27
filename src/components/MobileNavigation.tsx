@@ -6,11 +6,13 @@ import { Menu, X } from "lucide-react";
 import { ChatbotLauncher } from "./ChatbotLauncher";
 
 const sections = [
+  ["github", "GitHub activity"],
+  ["interwoven", "Interwoven Intelligence"],
   ["work", "Selected work"],
   ["knowledge", "Skills landscape"],
   ["about", "Experience & education"],
   ["robotics", "ThriveForce robotics"],
-  ["github", "GitHub activity"],
+  ["beyond", "Beyond the Code"],
   ["notes", "Engineering notes"],
   ["contact", "Contact"],
 ];
