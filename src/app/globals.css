@@ -493,66 +493,6 @@ body {
   background: var(--surface);
 }
 
-.project-slide {
-  --scene-color: #734850;
-  --scene-surface: #201416;
-}
-
-.project-slide[data-project="imdpune"] { --scene-color: #667d8c; --scene-surface: #12202a; }
-.project-slide[data-project="windy"] { --scene-color: #537f77; --scene-surface: #142220; }
-.project-slide[data-project="spenza"] { --scene-color: #8d7160; --scene-surface: #251c17; }
-.project-scene {
-  min-height: 15rem;
-  padding: 2.75rem 0.9rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--scene-color) 24%, var(--edge-soft));
-  border-radius: var(--radius-card);
-  background:
-    radial-gradient(ellipse at 80% 30%, var(--scene-surface), transparent 72%),
-    repeating-linear-gradient(90deg, #ffffff07 0 1px, transparent 1px 29px),
-    color-mix(in srgb, var(--surface) 42%, var(--background));
-  box-shadow: var(--shadow-soft);
-}
-
-.project-scene-number {
-  position: absolute;
-  inset: 0 0 auto auto;
-  font: 500 clamp(10rem, 28vw, 26rem)/0.78 var(--portfolio-display), sans-serif;
-  letter-spacing: -0.11em;
-  color: var(--scene-color);
-  opacity: 0.14;
-  pointer-events: none;
-}
-
-.project-scene-theme {
-  position: absolute;
-  inset: 0.75rem 0.9rem auto auto;
-  color: #bdada6;
-}
-
-.project-node .arch-node {
-  min-height: 2.4rem;
-  padding: 0.52rem 0.65rem;
-  border: 1px solid var(--edge-soft);
-  border-inline-start-color: var(--scene-color);
-  border-radius: var(--radius-control);
-  color: var(--text-primary);
-  background: var(--surface-gradient);
-  transition: transform 200ms var(--ease-reveal), border-color 180ms ease, background-color 180ms ease;
-}
-
-.project-node:is(:hover, :focus-visible, [aria-pressed="true"]) .arch-node {
-  border-color: var(--selected-edge);
-  background: var(--selected-surface);
-}
-
-.project-node[aria-pressed="true"] .arch-node { transform: translateX(3px); }
-.project-node .arch-line {
-  width: 1px;
-  height: 0.52rem;
-  margin-inline-start: 0.85rem;
-  background: var(--scene-color);
-}
-
 .robot-title { padding-block: var(--chapter-space) clamp(1.5rem, 4.5vw, 4rem); }
 .robot-chapter-name { font-size: clamp(2.7rem, 9vw, 8rem); line-height: 0.89; letter-spacing: -0.066em; }
 .robot-cad,
@@ -659,7 +599,7 @@ body:has(.case-image-dialog[open]) { overflow: hidden; }
 
 @media (width < 64rem) {
   .project-slide { border: 1px solid var(--edge-soft); border-radius: var(--radius-card); background: var(--surface-gradient); }
-  .project-scene { margin-inline: 0.55rem; border-radius: var(--radius-surface); flex: 1; box-shadow: none; }
+  .project-scene { margin-inline: .55rem; flex: 1; }
   .project-card-action { padding-block: 0.65rem; }
 }
 
@@ -708,10 +648,6 @@ body:has(.case-image-dialog[open]) { overflow: hidden; }
   }
   .project-track { gap: clamp(3.25rem, 8vh, 6rem); }
   .project-title { font-size: clamp(2.75rem, 4.65vw, 5rem); }
-  .project-scene { min-height: clamp(24rem, 41vw, 35rem); padding: 3.5rem 2rem 2rem; }
-  .project-scene-theme { inset: 1.2rem 1.4rem auto auto; }
-  .project-node .arch-node { min-height: 2.75rem; padding: 0.65rem 0.95rem; }
-  .project-node .arch-line { height: 0.78rem; }
   .robot-story { align-items: stretch; gap: clamp(2rem, 4.9vw, 5rem); padding-bottom: var(--chapter-space); }
   .robot-story-intro { min-height: clamp(19rem, 48vh, 34rem); }
   .robot-story-specs {

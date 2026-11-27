@@ -1,32 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronLeft, ChevronRight, MoveRight } from "lucide-react";
-import { EmberField, FlowLines, GridEffect, BlueprintEffect, SwaNeetiInk, MagneticEffect, usePointer } from "@/components/effects";
-import { PROJECT_ASSETS } from "@/lib/assets";
-import { projects as profileProjects } from "@/lib/profile";
-import { AnimatePresence, motion, useReducedMotion, useTransform } from "framer-motion";
+import { MagneticEffect } from "@/components/effects";
+import { ProjectMotion } from "./work/ProjectMotion";
+import { projects as PROJECTS } from "@/lib/profile";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
-const effects: Record<string, React.ElementType> = {
-  imdpune: EmberField,
-  swaneeti: SwaNeetiInk,
-  windy: FlowLines,
-  spenza: GridEffect,
-  thriveforce: BlueprintEffect,
+const editorialQuery = "(min-width: 64rem)";
+const subscribeEditorial = (change: () => void) => {
+  const media = window.matchMedia(editorialQuery);
+  media.addEventListener("change", change);
+  return () => media.removeEventListener("change", change);
 };
-
-const PROJECTS = profileProjects.map((project) => ({
-  ...project,
-  Effect: effects[project.slug],
-  assets: PROJECT_ASSETS[project.slug],
-}));
+const editorialSnapshot = () => window.matchMedia(editorialQuery).matches;
+const serverEditorial = () => false;
 
 type Project = (typeof PROJECTS)[number];
 
@@ -68,11 +62,8 @@ export const SelectedWork = () => {
   const [slide, setSlide] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [visibleScenes, setVisibleScenes] = useState<Set<string>>(new Set());
-  const [highlightedNode, setHighlightedNode] = useState("");
   const reduceMotion = useReducedMotion();
-  const { sNX, sNY } = usePointer();
-  const layerX = useTransform(sNX, [-1, 1], [-9, 9]);
-  const layerY = useTransform(sNY, [-1, 1], [-6, 6]);
+  const editorial = useSyncExternalStore(subscribeEditorial, editorialSnapshot, serverEditorial);
   const activeProject = PROJECTS[activeIndex];
 
   useEffect(() => {
@@ -106,26 +97,16 @@ export const SelectedWork = () => {
 
   useGSAP(() => {
     const media = gsap.matchMedia();
-    media.add({ desktop: "(width >= 64rem)", motion: "(prefers-reduced-motion: no-preference)" }, (context) => {
-      const { desktop, motion: animate } = context.conditions ?? {};
+    media.add(editorialQuery, () => {
       const cards = carousel.current ? Array.from(carousel.current.children) : [];
       cards.forEach((card, index) => {
-        if (desktop) {
-          ScrollTrigger.create({
-            trigger: card,
-            start: "top 62%",
-            end: "bottom 50%",
-            onEnter: () => setActiveIndex(index),
-            onEnterBack: () => setActiveIndex(index),
-          });
-        }
-        if (desktop && animate) {
-          const nodes = card.querySelectorAll(".arch-node");
-          gsap.fromTo(nodes, { opacity: 0.64, y: 10 }, {
-            opacity: 1, y: 0, duration: 0.48, stagger: 0.065, ease: "power3.out", clearProps: "transform,opacity",
-            scrollTrigger: { trigger: card, start: "top 78%", once: true },
-          });
-        }
+        ScrollTrigger.create({
+          trigger: card,
+          start: "top 62%",
+          end: "bottom 50%",
+          onEnter: () => setActiveIndex(index),
+          onEnterBack: () => setActiveIndex(index),
+        });
       });
     }, section);
     return () => media.revert();
@@ -171,7 +152,7 @@ export const SelectedWork = () => {
                 setSlide(next);
               }
             }}>
-            {PROJECTS.map((project) => {
+            {PROJECTS.map((project, index) => {
               const visible = visibleScenes.has(project.slug);
               return (
                 <article key={project.id} className="project-card project-slide isolate min-w-0 max-lg:flex max-lg:basis-full max-lg:shrink-0 max-lg:snap-start max-lg:flex-col"
@@ -179,54 +160,8 @@ export const SelectedWork = () => {
                   <div className="project-details mobile-card-pad relative z-20 lg:hidden" data-familiar-avoid>
                     <ProjectDetails project={project} />
                   </div>
-                  <div className="project-scene relative flex min-w-0 items-center justify-center overflow-hidden" data-cursor="VIEW">
-                    <span aria-hidden="true" className="project-scene-number">{project.id}</span>
-                    {project.assets?.hero && (
-                      <motion.div className="pointer-events-none absolute inset-0" style={{ x: reduceMotion ? 0 : layerX, y: reduceMotion ? 0 : layerY }}>
-                        <Image src={project.assets.hero} alt="" fill sizes="(width < 64rem) 90vw, 55vw" className="object-cover opacity-60 mix-blend-luminosity" />
-                      </motion.div>
-                    )}
-                    {project.assets?.texture && (
-                      <div className="pointer-events-none absolute inset-0 mix-blend-overlay opacity-25">
-                        <Image src={project.assets.texture} alt="" fill sizes="(width < 64rem) 90vw, 55vw" className="object-cover" />
-                      </div>
-                    )}
-                    <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-                      {visible && project.Effect && <project.Effect />}
-                    </div>
-                    <div className="project-scene-theme font-mono text-[9px] uppercase tracking-wide">{project.theme}</div>
-                    <div className="project-pipeline relative z-10 w-full max-w-sm">
-                      {project.assets?.diagram ? (
-                        <div className="relative aspect-square w-full">
-                          <Image src={project.assets.diagram} alt={project.title + " architecture"} fill sizes="(width < 64rem) 90vw, 24rem" className="object-contain" />
-                        </div>
-                      ) : (
-                        <>
-                          <p className="mb-3 flex items-center gap-2.5 font-mono text-[10px] uppercase tracking-widest text-text-muted">
-                            <span className="size-1.5 bg-accent" /> System Pipeline
-                          </p>
-                          <div className="flex flex-col">
-                            {project.architecture.map((node, index) => {
-                              const key = project.slug + "-" + index;
-                              const highlighted = highlightedNode === key;
-                              const reactToNode = (target: HTMLButtonElement) => window.dispatchEvent(new CustomEvent("companionInteract", { detail: { type: "pipeline-hover", target } }));
-                              return (
-                                <button type="button" key={node} aria-pressed={highlighted} data-highlighted={highlighted || undefined}
-                                  className="project-node group/node flex flex-col text-left"
-                                  onClick={(event) => { setHighlightedNode((current) => current === key ? "" : key); reactToNode(event.currentTarget); }}
-                                  onMouseEnter={(event) => reactToNode(event.currentTarget)}>
-                                  <span className="arch-node flex w-full items-center justify-between gap-3 font-mono text-xs">
-                                    <span>{node}</span>
-                                    <span aria-hidden="true" className="text-[10px] text-text-muted">{String(index + 1).padStart(2, "0")}</span>
-                                  </span>
-                                  {index < project.architecture.length - 1 && <span aria-hidden="true" className="arch-line" />}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </>
-                      )}
-                    </div>
+                  <div className="project-scene min-w-0" data-familiar-protect data-familiar-yield>
+                    <ProjectMotion slug={project.slug} active={visible && index === (editorial ? activeIndex : slide)} reduced={Boolean(reduceMotion)} />
                   </div>
                   <div className="project-card-action mobile-card-pad lg:hidden">
                     <ProjectAction project={project} />
