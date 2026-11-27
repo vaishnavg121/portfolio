@@ -4,22 +4,29 @@ const vertex = `
 attribute vec3 aPosition;
 attribute vec3 aInk;
 attribute vec2 aNormal;
+attribute vec3 aFlow;
 uniform vec4 uCamera;
 uniform vec3 uGrid;
 uniform float uPixelsPerCell;
 uniform float uFraming, uTime;
-uniform vec3 uRose;
+uniform vec3 uRose, uStone;
 varying vec4 vInk;
 varying vec2 vPoint;
 
 void main() {
   float size = uGrid.x;
-  bool dust = aInk.x < 0.;
+  bool peripheral = aInk.x < 0.;
   vec3 position = aPosition;
-  if (dust) {
-    float phase = aPosition.x * .14 + aPosition.y * .092 + aPosition.z * .086;
-    position.xy += vec2(sin(phase + uTime * .91), cos(phase * .78 + uTime * .73)) * vec2(.44, .33);
-    position.z += .42 * sin(phase + uTime * .6);
+  if (peripheral) {
+    vec3 p = position / size;
+    float phase = dot(p, vec3(8.2, 6.7, 3.5));
+    float crossPhase = dot(p, vec3(-5.3, 9., -2.));
+    // The perpendicular gradients of two waves create a smooth, shared current.
+    vec2 curl = vec2(.63, -.77) * cos(phase + uTime * .74)
+      + vec2(.86, .51) * sin(crossPhase - uTime * .43) * .52;
+    float drift = sin(phase * .68 + uTime * .58);
+    position.xy += (curl * .43 + aFlow.xy * drift * .94) * aFlow.z;
+    position.z += sin(crossPhase + uTime * .65) * aFlow.z * .76;
   }
   float x = position.x * uCamera.x + position.z * uCamera.y;
   float z = position.z * uCamera.x - position.x * uCamera.y;
@@ -40,11 +47,14 @@ void main() {
   float light = max(0., dot(facing, vec3(-.43, -.48, .764)));
   vec3 warm = mix(vec3(157., 151., 146.), vec3(245., 236., 225.), tone) / 255.;
   warm *= .86 + .14 * light;
-  if (dust) warm = mix(warm, uRose, .3);
+  if (peripheral) {
+    vec3 pigment = mix(uStone, uRose, smoothstep(-.24, .22, position.x / size) * .78);
+    warm = mix(warm, pigment, .34 + .22 * aFlow.z);
+  }
   float alpha = min(1., aInk.y * clamp(.94 + .34 * z / size, .76, 1.));
-  if (dust) {
+  if (peripheral) {
     vec2 edge = abs(gl_Position.xy);
-    alpha *= (1. - smoothstep(.87, 1., max(edge.x, edge.y)));
+    alpha *= (1. - smoothstep(.79, .995, max(edge.x, edge.y)));
   }
   vInk = vec4(warm, alpha);
 }
@@ -106,12 +116,14 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
   const position = gl.createBuffer();
   const ink = gl.createBuffer();
   const normal = gl.createBuffer();
+  const flow = gl.createBuffer();
   const orderBuffer = gl.createBuffer();
-  if (!position || !ink || !normal || !orderBuffer) {
+  if (!position || !ink || !normal || !flow || !orderBuffer) {
     gl.deleteProgram(program);
     gl.deleteBuffer(position);
     gl.deleteBuffer(ink);
     gl.deleteBuffer(normal);
+    gl.deleteBuffer(flow);
     gl.deleteBuffer(orderBuffer);
     return null;
   }
@@ -120,16 +132,20 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
   const positionAttribute = gl.getAttribLocation(program, "aPosition");
   const inkAttribute = gl.getAttribLocation(program, "aInk");
   const normalAttribute = gl.getAttribLocation(program, "aNormal");
+  const flowAttribute = gl.getAttribLocation(program, "aFlow");
   const camera = gl.getUniformLocation(program, "uCamera");
   const grid = gl.getUniformLocation(program, "uGrid");
   const pixelScale = gl.getUniformLocation(program, "uPixelsPerCell");
   const framing = gl.getUniformLocation(program, "uFraming");
   const time = gl.getUniformLocation(program, "uTime");
-  const rose = gl.getUniformLocation(program, "uRose");
-  const token = getComputedStyle(canvas).getPropertyValue("--accent-source").trim();
-  const rgb = /^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(token)?.slice(1).map(channel => parseInt(channel, 16) / 255)
-    ?? [.79, .57, .60];
-  gl.uniform3fv(rose, rgb);
+  const styles = getComputedStyle(canvas);
+  const paintToken = (uniform: string, token: string, fallback: number[]) => {
+    const channels = /^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(styles.getPropertyValue(token).trim());
+    const rgb = channels?.slice(1).map(channel => parseInt(channel, 16) / 255) ?? fallback;
+    gl.uniform3fv(gl.getUniformLocation(program, uniform), rgb);
+  };
+  paintToken("uRose", "--accent-source", [.737, .510, .537]);
+  paintToken("uStone", "--accent-stone", [.765, .663, .565]);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, ink);
   gl.bufferData(gl.ARRAY_BUFFER, field.inks, gl.STATIC_DRAW);
@@ -139,6 +155,10 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
   gl.bufferData(gl.ARRAY_BUFFER, field.normals, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(normalAttribute);
   gl.vertexAttribPointer(normalAttribute, 2, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, flow);
+  gl.bufferData(gl.ARRAY_BUFFER, field.flow, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(flowAttribute);
+  gl.vertexAttribPointer(flowAttribute, 3, gl.FLOAT, false, 0, 0);
   gl.bindBuffer(gl.ARRAY_BUFFER, position);
   gl.bufferData(gl.ARRAY_BUFFER, field.positions, gl.DYNAMIC_DRAW);
   gl.enableVertexAttribArray(positionAttribute);
@@ -213,12 +233,14 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
       gl.disableVertexAttribArray(positionAttribute);
       gl.disableVertexAttribArray(inkAttribute);
       gl.disableVertexAttribArray(normalAttribute);
+      gl.disableVertexAttribArray(flowAttribute);
       gl.bindBuffer(gl.ARRAY_BUFFER, null);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
       gl.useProgram(null);
       gl.deleteBuffer(position);
       gl.deleteBuffer(ink);
       gl.deleteBuffer(normal);
+      gl.deleteBuffer(flow);
       gl.deleteBuffer(orderBuffer);
       gl.deleteProgram(program);
     },

@@ -3,11 +3,29 @@ const noise = (index: number, offset: number) => {
   return seed - Math.floor(seed);
 };
 
-type FringePoint = { x: number; y: number; depth: number; tone: number; opacity: number; radius: number };
+type FringePoint = {
+  x: number; y: number; depth: number;
+  tone: number; opacity: number; radius: number;
+  flowX: number; flowY: number; mobility: number;
+};
+
+// Position and outward heading select a contour arc. Length, bend and spread shape its trail.
+const streams = [
+  { x: .76, y: .20, dx: .84, dy: -.54, length: .31, bend: .105, spread: .033, weight: 1, depth: -.18 },
+  { x: .78, y: .40, dx: .96, dy: -.28, length: .25, bend: -.087, spread: .027, weight: .66, depth: .11 },
+  { x: .81, y: .68, dx: .97, dy: .24, length: .31, bend: .125, spread: .041, weight: 1, depth: .19 },
+  { x: .16, y: .63, dx: -.88, dy: -.47, length: .22, bend: .085, spread: .039, weight: .84, depth: -.13 },
+  { x: .41, y: .25, dx: -.83, dy: -.56, length: .17, bend: -.055, spread: .022, weight: .55, depth: -.2 },
+] as const;
+
+const depthAt = (samples: Uint8Array, record: number, size: number) =>
+  (samples[record + 2] / 255 - .5) * size * .5;
+
+const toneAt = (samples: Uint8Array, record: number) => (samples[record + 3] >> 4) / 15;
 
 export function tracePortraitSilhouette(samples: Uint8Array, size: number, count: number) {
   const compact = size < 100;
-  const reach = size * (compact ? .123 : .172);
+  const reach = size * (compact ? .19 : .245);
   const padding = Math.ceil(reach + 2);
   const width = size + padding * 2;
   const records = new Int32Array(width * width).fill(-1);
@@ -40,10 +58,14 @@ export function tracePortraitSilhouette(samples: Uint8Array, size: number, count
     if (cell < records.length - width) enter(cell + width);
   }
 
-  const edge = new Uint8Array(count);
+  const edge = new Float32Array(count);
   for (let index = 0; index < count; index++) {
     const cell = gridCell(6 + index * 5);
-    edge[index] = Number(outside[cell-1] || outside[cell+1] || outside[cell-width] || outside[cell+width]);
+    if (outside[cell - 1] || outside[cell + 1] || outside[cell - width] || outside[cell + width]) {
+      edge[index] = 1;
+    } else if (outside[cell - 2] || outside[cell + 2] || outside[cell - width * 2] || outside[cell + width * 2]) {
+      edge[index] = .4;
+    }
   }
 
   // Propagate each cell's nearest occupied pixel so dispersion can follow its real outline.
@@ -78,32 +100,87 @@ export function tracePortraitSilhouette(samples: Uint8Array, size: number, count
   }
 
   const fringe: FringePoint[] = [];
-  const safeEdge = size * (compact ? .018 : .04);
+  const boundary: number[] = [];
+  const rimReach = size * (compact ? .091 : .111);
   for (let index = 0; index < tail; index++) {
     const cell = queue[index];
-    if (distances[cell] > reach * reach || nearest[cell] < 0) continue;
+    if (distances[cell] > reach * reach || nearest[cell] < 0 || distances[cell] < 1) continue;
+    if (distances[cell] === 1) boundary.push(cell);
     const distance = Math.sqrt(distances[cell]);
-    const fade = Math.max(0, 1 - distance / reach);
     const x = cell % width - padding, y = Math.floor(cell / width) - padding;
-    const grain = .72 + .22 * Math.sin(x * .22 - y * .15) + .07 * Math.cos(y * .43 + x * .19);
-    if (noise(cell, 1) > .59 * fade ** .88 * grain) continue;
-
-    const edgeDistance = Math.min(x + safeEdge, y + safeEdge, size + safeEdge - x, size + safeEdge - y);
-    const framing = Math.min(1, Math.max(0, edgeDistance / (size * .055)));
-    if (framing < .03) continue;
     const source = records[nearest[cell]];
-    const tone = (samples[source + 3] >> 4) / 15;
+    const tone = toneAt(samples, source);
     const outwardX = (x + padding - nearest[cell] % width) / distance;
     const outwardY = (y + padding - Math.floor(nearest[cell] / width)) / distance;
-    const lateral = (noise(cell, 4) - .5) * 1.75;
+    // The cropped hem should taper faster than the open air near the head and shoulders.
+    const hem = y > size * .73 ? Math.max(.43, 1 - outwardY * .58) : 1;
+    const grain = .82 + .18 * Math.sin(x * .16 - y * .19);
+    const rim = Math.max(0, 1 - distance / (rimReach * hem * grain));
+    const outer = Math.max(0, 1 - distance / (reach * hem));
+    const rimChance = (compact ? .64 : .73) * rim ** 1.4;
+    const dustChance = (compact ? .034 : .052) * outer ** 1.75 * (1 - rim);
+    const roll = noise(cell, 1);
+    if (roll > rimChance + dustChance) continue;
+
+    const dust = roll > rimChance;
+    const fade = dust ? outer : rim;
+    const lateral = (noise(cell, 4) - .5) * (dust ? 2.2 : 1.3);
+    const depthSpread = distance * (dust ? 1.7 : .78);
     fringe.push({
       x: x + .5 - outwardY * lateral + (noise(cell, 2) - .5) * .85,
-      y: y + .5 + outwardX * lateral + (noise(cell, 3) - .5) * .85 - distance * .06,
-      depth: (samples[source + 2] / 255 - .5) * size * .5 - distance * (.30 + noise(cell, 6) * 1.05),
+      y: y + .5 + outwardX * lateral + (noise(cell, 3) - .5) * .85,
+      depth: depthAt(samples, source, size) + depthSpread * (noise(cell, 6) * 1.65 - .92),
       tone,
-      opacity: (.19 + tone * .17 + noise(cell, 7) * .15) * fade ** 1.56 * framing,
-      radius: (.12 + noise(cell, 8) * .15) * (.76 + .24 * fade),
+      opacity: dust ? (.16 + .16 * noise(cell, 7)) * fade : (.24 + tone * .24 + noise(cell, 7) * .13) * fade ** 1.24,
+      radius: (.14 + noise(cell, 8) * .16) * (dust ? .68 + .32 * fade : .88 + .19 * fade) * (compact ? 1.1 : 1),
+      flowX: outwardX * .6 - outwardY * .5,
+      flowY: outwardY * .6 + outwardX * .5,
+      mobility: dust ? .91 : .27 + .39 * (1 - fade),
     });
+  }
+
+  for (const [streamIndex, stream] of streams.entries()) {
+    const goalX = stream.x * size + padding, goalY = stream.y * size + padding;
+    let root = -1, best = Infinity;
+    for (const cell of boundary) {
+      const origin = nearest[cell];
+      const ox = origin % width, oy = Math.floor(origin / width);
+      const facing = (cell % width - ox) * stream.dx + (Math.floor(cell / width) - oy) * stream.dy;
+      if (facing < .23) continue;
+      const score = (ox - goalX) ** 2 + (oy - goalY) ** 2 + (1 - facing) * size;
+      if (score < best) { root = origin; best = score; }
+    }
+    if (root < 0) continue;
+
+    const source = records[root];
+    const rootX = samples[source] * .5 + .25, rootY = samples[source + 1] * .5 + .25;
+    const tone = toneAt(samples, source);
+    const rootDepth = depthAt(samples, source, size);
+    const streamCount = Math.round((compact ? 62 : 154) * stream.weight);
+    for (let index = 0; index < streamCount; index++) {
+      const seed = streamIndex * 604 + index;
+      const t = ((index + noise(seed, 1)) / streamCount) ** 1.3;
+      const drift = stream.length * t * (compact ? .73 : 1);
+      const bend = stream.bend * t * (t - .12);
+      const across = noise(seed, 2) + noise(seed, 3) - 1;
+      const branch = Math.max(0, t - .28) * stream.spread * (seed % 3 === 1 ? 1.55 : -.34);
+      const spread = stream.spread * (.48 + .71 * Math.sin(Math.PI * t)) * across + branch;
+      const x = rootX + size * (stream.dx * drift - stream.dy * (bend + spread));
+      const y = rootY + size * (stream.dy * drift + stream.dx * (bend + spread));
+      const cell = (padding + Math.floor(y)) * width + padding + Math.floor(x);
+      if (x < -padding || x >= size + padding || !outside[cell]) continue;
+
+      const fade = (1 - t) ** 1.28;
+      fringe.push({
+        x, y, tone,
+        depth: rootDepth + size * (stream.depth * t + (noise(seed, 4) - .5) * (.035 + t * .17)),
+        opacity: (.30 + tone * .18 + .24 * noise(seed, 5)) * fade,
+        radius: (.17 + .18 * noise(seed, 6)) * (.72 + .28 * fade) * (compact ? 1.16 : 1),
+        flowX: stream.dx - stream.dy * t * stream.bend * 6,
+        flowY: stream.dy + stream.dx * t * stream.bend * 6,
+        mobility: .57 + t * .29,
+      });
+    }
   }
   return { edge, fringe };
 }

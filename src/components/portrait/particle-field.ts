@@ -36,6 +36,7 @@ export function createParticleField(data: ArrayBuffer) {
   const velocities = new Float32Array(home.length);
   const targets = new Float32Array(home.length);
   const inks = new Float32Array(home.length);
+  const flow = new Float32Array(home.length);
   const normals = new Float32Array(count * 2);
   const springs = new Float32Array(count);
   const damping = new Float32Array(count);
@@ -62,7 +63,7 @@ export function createParticleField(data: ArrayBuffer) {
     const coverage = (samples[record + 3] & 15) / 15;
     const normal = samples[record + 4];
     inks[slot] = tone;
-    const rim = edge[index] ? .79 + .21 * coverage : 1;
+    const rim = 1 - edge[index] * .21 * (1 - coverage);
     inks[slot + 1] = (0.33 + 0.64 * tone) * coverage ** 0.8 * (compact ? 1.11 : 1) * rim;
     inks[slot + 2] = (0.16 + 0.26 * Math.sqrt(tone)) * (0.79 + 0.21 * coverage) * (compact ? 1.10 : 1);
     normals[index * 2] = ((normal >> 4) / 15 - 0.5) * 1.52;
@@ -71,16 +72,19 @@ export function createParticleField(data: ArrayBuffer) {
     damping[index] = 0.865 - 0.016 * coverage;
   }
   for (let index = coreCount; index < count; index++) {
-    const { x, y, depth, tone, opacity, radius } = fringe[index - coreCount];
+    const { x, y, depth, tone, opacity, radius, flowX, flowY, mobility } = fringe[index - coreCount];
     const slot = index * 3;
     const inverseZoom = (focal - depth) / focal;
     home[slot] = (x - size * .5) * inverseZoom;
     home[slot + 1] = (y - centerY) * inverseZoom;
     home[slot + 2] = depth;
     // Negative tone reserves the atmospheric material in the same particle pass.
-    inks[slot] = -.11 - .88 * tone;
+    inks[slot] = -.01 - .98 * tone;
     inks[slot + 1] = opacity;
     inks[slot + 2] = radius;
+    flow[slot] = flowX;
+    flow[slot + 1] = flowY;
+    flow[slot + 2] = mobility;
     springs[index] = .099 + .035 * opacity;
     damping[index] = .889;
   }
@@ -189,7 +193,7 @@ export function createParticleField(data: ArrayBuffer) {
   }
 
   return {
-    size, count, positions, inks, normals, camera, focal, centerY,
+    size, count, positions, inks, normals, flow, camera, focal, centerY,
     reset() {
       positions.set(home);
       velocities.fill(0);

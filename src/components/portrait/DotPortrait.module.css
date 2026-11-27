@@ -1,5 +1,5 @@
 .portrait {
-  --portrait-bleed: 4%;
+  --portrait-bleed: 10%;
   position: relative;
   width: 100%;
   aspect-ratio: 1;
@@ -27,7 +27,7 @@
   pointer-events: none;
 }
 @media (width >= 64rem) {
-  .portrait { --portrait-bleed: 7%; }
+  .portrait { --portrait-bleed: 15%; }
 }
 
 .portrait[data-dot-ready] .picture { opacity: 0; }
