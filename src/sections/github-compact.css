@@ -1,57 +1,179 @@
 .github-compact {
-  --gh-cell: 9px;
-  --gh-gap: 3px;
-  margin-block-start: 1.1rem;
+  --gh-unit: 11.5px;
+  --gh-height: 102px;
+  position: relative;
+  margin-block-start: 1.05rem;
   max-width: 42rem;
-  padding: .46rem .75rem .28rem;
-  border: 1px solid var(--edge-soft);
-  border-radius: var(--radius-surface);
-  background: var(--glass-editorial);
-  box-shadow: inset 0 1px 0 rgb(255 244 251 / .06);
 }
-.github-compact-head, .github-compact-foot {
+
+.github-compact-head, .github-compact-foot, .github-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: .35rem .65rem;
+  gap: .4rem .65rem;
 }
-.github-compact-head h2 { color: var(--text-primary); font-size: .85rem; font-weight: 600; }
-.github-compact-head a { font: .66rem var(--portfolio-mono), monospace; color: var(--text-muted); min-height: 2.5rem; }
-.github-compact-head .portfolio-link-arrow { width: .76rem; height: .76rem; }
-.github-window { position: relative; min-height: 6.42rem; }
-.github-calendar-viewport { overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.github-compact-head, .github-compact-foot { justify-content: space-between; }
+.github-compact-head h2 { color: var(--text-primary); font-size: .84rem; font-weight: 600; }
+.github-compact-head a {
+  color: var(--text-muted);
+  font: .65rem var(--portfolio-mono), monospace;
+  min-height: 2.25rem;
+}
+.github-compact-head .portfolio-link-arrow { width: .72rem; height: .72rem; }
+
+.github-window { position: relative; min-height: var(--gh-height); }
+.github-window:has([data-sculpted])::before {
+  content: "";
+  position: absolute;
+  inset: 18% -1% 5%;
+  pointer-events: none;
+  background: radial-gradient(ellipse 52% 40% at 55% 69%,
+    color-mix(in srgb, var(--accent-stone) 11%, transparent), transparent 94%);
+}
+.github-calendar-viewport {
+  position: relative;
+  overflow: auto hidden;
+  overscroll-behavior-inline: contain;
+  overflow-anchor: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+  touch-action: pan-x pan-y pinch-zoom;
+}
 .github-calendar-viewport:not([data-calendar-ready]) { visibility: hidden; }
-.github-calendar-grid { position: relative; display: flex; width: max-content; gap: var(--gh-gap); padding: 0 2px .29rem; }
-.github-week {
-  display: grid;
-  grid-template-rows: 13px repeat(7, var(--gh-cell));
-  grid-template-columns: var(--gh-cell);
-  row-gap: var(--gh-gap);
+.github-calendar-grid {
+  position: relative;
+  width: max(100%, calc((var(--gh-weeks) + var(--gh-tail)) * var(--gh-unit)));
+  height: var(--gh-height);
 }
-.github-month { font: .57rem var(--portfolio-mono), monospace; color: var(--text-muted); grid-row: 1; white-space: nowrap; }
-.github-edge-anchor { position: absolute; inset-block-end: 0; width: 1px; height: 1px; pointer-events: none; }
+.github-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  visibility: hidden;
+  pointer-events: none;
+}
+[data-sculpted] .github-canvas {
+  visibility: visible;
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.github-edge-anchor {
+  position: absolute;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
 .github-edge-anchor:last-child { inset-inline-end: 0; }
+
+.github-month {
+  position: absolute;
+  left: calc((var(--week) + .7) * var(--gh-unit));
+  bottom: 1px;
+  color: var(--text-muted);
+  font: .551rem/1 var(--portfolio-mono), monospace;
+  pointer-events: none;
+}
+[data-sculpted] .github-month { left: calc((var(--week) + 1.88) * var(--gh-unit)); }
+
 .github-day {
+  position: absolute;
+  left: calc((var(--week) + .85) * var(--gh-unit));
+  top: calc(15px + var(--day) * var(--gh-unit) * .82);
+  width: calc(var(--gh-unit) * .73);
+  height: calc(var(--gh-unit) * .67);
+  translate: -50% -50%;
   border-radius: 2px;
   background: color-mix(in srgb, var(--accent-mauve) 14%, var(--surface));
-  transition: scale 210ms var(--ease-tactile), filter 140ms ease;
   cursor: pointer;
 }
-.github-day[data-level="1"] { background: color-mix(in srgb,var(--accent-petal) 24%,var(--surface)); }
-.github-day[data-level="2"] { background: color-mix(in srgb,var(--accent-petal) 42%,var(--surface)); }
-.github-day[data-level="3"] { background: color-mix(in srgb,var(--accent-petal) 67%,var(--surface)); }
+.github-day[data-level="1"] { background: color-mix(in srgb, var(--accent-petal) 29%, var(--surface)); }
+.github-day[data-level="2"] { background: color-mix(in srgb, var(--accent-petal) 48%, var(--surface)); }
+.github-day[data-level="3"] { background: color-mix(in srgb, var(--accent-petal) 69%, var(--surface)); }
 .github-day[data-level="4"] { background: var(--accent-petal); }
-.github-day:is(:focus-visible,[aria-pressed="true"]) { outline: 1px solid var(--text-primary); outline-offset: 1px; z-index: 1; }
-.github-day:active { scale: .82; transition-duration: 60ms; }
-@media (hover:hover) and (pointer:fine) {
-  .github-day:hover { scale: 1.22; filter: brightness(1.3); z-index: 1; }
+[data-sculpted] .github-day {
+  left: calc(var(--anchor-x) * var(--gh-unit));
+  top: calc(var(--gh-height) + var(--anchor-y) * var(--gh-unit));
+  pointer-events: none;
+  background: transparent;
+  z-index: 1;
 }
+.github-day:focus-visible, :not([data-sculpted]) > .github-day[aria-pressed="true"] {
+  outline: 1px solid var(--text-primary);
+  outline-offset: 2px;
+}
+.github-day:focus-visible { z-index: 2; }
+
+.github-tooltip {
+  position: absolute;
+  z-index: 4;
+  top: -.48rem;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  min-width: 8.35rem;
+  max-width: 100%;
+  padding: .4rem .55rem;
+  color: var(--text-primary);
+  background: var(--glass-panel), var(--surface);
+  border: 1px solid var(--glass-rim);
+  border-radius: var(--radius-control);
+  box-shadow: var(--glass-shadow);
+  pointer-events: none;
+  visibility: hidden;
+  transform-origin: 50% 100%;
+  font: .63rem/1.25 var(--portfolio-mono), monospace;
+}
+.github-tooltip[data-positioned="visible"] {
+  visibility: visible;
+  animation: github-detail-in 170ms var(--ease-reveal) both;
+}
+.github-tooltip::after {
+  content: "";
+  position: absolute;
+  left: var(--tooltip-notch, 50%);
+  bottom: -3px;
+  translate: -50% 0;
+  rotate: 45deg;
+  width: 6px;
+  height: 6px;
+  background: var(--surface);
+  border-right: 1px solid var(--glass-rim);
+  border-bottom: 1px solid var(--glass-rim);
+}
+@keyframes github-detail-in {
+  from { opacity: 0; transform: translateY(4px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.github-tooltip time { display: block; color: var(--text-muted); white-space: nowrap; }
+.github-tooltip strong { display: block; margin-top: .16rem; font-weight: 600; white-space: nowrap; }
+.github-tooltip button {
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  margin: -.35rem -.35rem -.35rem 0;
+  min-width: 2.35rem;
+  min-height: 2.35rem;
+  color: var(--text-muted);
+}
+
 .github-status { color: var(--text-muted); font-size: .75rem; padding-block-start: 1.55rem; }
-.github-compact-foot { min-height: 2.5rem; }
-.github-compact-foot p { color: var(--text-muted); font: .65rem/1.4 var(--portfolio-mono),monospace; }
-.github-latest { min-height: 2rem; padding-inline: .57rem; font-size: .66rem; }
+.github-compact-foot { min-height: 2.35rem; border-top: 1px solid color-mix(in srgb, var(--edge-soft) 55%, transparent); }
+.github-compact-foot p { color: var(--text-muted); font: .64rem/1.4 var(--portfolio-mono), monospace; }
+.github-actions { gap: .27rem; }
+.github-latest, .github-mode { min-height: 1.95rem; padding-inline: .56rem; font-size: .65rem; }
+.github-mode { min-width: 2.3rem; color: var(--text-muted); font-family: var(--portfolio-mono), monospace; }
+.github-mode:hover { color: var(--text-primary); }
+
 @media (pointer: coarse) {
-  .github-compact { --gh-cell: 10px; }
-  .github-window { min-height: 7rem; }
-  .github-latest { min-height: 44px; }
+  .github-compact { --gh-unit: 16px; --gh-height: 125px; }
+  .github-latest, .github-mode, .github-tooltip button { min-height: 44px; }
+  .github-mode, .github-tooltip button { min-width: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .github-tooltip[data-positioned="visible"] { animation: none; }
 }
