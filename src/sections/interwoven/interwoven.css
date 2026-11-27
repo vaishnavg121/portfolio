@@ -1,0 +1,62 @@
+.interwoven { grid-area: interwoven; position: relative; min-width: 0; }
+.interwoven-top { display: flex; align-items: center; gap: 1rem; }
+.interwoven-top h2 { color: var(--text-primary); font: 500 clamp(1.16rem,2.05vw,1.76rem)/1.1 var(--portfolio-display),sans-serif; letter-spacing: -.035em; }
+.interwoven-top::after {
+  content: ""; width: min(17vw,10rem); height: 1px;
+  background: linear-gradient(90deg,var(--edge-soft),transparent);
+}
+.interwoven-stage {
+  height: clamp(7.1rem,13vw,12.1rem);
+  position: relative;
+  touch-action: pan-y pinch-zoom;
+  background: radial-gradient(ellipse 47% 53% at 53% 50%,color-mix(in srgb,var(--accent-mauve) 9%,transparent),transparent);
+}
+.interwoven-canvas, .interwoven-fallback { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.interwoven-canvas[data-ribbons-ready] + .interwoven-fallback { display: none; }
+.interwoven-knot {
+  position: absolute; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+  translate: -50% -50%; cursor: pointer; z-index: 1;
+}
+.interwoven-knot::before {
+  content: ""; width: .46rem; height: .46rem; border-radius: 50%;
+  border: 1px solid color-mix(in srgb,var(--text-primary) 85%,var(--accent));
+  background: var(--background);
+  box-shadow: 0 0 0 4px color-mix(in srgb,var(--accent-petal) 13%,transparent),0 0 15px color-mix(in srgb,var(--accent-stone) 51%,transparent);
+  transition: scale 260ms var(--ease-tactile), background-color 140ms ease;
+}
+.interwoven-knot:is(:hover,:focus-visible,[aria-pressed=true])::before { scale: 1.36; background: var(--accent-petal); }
+.interwoven-knot[data-related]::before { border-color: var(--accent-petal); }
+.interwoven-knot:active::before { scale: .89; transition-duration: 75ms; }
+.interwoven-knot:focus-visible, .interwoven-controls button:focus-visible { outline: 2px solid var(--accent-petal); outline-offset: 1px; }
+.interwoven-controls { display: flex; flex-wrap: wrap; gap: 0 clamp(.58rem,2.7vw,2.4rem); margin-block: -.28rem 0; }
+.interwoven-controls button {
+  display: inline-flex; gap: .47rem; align-items: center; min-height: 44px; padding-inline: .2rem;
+  font: clamp(.66rem,1.4vw,.76rem)/1.2 var(--portfolio-mono),monospace;
+  color: var(--text-muted); cursor: pointer; border-radius: .48rem;
+  transition: color 130ms ease, scale 280ms var(--ease-tactile);
+}
+.interwoven-controls button i {
+  width: .86rem; height: 2px; border-radius: 99px; background: var(--ribbon-tone); opacity: .76;
+  transition: width 270ms var(--ease-tactile), opacity 130ms ease;
+}
+.interwoven-controls button:is([data-related],:hover) { color: var(--text-primary); }
+.interwoven-controls button[aria-pressed=true] i { width: 1.1rem; opacity: 1; }
+.interwoven-controls button:active { scale: .95; transition-duration: 80ms; }
+.interwoven-details { min-height: 1.45rem; color: var(--text-muted); font-size: .74rem; }
+.interwoven-details[data-open] {
+  background: var(--glass-panel); border: 1px solid var(--edge-soft); border-radius: var(--radius-surface);
+  box-shadow: inset 0 1px 0 rgb(255 244 251 / .07); animation: menu-enter var(--duration-panel) var(--ease-reveal) both;
+  display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center;
+  gap: .35rem 1rem; padding: .42rem .65rem .42rem .88rem;
+}
+.interwoven-details h3 { color: var(--text-primary); font-size: .86rem; margin-block-end: .14rem; }
+.interwoven-links { display: flex; flex-wrap: wrap; gap: 0 1rem; }
+.interwoven-links .portfolio-text-link { min-height: 40px; }
+.interwoven-links .portfolio-link-arrow { width: .68rem; height: .68rem; }
+.interwoven-clear { display: grid; place-content: center; width: 44px; height: 44px; }
+@media (width < 46rem) {
+  .interwoven-controls { gap: 0 .74rem; }
+  .interwoven-details[data-open] { grid-template-columns: minmax(0,1fr) auto; }
+  .interwoven-links { grid-column: 1; grid-row: 2; }
+  .interwoven-clear { grid-column: 2; grid-row: 1; align-self: start; }
+}

@@ -18,7 +18,8 @@ export function GithubActivity() {
   const [focused, setFocused] = useState<string | null>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const positioned = useRef(false);
-  const byDate = useMemo(() => calendar?.grid.flat() ?? [], [calendar]);
+  const weeks = useMemo(() => calendar?.grid.filter(week => week.length) ?? [], [calendar]);
+  const byDate = useMemo(() => weeks.flat(), [weeks]);
   const indices = useMemo(() => new Map(byDate.map((day, index) => [day.date, index])), [byDate]);
   const lastDate = byDate.at(-1)?.date;
   const firstDate = byDate[0]?.date;
@@ -52,7 +53,6 @@ export function GithubActivity() {
     return () => observer.disconnect();
   }, [lastDate]);
 
-  let previousMonth = -1;
   return (
     <section className="github-compact min-w-0" id="github" aria-labelledby="github-title" data-familiar-protect data-familiar-yield>
       <header className="github-compact-head">
@@ -67,12 +67,12 @@ export function GithubActivity() {
             aria-label="Contribution calendar. Use arrow keys to move between days." data-anchor="github-calendar-center">
             <div className="github-calendar-grid">
               <span className="github-edge-anchor" data-anchor="github-calendar-start" />
-              {calendar.grid.filter(week => week.length).map(week => {
+              {weeks.map((week, index) => {
                 const day = week[0];
                 const date = calendarDate(day.date);
                 const month = date.getUTCMonth();
-                const monthLabel = month !== previousMonth ? monthFormat.format(date) : "";
-                previousMonth = month;
+                const previous = weeks[index - 1]?.[0];
+                const monthLabel = !previous || month !== calendarDate(previous.date).getUTCMonth() ? monthFormat.format(date) : "";
                 return <div className="github-week" key={day.date}>
                   <span className="github-month" aria-hidden="true">{monthLabel}</span>
                   {week.map(item => {

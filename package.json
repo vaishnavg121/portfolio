@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:knowledge": "node --experimental-strip-types --test tests/knowledge-*.test.mjs",
-    "test:github": "node --experimental-strip-types --test tests/github-calendar.test.mjs"
+    "test:github": "node --experimental-strip-types --test tests/github-calendar.test.mjs",
+    "test:interwoven": "node --experimental-strip-types --test tests/interwoven.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
