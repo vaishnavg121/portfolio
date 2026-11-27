@@ -5,20 +5,21 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ArrowUpRight, ScanLine } from "lucide-react";
 import type { startStudio } from "./studio-runtime";
-import { learningBay, learningPhases, studioBays } from "./studio-plan";
+import { stationDetails, studioBays, type StudioStationId } from "./studio-plan";
 import styles from "./ResearchStudio.module.css";
 
 type Stage = NonNullable<ReturnType<typeof startStudio>>;
 
 export function ResearchStudio() {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const overview = useRef<HTMLButtonElement>(null);
+  const controls = useRef<HTMLDivElement>(null);
   const runtime = useRef<Stage | null>(null);
   const touch = useRef<{ id: number; x: number; y: number; rotating: boolean } | null>(null);
   const [ready, setReady] = useState(false);
-  const [focused, setFocused] = useState(false);
-  const [hover, setHover] = useState(false);
-  const [phase, setPhase] = useState(0);
+  const [focused, setFocused] = useState<StudioStationId | null>(null);
+  const [hover, setHover] = useState<StudioStationId | null>(null);
+  const [phase, setPhase] = useState<{ station: StudioStationId; index: number }>();
+  const details = focused ? stationDetails[focused] : null;
 
   useEffect(() => {
     const surface = canvas.current;
@@ -31,7 +32,7 @@ export function ResearchStudio() {
       const token = ++request;
       import("./studio-runtime").then(({ startStudio }) => {
         if (stopped || request !== token || !seen) return;
-        runtime.current = startStudio(surface, () => setReady(true), setPhase);
+        runtime.current = startStudio(surface, () => setReady(true), (station, index) => setPhase({ station, index }));
         runtime.current?.visible(seen);
       }).catch(() => {
         if (!stopped) setReady(false);
@@ -69,37 +70,43 @@ export function ResearchStudio() {
     runtime.current?.focus(focused);
   }, [focused, ready]);
 
-  function inspect() {
-    setFocused(true);
+  function inspect(station: StudioStationId) {
+    setFocused(station);
   }
 
   function reset() {
-    setFocused(false);
-    setHover(false);
-    overview.current?.focus({ preventScroll: true });
+    setFocused(null);
+    setHover(null);
+    runtime.current?.highlight(null);
+    controls.current?.querySelector<HTMLButtonElement>(`[data-inspect="${focused}"]`)?.focus({ preventScroll: true });
   }
 
   return (
     <section id="research-studio" className={styles.studio} aria-labelledby="studio-title"
-      data-studio-renderer={ready ? "webgl" : "fallback"} data-studio-view={focused ? "focus" : "overview"}
+      data-studio-renderer={ready ? "webgl" : "fallback"} data-studio-view={focused ? "focus" : "overview"} data-studio-station={focused ?? undefined}
       onKeyDown={event => { if (event.key === "Escape" && focused) reset(); }}>
       <header className={styles.heading}>
         <div>
           <h2 id="studio-title">The Research Studio</h2>
           <p>Four disciplines, one shared laboratory.</p>
         </div>
-        <button ref={overview} type="button" className={`portfolio-control ${styles.inspect}`} aria-expanded={focused}
-          aria-controls="studio-details" onClick={focused ? reset : inspect}>
-          {focused ? <ArrowLeft size={14} aria-hidden /> : <ScanLine size={14} aria-hidden />}
-          {focused ? "Overview" : "Inspect AI / ML"}
-        </button>
+        <div ref={controls} className={styles.controls} role="group" aria-label="Inspect a workstation">
+          {(["learning", "agentic"] as const).map(id => (
+            <button key={id} type="button" className={`portfolio-control ${styles.inspect}`} data-inspect={id}
+              aria-expanded={focused === id} aria-controls={focused === id ? "studio-details" : undefined} onClick={() => inspect(id)}>
+              <ScanLine size={14} aria-hidden />{stationDetails[id].control}
+            </button>
+          ))}
+          {focused && <button type="button" className={`portfolio-control ${styles.inspect}`} onClick={reset}>
+            <ArrowLeft size={14} aria-hidden />Overview
+          </button>}
+        </div>
       </header>
-      <div className={styles.stage} data-studio-stage data-hover={hover ? "" : undefined}>
+      <div className={styles.stage} data-studio-stage data-hover={hover ?? undefined}>
         {!ready && <div className={styles.fallback}>
           <Image fill unoptimized
-            src={focused ? "/images/research-studio/station.webp" : "/images/research-studio/overview.webp"}
-            alt={focused ? "Forecasting workstation showing the sensor manifold, observation chamber, and plot planes"
-              : "A four-bay architectural cutaway with a forecasting workstation in the front bay"} />
+            src={`/images/research-studio/${details?.image ?? "overview.webp"}`}
+            alt={details?.alt ?? "A four-bay architectural cutaway with agentic retrieval and forecasting workstations"} />
         </div>}
         <canvas ref={canvas} className={styles.canvas} data-studio-canvas aria-hidden
           onPointerMove={event => {
@@ -118,7 +125,7 @@ export function ResearchStudio() {
               if (start.rotating) runtime.current.lean(Math.max(-.8, Math.min(.8, dx / 135)));
             }
           }}
-          onPointerLeave={() => { runtime.current?.lean(0); runtime.current?.highlight(false); setHover(false); }}
+          onPointerLeave={() => { runtime.current?.lean(0); runtime.current?.highlight(null); setHover(null); }}
           onPointerDown={event => {
             if (event.isPrimary && event.button === 0) touch.current = {
               id: event.pointerId, x: event.clientX, y: event.clientY, rotating: false,
@@ -129,27 +136,30 @@ export function ResearchStudio() {
             const start = touch.current;
             touch.current = null;
             if (start?.rotating) runtime.current?.lean(0);
-            if (!start?.rotating && start?.id === event.pointerId && Math.hypot(event.clientX - start.x, event.clientY - start.y) < 9
-              && runtime.current?.hit(event.clientX, event.clientY)) inspect();
+            if (!start?.rotating && start?.id === event.pointerId && Math.hypot(event.clientX - start.x, event.clientY - start.y) < 9) {
+              const id = runtime.current?.hit(event.clientX, event.clientY);
+              if (id) inspect(id);
+            }
           }} />
-        {focused && <aside id="studio-details" className={styles.details}>
+        {details && <aside key={focused} id="studio-details" className={styles.details}>
           <p className={styles.kicker}>Conceptual sequence</p>
-          <h3>Sensor to forecast</h3>
-          <p>Follow observations through conditioning, model inference and a visibility forecast. The animation illustrates the pipeline.</p>
-          <ol className={styles.phases} aria-label="Forecasting stages">
-            {learningPhases.map((label, index) => (
-              <li key={label} aria-current={ready && phase === index ? "step" : undefined} data-studio-phase={index}>{label}</li>
+          <h3>{details.title}</h3>
+          <p>{details.summary}</p>
+          <ol className={styles.phases} aria-label={details.phaseLabel}>
+            {details.phases.map((label, index) => (
+              <li key={label} aria-current={ready && phase?.station === focused && phase.index === index ? "step" : undefined} data-studio-phase={index}>{label}</li>
             ))}
           </ol>
           <div className={styles.links}>
-            <Link className="portfolio-text-link" href="/work/imdpune">Vertical Visibility <ArrowUpRight size={12} aria-hidden /></Link>
-            <Link className="portfolio-text-link" href="/work/windy">Windy <ArrowUpRight size={12} aria-hidden /></Link>
+            {details.projects.map(project => (
+              <Link key={project.href} className="portfolio-text-link" href={project.href}>{project.label} <ArrowUpRight size={12} aria-hidden /></Link>
+            ))}
           </div>
         </aside>}
       </div>
       <ul className={styles.bays} aria-label="Studio workstations">
         {studioBays.map(bay => (
-          <li key={bay.id} data-active={bay === learningBay ? "" : undefined}>
+          <li key={bay.id} data-active={bay.id === "learning" || bay.id === "agentic" ? "" : undefined}>
             <span aria-hidden />{bay.title}
           </li>
         ))}
