@@ -1,6 +1,6 @@
 .github-compact {
   --gh-unit: 11.5px;
-  --gh-height: 102px;
+  --gh-height: 108px;
   position: relative;
   margin-block-start: 1.05rem;
   max-width: 42rem;
@@ -169,7 +169,7 @@
 .github-mode:hover { color: var(--text-primary); }
 
 @media (pointer: coarse) {
-  .github-compact { --gh-unit: 16px; --gh-height: 125px; }
+  .github-compact { --gh-unit: 16px; --gh-height: 142px; }
   .github-latest, .github-mode, .github-tooltip button { min-height: 44px; }
   .github-mode, .github-tooltip button { min-width: 44px; }
 }

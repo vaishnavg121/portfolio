@@ -1,13 +1,14 @@
 import {
-  Box3, Color, InstancedBufferAttribute, InstancedMesh, Matrix4, OrthographicCamera, PlaneGeometry, Raycaster, Scene,
+  Box3, Color, InstancedBufferAttribute, InstancedMesh, Matrix4, Mesh, OrthographicCamera, PlaneGeometry, Raycaster, Scene,
   ShaderMaterial, Vector2, Vector3, WebGLRenderer,
 } from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
 import { contributionView, type ContributionColumn } from "@/lib/github-calendar";
 
 const formationTime = .76;
 const footprintX = .71;
-const footprintZ = .74;
+const footprintZ = .69;
 const thickness = .115;
 
 const vertexShader = `
@@ -21,8 +22,11 @@ const vertexShader = `
     float height = mix(.115, aDay.x, rise);
     float hovered = 1. - step(.5, abs(aDay.w - uHover));
     float pinned = 1. - step(.5, abs(aDay.w - uPinned));
-    vec3 p = vec3(position.x, (position.y + .5) * height + hovered * uLift, position.z);
-    vNormal = normalize(vec3(normal.x, normal.y / max(.22, height), normal.z));
+    float bevel = min(.106, height * .34);
+    float cap = (.5 - abs(position.y)) * bevel / .12;
+    float y = position.y < 0. ? cap : height - cap;
+    vec3 p = vec3(position.x, y + hovered * uLift, position.z);
+    vNormal = normalize(vec3(normal.x, normal.y * .12 / bevel, normal.z));
     vLocal = position;
     vDay = vec4(aDay.y, hovered, pinned, rise);
     gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.);
@@ -42,17 +46,20 @@ const fragmentShader = `
     float upper = smoothstep(.04, .52, vLocal.y + .50);
     float occupied = step(.001, vDay.x);
     float amount = pow(vDay.x, .64);
-    vec3 pigment = mix(uMauve, mix(uRose, uStone, amount * .57), .53 + amount * .17);
-    vec3 base = mix(uNight, uMauve, .023 + .048 * light + .018 * top);
-    vec3 ceramic = mix(pigment, uStone, .34) * (.35 + .45 * light);
-    float glint = pow(max(0., dot(n, normalize(key + uView))), 21.);
-    float reflection = 1. - smoothstep(.008, .105, abs(vLocal.x + vLocal.z * .74 + .07));
-    vec3 glass = mix(uNight, pigment, (.12 + .39 * upper) * (.41 + .59 * light))
-      + uIvory * (top * (.155 + .075 * reflection) + rim * (.025 + .155 * upper) + glint * .20);
-    float shade = smoothstep(-.44, .22, vLocal.y);
-    vec3 material = mix(ceramic, glass, .25 + shade * .71) + pigment * upper * .09;
-    material *= .61 + amount * .59;
-    material += uIvory * pow(amount, 2.) * top * .135;
+    vec3 pigment = mix(mix(uMauve, uStone, .40), uRose, smoothstep(.05, .55, vDay.x));
+    pigment = mix(pigment, mix(uStone, uIvory, .71), smoothstep(.40, 1., vDay.x));
+    float lowerShade = mix(.57, 1., smoothstep(-.50, .28, vLocal.y));
+    float sideFill = .34 + .46 * light + .14 * max(n.x, 0.);
+    vec3 base = mix(uNight, uMauve, .016 + .031 * light + .027 * top);
+    vec3 ceramic = pigment * (.29 + .49 * light + .09 * top) * lowerShade;
+    float glint = pow(max(0., dot(n, normalize(key + uView))), 18.);
+    float reflection = 1. - smoothstep(.03, .38, abs(vLocal.x + vLocal.z * .64 + .105));
+    vec3 glass = mix(uNight, pigment, (.18 + .56 * upper) * sideFill) * lowerShade
+      + uIvory * (top * (.10 + .12 * reflection) + rim * (.012 + .09 * upper) + glint * .085);
+    vec3 hybrid = mix(ceramic * .72, glass, .17 + upper * .77) + pigment * upper * (.035 + .07 * light);
+    vec3 material = hybrid;
+    material *= .79 + amount * .29;
+    material += uIvory * amount * amount * top * .095;
     vec3 color = mix(base, material, occupied);
     float focus = max(vDay.y * .71, vDay.z);
     color = mix(color, uIvory, focus * (.10 + top * .14 + rim * .1));
@@ -77,9 +84,37 @@ const reflectionFragment = `
   varying vec2 vUv;
   varying float vStrength;
   void main() {
-    float soft = 1. - smoothstep(.12, .50, length(vUv - .5));
-    float echo = sqrt(vStrength);
-    gl_FragColor = vec4(mix(uNight, uRose, echo * .66), soft * (.065 + echo * .19));
+    vec2 position = vUv - .5;
+    float contact = (1. - smoothstep(.12, .49, length(position + vec2(.04, -.05)))) * .23;
+    float echo = (1. - smoothstep(.01, .48, length(position - vec2(.16, -.13)))) * vStrength * .24;
+    gl_FragColor = vec4(mix(uNight, uRose, echo / max(.13, contact + echo) * .62), contact + echo);
+    #include <colorspace_fragment>
+  }
+`;
+
+const groundVertex = `
+  varying vec2 vGrid;
+  void main() {
+    vGrid = position.xz;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
+  }
+`;
+
+const groundFragment = `
+  uniform vec3 uNight, uMauve, uStone;
+  uniform float uWeeks;
+  varying vec2 vGrid;
+  void main() {
+    float left = smoothstep(-.68, .54, vGrid.x);
+    float right = 1. - smoothstep(uWeeks - 2.5, uWeeks + .1, vGrid.x);
+    float sides = smoothstep(-.69, .08, vGrid.y) * (1. - smoothstep(6., 6.65, vGrid.y));
+    vec2 line = abs(fract(vGrid) - .5);
+    float horizontal = 1. - smoothstep(0., .063, line.y);
+    float vertical = 1. - smoothstep(0., .051, line.x);
+    float front = 1. - smoothstep(.005, .072, abs(vGrid.y - 6.42));
+    float field = left * right * sides;
+    float hue = max(horizontal * .115, vertical * .068) * field + front * left * right * .15;
+    gl_FragColor = vec4(mix(uNight, mix(uMauve, uStone, .35), min(1., hue * 6.)), field * .065 + hue);
     #include <colorspace_fragment>
   }
 `;
@@ -105,6 +140,7 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
   const hover = new Vector2(), lean = new Vector2();
   const direction = new Vector3(), up = new Vector3(), right = new Vector3(), center = new Vector3();
   const color = getComputedStyle(canvas);
+  const view = contributionView;
   const tint = (name: string) => ({ value: new Color(color.getPropertyValue(name).trim()) });
   const uniforms = {
     uTime: { value: reduced ? formationTime : 0 },
@@ -113,12 +149,16 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
     uStone: tint("--accent-stone"),
     uIvory: tint("--text-primary"),
     uMauve: tint("--accent-mauve"),
+    uWeeks: { value: weekCount },
     uView: { value: direction },
     uHover: { value: -1 },
     uPinned: { value: -1 },
     uLift: { value: 0 },
   };
-  const geometry = new RoundedBoxGeometry(footprintX, 1, footprintZ, 1, .12);
+  const blank = new RoundedBoxGeometry(footprintX, 1, footprintZ, 2, .12);
+  blank.deleteAttribute("uv");
+  const geometry = mergeVertices(blank);
+  blank.dispose();
   const attributes = new Float32Array(columns.length * 4);
   const material = new ShaderMaterial({ uniforms, vertexShader, fragmentShader });
   const mesh = new InstancedMesh(geometry, material, columns.length);
@@ -139,6 +179,13 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
   reflections.instanceMatrix = mesh.instanceMatrix;
   reflections.frustumCulled = false;
   scene.add(reflections);
+  const groundGeometry = new PlaneGeometry(weekCount + 1, 7.5).rotateX(-Math.PI / 2).translate((weekCount - 1) / 2, -.025, 2.99);
+  const groundMaterial = new ShaderMaterial({
+    uniforms, vertexShader: groundVertex, fragmentShader: groundFragment, transparent: true, depthWrite: false,
+  });
+  const ground = new Mesh(groundGeometry, groundMaterial);
+  ground.renderOrder = -1;
+  scene.add(ground);
 
   const raycaster = new Raycaster();
   const cursor = new Vector2();
@@ -149,8 +196,7 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
   let width = 0, height = 0, pitch = 1;
 
   function pose() {
-    const view = contributionView;
-    direction.set(view.eye.x + lean.x * .041, view.eye.y + lean.y * .027, view.eye.z).normalize();
+    direction.set(view.eye.x + lean.x * .022, view.eye.y + lean.y * .022, view.eye.z).normalize();
     up.set(0, direction.z, -direction.y).normalize();
     right.crossVectors(up, direction);
     const scale = pitch / right.x;
@@ -224,10 +270,10 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
       if (!width || !height || x < 0 || x >= width || y < 0 || y >= height) return -1;
       cursor.set(x / width * 2 - 1, 1 - y / height * 2);
       raycaster.setFromCamera(cursor, camera);
-      const guess = x / pitch - contributionView.left;
+      const guess = x / pitch - view.left;
       let best = -1, nearest = Infinity, near = -1, distance = touch ? 95 : 26;
       for (const [index, column] of columns.entries()) {
-        if (Math.abs(column.x - guess) > 3.4) continue;
+        if (Math.abs(column.x - guess) > 4.25) continue;
         const wave = Math.max(0, Math.min(1, (uniforms.uTime.value - attributes[index * 4 + 2] * .24) / .49));
         const columnHeight = thickness + (column.height - thickness) * (1 - (1 - wave) ** 3);
         const lift = index === uniforms.uHover.value ? uniforms.uLift.value : 0;
@@ -253,6 +299,8 @@ export function createContributionSculpture({ canvas, columns, weekCount, reduce
       reflectionGeometry.dispose();
       reflectionMaterial.dispose();
       reflections.dispose();
+      groundGeometry.dispose();
+      groundMaterial.dispose();
       renderer.dispose();
     },
   };

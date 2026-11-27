@@ -36,15 +36,21 @@ export function contributionColumns(weeks: GithubContribution[][]) {
 export type ContributionColumn = ReturnType<typeof contributionColumns>[number];
 
 // A rolled orthographic camera keeps the chronological axis horizontal.
-const eyeLength = Math.hypot(.30, .69, .66);
-const upLength = Math.hypot(.69, .66);
-const eye = { x: -.30 / eyeLength, y: .69 / eyeLength, z: .66 / eyeLength };
-const up = { x: 0, y: .66 / upLength, z: -.69 / upLength };
-const right = { x: up.y * eye.z - up.z * eye.y, y: up.z * eye.x, z: -up.y * eye.x };
-export const contributionView = { eye, up, right, left: 1.0, floor: 5.43, tail: 3.48 };
+function sculptureView(x: number, y: number, z: number) {
+  const length = Math.hypot(x, y, z);
+  const vertical = Math.hypot(y, z);
+  const eye = { x: x / length, y: y / length, z: z / length };
+  const up = { x: 0, y: z / vertical, z: -y / vertical };
+  const right = { x: vertical / length, y: up.z * eye.x, z: -up.y * eye.x };
+  return { eye, up, right, left: .88, floor: 6.05, tail: 4.08 };
+}
+
+export const contributionView = sculptureView(-.49, .75, .65);
+export const contributionMonthOffset = contributionView.left + contributionView.right.z / contributionView.right.x * 6.58;
 
 export function contributionAnchor(column: ContributionColumn) {
   const y = column.height * .68;
+  const { right, up } = contributionView;
   return {
     x: contributionView.left + column.x + (right.y * y + right.z * column.z) / right.x,
     y: -contributionView.floor - (up.y * y + up.z * column.z) / right.x,
