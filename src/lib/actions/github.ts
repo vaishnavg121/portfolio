@@ -1,27 +1,27 @@
 "use server";
 
-export interface GithubContribution {
-  date: string;
-  count: number;
-  level: 0 | 1 | 2 | 3 | 4;
-}
-
-export interface GithubCalendarData {
-  grid: GithubContribution[][];
-  totalContributions: number;
-  mostActiveDay?: GithubContribution;
-  activeWeeks: number;
-  currentYear: number;
-}
+import { parsePublicCalendar, type GithubCalendarData, type GithubContribution } from "@/lib/github-calendar";
 
 export async function fetchGithubContributions(username: string): Promise<GithubCalendarData | null> {
+  if (!/^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i.test(username)) return null;
   const token = process.env.GITHUB_TOKEN;
-  
-  if (!token) {
-    console.warn("No GITHUB_TOKEN configured. Falling back to empty state.");
+  if (token) {
+    const data = await fetchAuthenticatedCalendar(username, token);
+    if (data) return data;
+  }
+  try {
+    const result = await fetch("https://github.com/users/" + username + "/contributions", {
+      headers: { "Accept-Language": "en-US" },
+      signal: AbortSignal.timeout(4500),
+      next: { revalidate: 3600 },
+    });
+    return result.ok ? parsePublicCalendar(await result.text()) : null;
+  } catch {
     return null;
   }
+}
 
+async function fetchAuthenticatedCalendar(username: string, token: string): Promise<GithubCalendarData | null> {
   const query = `
     query($userName:String!) {
       user(login: $userName){
@@ -44,6 +44,7 @@ export async function fetchGithubContributions(username: string): Promise<Github
   try {
     const response = await fetch("https://api.github.com/graphql", {
       method: "POST",
+      signal: AbortSignal.timeout(4500),
       headers: {
         Authorization: `bearer ${token}`,
         "Content-Type": "application/json",

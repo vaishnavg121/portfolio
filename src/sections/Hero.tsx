@@ -8,6 +8,7 @@ import { usePointer, MagneticEffect } from "@/components/effects";
 import { HeroBackground } from "@/components/HeroBackground";
 import { DotPortrait } from "@/components/portrait/DotPortrait";
 import { HeroCards } from "./HeroCards";
+import { GithubActivity } from "./GithubActivity";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -77,6 +78,7 @@ export const Hero = () => {
             </div>
             <p className="hero-annotation font-hand text-xl text-accent md:text-2xl">{"// curiosity usually gets out of hand"}</p>
           </div>
+          <GithubActivity />
         </motion.div>
 
         <div className="hero-deck-stage">
