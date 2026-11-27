@@ -96,7 +96,7 @@
 .portfolio-atmosphere > #notes {
   background-image:
     linear-gradient(#0b0809, transparent min(7rem, 20%)),
-    radial-gradient(ellipse 54% min(31rem, 68%) at 57% 53%, color-mix(in srgb, var(--accent-mauve) 10%, transparent), transparent);
+    radial-gradient(ellipse 54% 68% at 57% 53%, color-mix(in srgb, var(--accent-mauve) 10%, transparent), transparent);
 }
 .portfolio-atmosphere > #contact {
   background-image:
