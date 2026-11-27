@@ -6,7 +6,7 @@ import { ATLAS_TERRITORIES, SKILLS_BY_ID, TERRITORIES_BY_ID, type AtlasPosition,
 import { OVERVIEW_BOUNDS, PAN_BOUNDS, PERSPECTIVE, landmarkPositions, pickSurface, projection, screenPoint, skillPose, territoryIndex, visibleSkills, type AtlasRenderer, type SceneFrame } from "./atlas-geometry";
 import { makeCanvasAtlas } from "./atlas-canvas";
 import { connectionEndpoint, connectionsFor, routeCurve, visibleProjects } from "./atlas-connections";
-import { anchorRipple, IMPULSE_DURATION } from "./atlas-motion";
+import { anchorRipple, createSurfacePointer, IMPULSE_DURATION } from "./atlas-motion";
 
 type AtlasElements = {
   stage: HTMLDivElement;
@@ -46,8 +46,9 @@ export function createAtlasScene(
   let hoverFrom = 0;
   let previewSkill: ReturnType<typeof SKILLS_BY_ID.get>;
   let pointer: Point | null = null;
-  let previousPointer: Point | null = null;
-  let lastImpulse = -Infinity;
+  let previousPointer: (Point & { time: number }) | null = null;
+  let lastPointerSample = -Infinity;
+  const surfacePointer = createSurfacePointer();
   let nextImpulse = 0;
   const impulseData = new Float32Array(16);
   const impulseTimes = new Float64Array(4).fill(-Infinity);
@@ -238,18 +239,27 @@ export function createAtlasScene(
     const emphasizing = animated && now - emphasisStart < 440;
     const morph = emphasizing ? ease(clamp((now-emphasisStart)/440)) : 1;
     for(let i=0;i<selectionLight.length;i++) selectionLight[i]=fromSelectionLight[i]+((i===selectionRegion?1:0)-fromSelectionLight[i])*morph;
-    if (pointer && animated && now-lastImpulse>51) {
-      force(pointer,previousPointer ? clamp(Math.hypot(pointer.x-previousPointer.x,pointer.y-previousPointer.y)/35,.38,.90) : .66,now);
-      previousPointer=pointer;
+    const range=now-lastRender;
+    if (pointer && animated && now-lastPointerSample>=40) {
+      const hit = surfaceAt(pointer);
+      const velocity = previousPointer
+        ? Math.hypot(pointer.x-previousPointer.x,pointer.y-previousPointer.y)/Math.max(16,now-previousPointer.time)
+        : .24;
+      if (hit) {
+        const pressure = clamp(.24 + velocity * .75, .24, .90) * (touches.size ? .63 : 1);
+        const footprint = (108 + Math.min(27,velocity * 30)) / Math.sqrt(clamp(camera.z / defaultView.z,1,4));
+        surfacePointer.track(hit.x,hit.y,pressure,footprint,now);
+      } else surfacePointer.release();
+      previousPointer={ ...pointer, time: now };
+      lastPointerSample=now;
       pointer=null;
     }
-    let disturbed = false;
+    let disturbed = animated && surfacePointer.advance(now,range || 16);
     for(let i=0;i<4;i++){
       const age=(now-impulseTimes[i])/1000;
       impulseData[i*4+2]=Math.min(2,age);
       disturbed ||= age < IMPULSE_DURATION;
     }
-    const range=now-lastRender;
     const isActive=Boolean(motion||emphasizing||disturbed||progress<1);
     if (animated && isActive && lastRender > 0 && range < 190) {
       slowFrames=range>26 ? slowFrames+1 : Math.max(0,slowFrames-1);
@@ -276,7 +286,7 @@ export function createAtlasScene(
     const state: SceneFrame = {
       camera,width,height,stretch,progress,selection,time:now/1000,perspective:PERSPECTIVE,hover,selectionLight,
       impulses:impulseData,activeSkill:skill?skillPose(skill):null,motion:animated,quality,hoverStrength,
-      hoverPoint,rippling:animated&&disturbed,
+      hoverPoint,rippling:animated&&disturbed,pointerField:surfacePointer.values,
     };
     displayLabels(state);
     if (rendererType === "pending") {
@@ -403,6 +413,8 @@ export function createAtlasScene(
       clearGesture();
       setHover(-1);
       pointer=null;
+      previousPointer=null;
+      surfacePointer.reset();
       if (formationStart >= 0) formationStart = -Infinity;
       leaveMap();
     }
@@ -446,14 +458,14 @@ export function createAtlasScene(
     schedule();
   }
 
+  function surfaceAt(point: Point) {
+    const screen = local(point);
+    return pickSurface({x:(screen.x-camera.x)/camera.z,y:(screen.y-camera.y)/camera.z},PERSPECTIVE);
+  }
+
   function force(point:Point,strength:number,now=performance.now(),at?:AtlasPosition) {
     if(reduced.matches||rendererType!=="webgl")return;
-    let hit = at;
-    if (!hit) {
-      const screen = local(point);
-      hit = pickSurface({x:(screen.x-camera.x)/camera.z,y:(screen.y-camera.y)/camera.z},PERSPECTIVE) ?? undefined;
-    }
-    lastImpulse=now;
+    const hit = at ?? surfaceAt(point);
     if(!hit)return;
     const i=nextImpulse++%4;
     impulseTimes[i]=now;
@@ -472,6 +484,9 @@ export function createAtlasScene(
     touches.clear();
     inputStart = null;
     lastGesture = null;
+    pointer = null;
+    previousPointer = null;
+    surfacePointer.release();
     for (const id of oldPointers) if (stage.hasPointerCapture(id)) stage.releasePointerCapture(id);
   }
 
@@ -501,7 +516,7 @@ export function createAtlasScene(
       if(next){
         const region=territoryIndex(next);
         const skill=next.type==="skill"?SKILLS_BY_ID.get(next.id):undefined;
-        if(region>=0)force({x:0,y:0},1.06,now,skill?skillPose(skill):landmarkPositions[region]);
+        if(region>=0)force({x:0,y:0},.79,now,skill?skillPose(skill):landmarkPositions[region]);
       }
       selectionTime = now;
       dragged = false;
@@ -526,18 +541,25 @@ export function createAtlasScene(
     },
     track(point:Point|null) {
       pointer=point;
-      if(!point)previousPointer=null;
+      if(!point) {
+        previousPointer=null;
+        surfacePointer.release();
+      }
       schedule();
     },
-    impulse(point:Point) { force(point,1.43); },
-    down(pointer: Pointer, exploring: boolean) {
+    impulse(point:Point) { force(point,1.02); },
+    down(input: Pointer, exploring: boolean) {
       if (!touches.size) {
         dragged = false;
       } else dragged = true;
-      if (pointer.pointerType === "touch" && !exploring) return;
+      if (input.pointerType === "touch" && !exploring) return;
       motion = null;
-      if (!touches.size) inputStart = pointer;
-      touches.set(pointer.pointerId, local(pointer));
+      if (!touches.size) inputStart = input;
+      touches.set(input.pointerId, local(input));
+      if (touches.size > 1) {
+        pointer = null;
+        surfacePointer.release();
+      }
       lastGesture = sampleGesture(touches.values());
     },
     move(pointer: Pointer) {
@@ -559,7 +581,14 @@ export function createAtlasScene(
       if (!touches.delete(pointerId)) return;
       if (stage.hasPointerCapture(pointerId)) stage.releasePointerCapture(pointerId);
       lastGesture = sampleGesture(touches.values());
-      if (!lastGesture) inputStart = null;
+      if (!lastGesture) {
+        if (inputStart?.pointerType === "touch") {
+          pointer=null;
+          previousPointer=null;
+          surfacePointer.release();
+        }
+        inputStart = null;
+      }
     },
     clearGesture,
     discardClick() { return dragged; },

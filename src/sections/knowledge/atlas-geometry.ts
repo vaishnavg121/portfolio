@@ -257,6 +257,7 @@ export type SceneFrame = {
   time: number; perspective: number; hover: number; selectionLight: Float32Array;
   impulses: Float32Array; activeSkill: AtlasPosition | null; motion: boolean; quality: number; hoverStrength: number;
   hoverPoint: AtlasPosition | null; rippling: boolean;
+  pointerField: Float32Array;
 };
 export type AtlasRenderer = { draw: (frame: SceneFrame) => void; dispose: () => void };
 

@@ -15,7 +15,7 @@ attribute float aPhase;
 attribute vec4 aRibbon;
 uniform vec3 uCam;
 uniform vec4 uFrame, uMotion, uSkill, uLens;
-uniform vec4 uInteraction;
+uniform vec4 uInteraction, uPointerField;
 uniform float uSurfaceLayer;
 uniform vec4 uGrade;
 uniform vec2 uGround;
@@ -269,7 +269,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
   const streamAttrs=streamAttribs.map(([name,size,offset])=>({index:gl.getAttribLocation(streamProgram,name),size,offset}));
   const streamUniforms=["uSize","uAccent","uLight","uPetal","uTime","uPointer"] as const;
   const stream=Object.fromEntries(streamUniforms.map(name=>[name,gl.getUniformLocation(streamProgram,name)]));
-  const names=["uCam","uFrame","uMotion","uSkill","uLens","uInteraction","uSurfaceLayer","uGrade","uGround","uShadow","uMuted","uLight","uAccent","uPetal","uStone","uImpulses[0]","uPeaks[0]"] as const;
+  const names=["uCam","uFrame","uMotion","uSkill","uLens","uInteraction","uPointerField","uSurfaceLayer","uGrade","uGround","uShadow","uMuted","uLight","uAccent","uPetal","uStone","uImpulses[0]","uPeaks[0]"] as const;
   const u=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
   gl.uniform4f(u.uLens,lens.COS,lens.SIN,lens.CY,lens.SY);
   const peaks=new Float32Array(32);
@@ -317,6 +317,7 @@ export function makeWebGLAtlas(canvas:HTMLCanvasElement,compact:boolean):AtlasRe
       const s=frame.activeSkill;
       gl.uniform4f(u.uSkill,s?.x??99999,s?.y??99999,s?.z??0,dpr);
       gl.uniform4fv(u["uImpulses[0]"],frame.impulses);
+      gl.uniform4fv(u.uPointerField, frame.pointerField);
       for (let i=0;i<landmarkPositions.length;i++) peaks[i*4+3]=frame.selectionLight[i];
       gl.uniform4fv(u["uPeaks[0]"],peaks);
       const center=terrainCenter(frame);
