@@ -1,3 +1,5 @@
+import { tracePortraitSilhouette } from "./portrait-dispersion";
+
 const TICK = 0.5; // 120 Hz, expressed in 60 Hz frame units.
 const FRONT_YAW = 0;
 const FRONT_PITCH = 0;
@@ -18,12 +20,14 @@ export function createParticleField(data: ArrayBuffer) {
   // DP v3 records half-cell X/Y, depth, luminance/coverage, and two packed normals.
   const samples = new Uint8Array(data);
   const size = samples[4];
-  const count = (samples.length - 6) / 5;
+  const coreCount = (samples.length - 6) / 5;
   if (samples[0] !== 68 || samples[1] !== 80 || samples[2] !== 3 || samples[3] !== 0 ||
-    !size || size !== samples[5] || !Number.isInteger(count) || count < 1 || count > 65535) {
+    !size || size !== samples[5] || !Number.isInteger(coreCount) || coreCount < 1 || coreCount > 65535) {
     throw new Error("Invalid portrait sculpture");
   }
 
+  const { edge, fringe } = tracePortraitSilhouette(samples, size, coreCount);
+  const count = Math.min(65535, coreCount + fringe.length);
   const focal = size * 1.58;
   const centerY = size * 0.45;
   const compact = size < 100;
@@ -42,7 +46,7 @@ export function createParticleField(data: ArrayBuffer) {
   let pitchVelocity = 0;
   let accumulated = 0;
 
-  for (let index = 0; index < count; index++) {
+  for (let index = 0; index < coreCount; index++) {
     const record = 6 + index * 5;
     const slot = index * 3;
     const x = samples[record] * 0.5 + 0.25 - size * 0.5;
@@ -58,12 +62,27 @@ export function createParticleField(data: ArrayBuffer) {
     const coverage = (samples[record + 3] & 15) / 15;
     const normal = samples[record + 4];
     inks[slot] = tone;
-    inks[slot + 1] = (0.33 + 0.64 * tone) * coverage ** 0.8 * (compact ? 1.11 : 1);
+    const rim = edge[index] ? .79 + .21 * coverage : 1;
+    inks[slot + 1] = (0.33 + 0.64 * tone) * coverage ** 0.8 * (compact ? 1.11 : 1) * rim;
     inks[slot + 2] = (0.16 + 0.26 * Math.sqrt(tone)) * (0.79 + 0.21 * coverage) * (compact ? 1.10 : 1);
     normals[index * 2] = ((normal >> 4) / 15 - 0.5) * 1.52;
     normals[index * 2 + 1] = ((normal & 15) / 15 - 0.5) * 1.52;
     springs[index] = 0.146 + 0.034 * coverage;
     damping[index] = 0.865 - 0.016 * coverage;
+  }
+  for (let index = coreCount; index < count; index++) {
+    const { x, y, depth, tone, opacity, radius } = fringe[index - coreCount];
+    const slot = index * 3;
+    const inverseZoom = (focal - depth) / focal;
+    home[slot] = (x - size * .5) * inverseZoom;
+    home[slot + 1] = (y - centerY) * inverseZoom;
+    home[slot + 2] = depth;
+    // Negative tone reserves the atmospheric material in the same particle pass.
+    inks[slot] = -.11 - .88 * tone;
+    inks[slot + 1] = opacity;
+    inks[slot + 2] = radius;
+    springs[index] = .099 + .035 * opacity;
+    damping[index] = .889;
   }
 
   positions.set(home);
@@ -102,7 +121,7 @@ export function createParticleField(data: ArrayBuffer) {
     let hit = -1;
 
     // Find the observed surface sample closest to the camera ray through the pointer.
-    for (let slot = 0; slot < home.length; slot += 3) {
+    for (let slot = 0; slot < coreCount * 3; slot += 3) {
       if (inks[slot + 1] < 0.15) continue;
       const x = home[slot];
       const y = home[slot + 1];
@@ -153,6 +172,22 @@ export function createParticleField(data: ArrayBuffer) {
     }
   }
 
+  function disturbFringe(force: Disturbance) {
+    const cursorX = (force.x - .5) * size, cursorY = force.y * size - centerY;
+    const reach = size * .188;
+    for (let slot = coreCount * 3; slot < home.length; slot += 3) {
+      const depth = home[slot + 2];
+      const zoom = focal / (focal - depth);
+      const dx = home[slot] * zoom - cursorX, dy = home[slot + 1] * zoom - cursorY;
+      const weight = Math.max(0, 1 - (dx * dx + dy * dy) / (reach * reach));
+      if (!weight) continue;
+      const push = weight * weight * force.strength;
+      targets[slot] += dx * .29 * push + .48 * push;
+      targets[slot + 1] += dy * .26 * push - 1.45 * push;
+      targets[slot + 2] -= (force.pulse === undefined ? .032 : .048) * size * push;
+    }
+  }
+
   return {
     size, count, positions, inks, normals, camera, focal, centerY,
     reset() {
@@ -188,6 +223,7 @@ export function createParticleField(data: ArrayBuffer) {
       if (force?.strength) {
         const hit = hitSurface(force);
         if (hit >= 0) targetRipple(force, hit);
+        disturbFringe(force);
       }
 
       for (let index = 0; index < count; index++) {

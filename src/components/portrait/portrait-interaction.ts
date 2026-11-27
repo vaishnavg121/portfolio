@@ -27,6 +27,7 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
   let request: AbortController | undefined;
   let renderer: ReturnType<typeof createParticleRenderer> = null;
   let frame = 0;
+  let ambientTimer = 0;
   let lastFrame = 0;
   let contact: Contact | undefined;
   let pointer: Disturbance | null = null;
@@ -36,7 +37,19 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
   const canPresent = () => visible && !document.hidden && !reduced.matches;
 
   function schedule() {
+    window.clearTimeout(ambientTimer);
+    ambientTimer = 0;
     if (!frame && renderer && presented) frame = requestAnimationFrame(update);
+  }
+
+  function idle() {
+    if (ambientTimer || !presented || !renderer || !canPresent()) return;
+    ambientTimer = window.setTimeout(() => {
+      ambientTimer = 0;
+      if (!presented || !renderer || !canPresent()) return;
+      renderer.paintAmbient();
+      idle();
+    }, wide.matches ? 65 : 100);
   }
 
   function update(now: number) {
@@ -55,7 +68,10 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     renderer.paint();
 
     if (moving || tap) schedule();
-    else lastFrame = 0;
+    else {
+      lastFrame = 0;
+      idle();
+    }
   }
 
   function resetInput() {
@@ -67,6 +83,8 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
 
   function pause() {
     if (frame) cancelAnimationFrame(frame);
+    window.clearTimeout(ambientTimer);
+    ambientTimer = 0;
     frame = 0;
     lastFrame = 0;
     presented = false;
@@ -83,8 +101,10 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
 
   function sizeCanvas() {
     if (!presented || !renderer) return;
-    const { width, height } = root.getBoundingClientRect();
-    renderer.resize(width, height);
+    const { width, height } = canvas.getBoundingClientRect();
+    if (!width || !height) return;
+    const portrait = root.getBoundingClientRect();
+    renderer.resize(width, height, Math.min(portrait.width / width, portrait.height / height));
     renderer.paint();
   }
 
@@ -95,6 +115,7 @@ export function enablePortraitMotion(root: HTMLElement, canvas: HTMLCanvasElemen
     sizeCanvas();
     root.dataset.dotReady = "";
     if (!assembled) schedule();
+    else idle();
     assembled = true;
   }
 

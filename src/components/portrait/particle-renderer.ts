@@ -7,20 +7,29 @@ attribute vec2 aNormal;
 uniform vec4 uCamera;
 uniform vec3 uGrid;
 uniform float uPixelsPerCell;
+uniform float uFraming, uTime;
+uniform vec3 uRose;
 varying vec4 vInk;
 varying vec2 vPoint;
 
 void main() {
   float size = uGrid.x;
-  float x = aPosition.x * uCamera.x + aPosition.z * uCamera.y;
-  float z = aPosition.z * uCamera.x - aPosition.x * uCamera.y;
-  float y = aPosition.y * uCamera.z - z * uCamera.w;
-  z = aPosition.y * uCamera.w + z * uCamera.z;
+  bool dust = aInk.x < 0.;
+  vec3 position = aPosition;
+  if (dust) {
+    float phase = aPosition.x * .14 + aPosition.y * .092 + aPosition.z * .086;
+    position.xy += vec2(sin(phase + uTime * .91), cos(phase * .78 + uTime * .73)) * vec2(.44, .33);
+    position.z += .42 * sin(phase + uTime * .6);
+  }
+  float x = position.x * uCamera.x + position.z * uCamera.y;
+  float z = position.z * uCamera.x - position.x * uCamera.y;
+  float y = position.y * uCamera.z - z * uCamera.w;
+  z = position.y * uCamera.w + z * uCamera.z;
   float perspective = uGrid.y / (uGrid.y - z);
   vec2 projected = (vec2(x, y) * perspective + vec2(size * .5, uGrid.z)) / size;
-  gl_Position = vec4(projected.x * 2. - 1., 1. - projected.y * 2., -z / size, 1.);
+  gl_Position = vec4(vec2(projected.x * 2. - 1., 1. - projected.y * 2.) * uFraming, -z / size, 1.);
 
-  float tone = aInk.x;
+  float tone = abs(aInk.x);
   float radius = aInk.z * perspective * uPixelsPerCell;
   gl_PointSize = radius * 2. + 1.45;
   vPoint = vec2(radius, gl_PointSize);
@@ -31,7 +40,12 @@ void main() {
   float light = max(0., dot(facing, vec3(-.43, -.48, .764)));
   vec3 warm = mix(vec3(157., 151., 146.), vec3(245., 236., 225.), tone) / 255.;
   warm *= .86 + .14 * light;
+  if (dust) warm = mix(warm, uRose, .3);
   float alpha = min(1., aInk.y * clamp(.94 + .34 * z / size, .76, 1.));
+  if (dust) {
+    vec2 edge = abs(gl_Position.xy);
+    alpha *= (1. - smoothstep(.87, 1., max(edge.x, edge.y)));
+  }
   vInk = vec4(warm, alpha);
 }
 `;
@@ -109,6 +123,13 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
   const camera = gl.getUniformLocation(program, "uCamera");
   const grid = gl.getUniformLocation(program, "uGrid");
   const pixelScale = gl.getUniformLocation(program, "uPixelsPerCell");
+  const framing = gl.getUniformLocation(program, "uFraming");
+  const time = gl.getUniformLocation(program, "uTime");
+  const rose = gl.getUniformLocation(program, "uRose");
+  const token = getComputedStyle(canvas).getPropertyValue("--accent-source").trim();
+  const rgb = /^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(token)?.slice(1).map(channel => parseInt(channel, 16) / 255)
+    ?? [.79, .57, .60];
+  gl.uniform3fv(rose, rgb);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, ink);
   gl.bufferData(gl.ARRAY_BUFFER, field.inks, gl.STATIC_DRAW);
@@ -157,25 +178,32 @@ export function createParticleRenderer(canvas: HTMLCanvasElement, data: ArrayBuf
     for (let i = 0; i < field.count; i++) order[counts[buckets[i]]++] = i;
   }
 
+  const paintAmbient = () => {
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniform1f(time, performance.now() / 1000);
+    gl.drawElements(gl.POINTS, field.count, gl.UNSIGNED_SHORT, 0);
+  };
+
   return {
-    resize(width: number, height: number) {
+    resize(width: number, height: number, fit: number) {
       const density = Math.min(window.devicePixelRatio || 1, 1.75, 820 / Math.max(width, height, 1));
       const w = Math.max(1, Math.round(width * density));
       const h = Math.max(1, Math.round(height * density));
       if (canvas.width !== w) canvas.width = w;
       if (canvas.height !== h) canvas.height = h;
       gl.viewport(0, 0, w, h);
-      gl.uniform1f(pixelScale, Math.min(w, h) / field.size);
+      gl.uniform1f(pixelScale, Math.min(w, h) * fit / field.size);
+      gl.uniform1f(framing, fit);
     },
     paint() {
       sortBackToFront();
-      gl.clear(gl.COLOR_BUFFER_BIT);
       gl.uniform4fv(camera, field.camera);
       gl.bindBuffer(gl.ARRAY_BUFFER, position);
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, field.positions);
       gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, order);
-      gl.drawElements(gl.POINTS, field.count, gl.UNSIGNED_SHORT, 0);
+      paintAmbient();
     },
+    paintAmbient,
     advance(step: number, force: Disturbance | null) {
       return field.advance(step, force);
     },
