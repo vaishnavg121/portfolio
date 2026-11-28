@@ -1,4 +1,7 @@
 .project-study {
+  --study-metal:color-mix(in srgb,var(--accent-stone) 18%,var(--background));
+  --study-rim:color-mix(in srgb,var(--accent-stone) 48%,transparent);
+  --study-glass:color-mix(in srgb,var(--study-tone) 25%,var(--surface));
   width: 100%;
   margin: 0;
 }
@@ -10,7 +13,8 @@
   overflow: hidden;
   border-radius: var(--radius-surface);
   background:
-    radial-gradient(ellipse at 34% 46%, color-mix(in srgb, var(--study-tone) 12%, transparent), transparent 72%),
+    linear-gradient(145deg,color-mix(in srgb,var(--accent-stone) 13%,transparent),transparent 61%),
+    radial-gradient(ellipse at 34% 46%, color-mix(in srgb, var(--study-tone) 14%, transparent), transparent 72%),
     radial-gradient(ellipse at 85% 19%, color-mix(in srgb, var(--study-tone) 8%, transparent), transparent 60%),
     var(--background);
 }
@@ -50,6 +54,10 @@ text.study-emphasis { fill: currentColor; }
   font-variant-numeric: tabular-nums;
 }
 .study-unit { fill: var(--text-muted); font: 14px var(--portfolio-mono), monospace; }
+.study-packet { opacity:0; offset-path:var(--packet-route); fill:var(--text-primary); filter:drop-shadow(0 0 3px var(--accent-stone)); }
+.case-study-visual { width:100%; border:1px solid var(--glass-rim); border-radius:var(--radius-surface); overflow:hidden; background:var(--surface); box-shadow:0 16px 42px #0d090b66; }
+.case-lede { max-width:41ch; margin-block:0 1.1rem; color:var(--text-muted); font-size:.91rem; line-height:1.55; }
+.case-study-visual svg[role=img] { border-radius:0; }
 
 @media (prefers-reduced-motion: reduce) {
   .study-replay { display: none; }
@@ -57,6 +65,7 @@ text.study-emphasis { fill: currentColor; }
 
 @media (prefers-reduced-motion: no-preference) {
   [data-playing] .study-air { animation: study-air 2.6s var(--ease-reveal) both; transform-origin: 50% 55%; }
+  [data-playing] .study-packet { animation:study-packet .9s var(--packet-delay) ease-in-out both; }
   [data-playing] .study-sensors { animation: study-emerge .8s .7s var(--ease-reveal) both; }
   [data-playing] .study-forecast { animation: study-emerge .9s 1.42s var(--ease-reveal) both; }
   [data-playing] .study-query { animation: study-emerge .45s var(--ease-reveal) both; }
@@ -76,11 +85,16 @@ text.study-emphasis { fill: currentColor; }
   .study-retrieval { --trace-offset: 1.28s; }
   .study-validation { --trace-offset: 2.38s; }
 }
-@keyframes study-emerge { from { opacity: 0; } to { opacity: 1; } }
+@keyframes study-emerge { from { opacity: .23; } to { opacity: 1; } }
 @keyframes study-page { from { opacity: 0; transform: translateY(8px) rotate(-3deg); } to { opacity: 1; transform: none; } }
 @keyframes study-project { from { opacity: 0; transform: translate(var(--from-x), var(--from-y)) scale(.4); } to { opacity: 1; transform: none; } }
 @keyframes study-trace { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes study-air { from { opacity: .25; transform: translateX(-18px) scale(1.045); } to { opacity: 1; transform: none; } }
+@keyframes study-packet {
+  from { opacity:0; offset-distance:0%; }
+  22%,76% { opacity:.96; }
+  to { opacity:0; offset-distance:100%; }
+}
 
 @media (width < 64rem) {
   .project-study svg[role=img] { border-radius: var(--radius-control); }

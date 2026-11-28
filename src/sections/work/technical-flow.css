@@ -1,0 +1,57 @@
+.technical-flow {
+  --flow-line:color-mix(in srgb,var(--accent-stone) 42%,transparent);
+  margin-block:1rem 2.15rem;
+  border:1px solid var(--glass-rim);
+  border-radius:var(--radius-surface);
+  padding:clamp(.84rem,2.4vw,1.55rem);
+  background:radial-gradient(ellipse 65% 95% at 0 0,color-mix(in srgb,var(--accent-mauve) 14%,transparent),transparent),var(--surface);
+  box-shadow:inset 0 1px color-mix(in srgb,var(--text-primary) 10%,transparent);
+}
+.technical-flow figcaption, .case-metrics caption {
+  text-align:start;
+  color:var(--text-primary);
+  font:500 clamp(1.04rem,2.15vw,1.35rem)/1.25 var(--portfolio-display),sans-serif;
+  letter-spacing:-.022em;
+  margin-bottom:1rem;
+}
+.technical-lanes { display:grid; grid-template-columns:repeat(var(--lanes),minmax(0,1fr)); gap:1.45rem; list-style:none; margin:0; padding:0; }
+.technical-lane { position:relative; min-width:0; display:grid; align-items:center; }
+.technical-lane ul { display:grid; gap:.38rem; padding:0; list-style:none; }
+.technical-lane:not(:last-child)::after {
+  content:""; position:absolute; z-index:1; top:50%; left:100%; width:1.45rem; height:1px; pointer-events:none;
+  background:var(--flow-line);
+}
+.technical-lane[data-current]:not(:last-child)::after { background:var(--accent-stone); box-shadow:0 0 7px var(--flow-line); }
+.technical-lane:not(:last-child)::before {
+  content:""; position:absolute; z-index:2; right:-1.38rem; top:calc(50% - 2px); width:5px; height:5px;
+  border-top:1px solid var(--accent-stone); border-right:1px solid var(--accent-stone); transform:rotate(45deg);
+}
+.technical-step {
+  display:flex; align-items:center; gap:.46rem; min-height:46px; width:100%; padding:.54rem .66rem; text-align:left;
+  border-radius:.62rem; color:var(--text-muted); border:1px solid var(--edge-soft);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--accent-stone) 14%,var(--surface)),var(--background));
+  box-shadow:0 2px color-mix(in srgb,var(--background) 80%,transparent),inset 0 1px color-mix(in srgb,var(--text-primary) 10%,transparent);
+  font:.75rem/1.35 var(--portfolio-mono),monospace;
+  transition:color 145ms ease,border-color 145ms ease,translate 140ms var(--ease-tactile);
+}
+.technical-step:is(:hover,:focus-visible,[aria-pressed=true]) { color:var(--text-primary); border-color:var(--flow-line); }
+.technical-step:active { translate:0 1px; }
+.technical-port { flex:none; width:.37rem; height:.37rem; border-radius:50%; border:1px solid var(--accent-mauve); }
+.technical-step[aria-pressed=true] .technical-port { background:var(--accent-petal); box-shadow:0 0 6px var(--flow-line); }
+.technical-detail { margin-top:1.03rem; min-height:4rem; display:grid; align-content:start; gap:.22rem; color:var(--text-muted); font-size:.83rem; line-height:1.5; }
+.technical-detail strong { font-weight:600; color:var(--text-primary); }
+.case-metrics { width:100%; margin:1rem 0 1.5rem; border-collapse:collapse; color:var(--text-muted); font-size:.82rem; }
+.case-metrics :is(th,td) { text-align:left; padding:.65rem clamp(.24rem,1.4vw,.76rem); border-bottom:1px solid var(--edge-soft); }
+.case-metrics thead th { color:var(--text-primary); font-weight:600; }
+.case-metrics tbody th { font-weight:500; }
+.case-metrics [data-number] { font:normal .76rem/1.4 var(--portfolio-mono),monospace; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.correlation-track { display:block; position:relative; height:.68rem; margin:.25rem .1rem; min-width:4rem; border-radius:5px; background:var(--surface); }
+.correlation-track::before { content:""; position:absolute; top:0; bottom:0; left:50%; width:1px; background:var(--accent-stone); opacity:.53; }
+.correlation-track span { position:absolute; inset-block:1px; border-radius:3px; }
+@media (width < 43rem) {
+  .technical-lanes { grid-template-columns:1fr; gap:.82rem; }
+  .technical-lane[data-branches] ul { margin-inline-start:.6rem; padding-inline-start:.6rem; border-inline-start:1px solid var(--flow-line); }
+  .technical-lane:not(:last-child)::after { top:100%; left:1.12rem; width:1px; height:.82rem; }
+  .technical-lane:not(:last-child)::before { left:.99rem; right:auto; top:calc(100% + .42rem); transform:rotate(135deg); }
+}
+@media (prefers-reduced-motion:reduce) { .technical-step { transition:none; } }

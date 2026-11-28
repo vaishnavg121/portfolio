@@ -1,10 +1,3 @@
-export type ProjectAssetSet = {
-  hero?: string; // Hero image or video
-  texture?: string; // Optional overlay texture
-  diagram?: string; // System architecture diagram
-  gallery?: string[]; // Optional additional screenshots
-};
-
 export const MASCOT_ASSETS = {
   rive: "/assets/mascot/ink-familiar.riv",
   static: "/assets/mascot/ink-familiar-static.webp",
@@ -21,7 +14,6 @@ export const MASCOT_ASSETS = {
     wave: "/assets/mascot/poses/wave.png"
   }
 };
-
 export const GLOBAL_TEXTURES = {
   paperNoise: "/assets/textures/paper-noise.webp",
 };
@@ -44,27 +36,4 @@ export const THEME_ASSETS = {
     notebookInkFrame: "/assets/theme/global/notebook-ink-frame.png",
     inkTrail: "/assets/theme/global/ink-trail.png",
   }
-};
-
-export const PROJECT_ASSETS: Record<string, ProjectAssetSet> = {
-  imdpune: {
-    hero: undefined,
-    diagram: undefined,
-  },
-  swaneeti: {
-    hero: undefined,
-    diagram: undefined,
-  },
-  windy: {
-    hero: undefined,
-    diagram: undefined,
-  },
-  spenza: {
-    hero: undefined,
-    diagram: undefined,
-  },
-  thriveforce: {
-    hero: undefined,
-    diagram: undefined,
-  },
 };

@@ -2,7 +2,8 @@
 "use client";
 
 import React, { useRef } from 'react';
-import { VisualSlot } from './VisualSlot';
+import { ProjectCoverVisual } from './ProjectMotion';
+import { TechnicalFlow } from './TechnicalFlow';
 import Link from 'next/link';
 import { MoveLeft, ArrowRight, ExternalLink } from 'lucide-react';
 import { useCaseMotion } from "./useCaseMotion";
@@ -48,6 +49,7 @@ export const SwaNeetiCaseStudy = () => {
             <h1 className="hero-elem case-title font-display lg:text-5xl uppercase tracking-tighter leading-tight mb-4 lg:mb-8 text-white/90">
               Evidence-Grounded Agentic Legal Research Engine
             </h1>
+            <p className="hero-elem case-lede">An Indian legal research tool that connects preliminary analysis to retrieved statutes, precedents, and case evidence.</p>
             
             <div className="hero-elem font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase mb-4 lg:mb-8 space-y-2">
               <p>Legal Engineering</p>
@@ -61,25 +63,10 @@ export const SwaNeetiCaseStudy = () => {
               <span className="px-3 py-1 bg-white/5 border border-white/10">Deterministic Graphs</span>
             </div>
             
-            <div className="hero-elem mt-4 lg:mt-16 font-mono text-xs text-text-muted tracking-widest uppercase flex items-center gap-3">
-              <span className="w-4 h-[1px] bg-text-muted" /> SCROLL TO EXPLORE
-            </div>
           </div>
           
-          <div className="lg:w-2/3">
-            <div className="hero-elem w-full min-h-[16rem] lg:min-h-0 lg:aspect-[16/10] relative rounded-sm overflow-hidden border border-white/10 bg-[#050505]">
-               <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: "linear-gradient(90deg, #fff 1px, transparent 1px), linear-gradient(0deg, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
-               <div className="inset-0 lg:absolute flex min-h-[16rem] lg:min-h-0 flex-col items-center justify-center text-center p-4 lg:p-8 relative z-10 mix-blend-screen opacity-90">
-                 <div className="w-full max-w-lg font-mono text-[10px] md:text-xs text-accent/70 tracking-widest text-left space-y-2 mb-5 lg:mb-8 p-3 lg:p-4 max-lg:[overflow-wrap:anywhere] border border-accent/20 bg-accent/5">
-                   <p>&#123;</p>
-                   <p className="pl-4">"node_type": "CaseFact",</p>
-                   <p className="pl-4">"support": "EvidenceChunk_04",</p>
-                   <p className="pl-4">"status": "CANDIDATE"</p>
-                   <p>&#125;</p>
-                 </div>
-                 <h2 className="font-display text-2xl lg:text-4xl text-white/40 tracking-tight uppercase">Traceable Reasoning</h2>
-               </div>
-            </div>
+          <div className="hero-elem lg:w-2/3">
+            <ProjectCoverVisual slug="swaneeti" />
           </div>
         </div>
       </section>
@@ -115,9 +102,7 @@ export const SwaNeetiCaseStudy = () => {
         {/* 03 LEGAL RESEARCH LOOP */}
         <CaseSection>
           <SectionHeader number="03" title="Legal Research Loop" />
-          <div className="w-full h-auto aspect-[16/10] md:aspect-[16/9] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
-            <VisualSlot src="/assets/projects/swa-neeti/swa-legal-research-loop.png" alt="Bounded research loop — agentic research with explicit sufficiency and gap handling." className="h-full w-full" objectFit="contain" />
-          </div>
+          <TechnicalFlow id="legalLoop" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
               Swa.Neeti executes a staged, observable application workflow rather than relying on unconstrained chain-of-thought looping. The stages represent explicit application states:
@@ -139,9 +124,7 @@ export const SwaNeetiCaseStudy = () => {
         {/* 04 HYBRID RETRIEVAL */}
         <CaseSection>
           <SectionHeader number="04" title="Hybrid Retrieval Architecture" />
-          <div className="w-full h-auto aspect-[16/10] md:aspect-[16/9] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
-            <VisualSlot src="/assets/projects/swa-neeti/swa-retrieval-evidence-architecture.png" alt="Hybrid retrieval architecture showing RRF and deterministic embedding spaces." className="h-full w-full" objectFit="contain" />
-          </div>
+          <TechnicalFlow id="legalRetrieval" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
               Retrieval is governed by a typed <code>LegalSearchQuery</code>. The pipeline initiates with deterministic parsing of exact statutory references and metadata filters, bypassing semantic search when an exact citation is requested.

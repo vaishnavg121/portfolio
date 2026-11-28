@@ -1,5 +1,9 @@
-import { useId, useState, type CSSProperties } from "react";
+"use client";
+
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { useReducedMotion } from "framer-motion";
 import { RotateCcw } from "lucide-react";
+import { expenseExample } from "../research-studio/markets-math";
 import "./project-studies.css";
 
 const sceneInfo = {
@@ -25,7 +29,7 @@ const sceneInfo = {
   },
 } as const;
 
-type SceneId = keyof typeof sceneInfo;
+export type SceneId = keyof typeof sceneInfo;
 const range = (count: number) => Array.from({ length: count }, (_, index) => index);
 const random = (seed: number) => {
   // Integer hashing keeps the server's SVG coordinates identical in other JS engines.
@@ -56,6 +60,22 @@ const observations = range(72).map(i => {
   };
 });
 
+function Instrument({ x,y,width,height,uid,children }: {
+  x:number; y:number; width:number; height:number; uid:string; children?:React.ReactNode;
+}) {
+  return <g transform={`translate(${x} ${y})`} className="study-instrument">
+    <path d={`M0 ${height-2} H${width-1} V5 L${width+8} 12 V${height+4} L${width} ${height+10} H7Z`}
+      fill="var(--study-metal)" stroke="var(--study-rim)" strokeWidth=".8" />
+    <rect width={width} height={height} rx="8" fill={`url(#${uid}-glass)`} stroke="var(--study-rim)" />
+    <path d={`M10 2 H${width-11}`} stroke="var(--text-primary)" strokeOpacity=".31" />
+    {children}
+  </g>;
+}
+
+function Packet({ route, offset }: { route:string; offset:number }) {
+  return <circle r="2.8" className="study-packet" style={{"--packet-route":`path("${route}")`,"--packet-delay":offset+"s"} as CSSProperties}/>;
+}
+
 function Visibility({ uid }: { uid: string }) {
   return <>
     <defs>
@@ -84,6 +104,12 @@ function Visibility({ uid }: { uid: string }) {
         <circle cx={x} cy={y} r="3.5" fill="var(--study-tone)" />
       </g>)}
     </g>
+    <Instrument x={287} y={131} width={39} height={35} uid={uid}>
+      <path d="M9 11 H29 M9 17 H29 M9 23 H25" className="study-grid" />
+    </Instrument>
+    <Packet route="M116 282 L300 148 H329" offset={1.02} />
+    <Packet route="M188 213 L300 148 H329" offset={1.29} />
+    <Instrument x={326} y={82} width={287} height={213} uid={uid}/>
     <g className="study-forecast">
       <path d="M333 110 V285 H604 M333 166 H604 M333 214 H604 M333 250 H604 M478 112 V285" className="study-grid" />
       <path d="M478 213 C507 190 537 220 566 182 S599 166 604 167 L604 207 C575 204 575 223 549 232 S502 224 478 213Z" fill={"url(#" + uid + "-forecast)"} />
@@ -111,6 +137,8 @@ function Legal({ uid }: { uid: string }) {
         <stop offset="1" stopColor="var(--study-tone)" stopOpacity=".045" />
       </linearGradient>
     </defs>
+    <Instrument x={40} y={61} width={259} height={248} uid={uid}/>
+    <Instrument x={357} y={74} width={246} height={216} uid={uid}/>
     <g className="study-query">
       <text x="57" y="50" className="study-text">Query</text>
       <path d="M110 45 H290 C318 45 316 84 290 98" className="study-line study-trace" pathLength="1" />
@@ -135,6 +163,8 @@ function Legal({ uid }: { uid: string }) {
       <path d="M371 316 l6 6 l12 -14" className="study-line study-emphasis" />
       <text x="403" y="322" className="study-text study-emphasis">Citation check</text>
     </g>
+    <Packet route="M197 132 C293 93 292 153 373 145" offset={1.40} />
+    <Packet route="M122 241 C285 283 294 240 373 243" offset={1.62} />
   </>;
 }
 
@@ -147,6 +177,8 @@ function Windy({ uid }: { uid: string }) {
         <stop offset="1" stopColor="var(--study-tone)" stopOpacity="0" />
       </linearGradient>
     </defs>
+    <Instrument x={30} y={43} width={298} height={253} uid={uid}/>
+    <Instrument x={370} y={43} width={243} height={253} uid={uid}/>
     <text x="53" y="66" className="study-text">Observation field</text>
     <g className="study-vectors">
       {range(9).map(i=>{
@@ -159,6 +191,7 @@ function Windy({ uid }: { uid: string }) {
         <circle key={i} cx={startX} cy={startY} r={size*.72} fill="var(--study-tone)" opacity={.35+random(i)*.35}/>)}
     </g>
     <path d="M321 172 H359 M351 165 L359 172 L351 179" className="study-line study-emphasis" />
+    <Packet route="M289 172 H369" offset={.81} />
     <g className="study-projection">
       <text x="377" y="66" className="study-text">PCA projection</text>
       <path d="M378 87 V292 H605 M378 126 H605 M378 167 H605 M378 208 H605 M378 249 H605 M425 87 V292 M470 87 V292 M515 87 V292 M560 87 V292" className="study-grid" />
@@ -172,11 +205,16 @@ function Windy({ uid }: { uid: string }) {
   </>;
 }
 
-function Ledger() {
-  const amounts=[{ value:"500", y:103, color:"var(--study-tone)" },{ value:"400", y:192, color:"var(--accent-petal)" },{ value:"300", y:281, color:"var(--accent-mauve)" }];
+function Ledger({uid}: {uid:string}) {
+  const {total,credits}=expenseExample;
+  const colors=["var(--study-tone)","var(--accent-petal)","var(--accent-mauve)"];
+  const amounts=credits.map((value,index)=>({value,y:103+index*89,color:colors[index]}));
+  const balance=credits.reduce<number>((amount,credit)=>amount+credit,-total);
   return <>
+    <Instrument x={34} y={65} width={149} height={197} uid={uid}/>
+    <Instrument x={466} y={55} width={140} height={250} uid={uid}/>
     <text x="49" y="94" className="study-text">Transaction</text>
-    <text x="49" y="207" className="study-value">1200</text>
+    <text x="49" y="207" className="study-value">{total}</text>
     <text x="49" y="252" className="study-unit">minor units</text>
     <path d="M47 226 H176 M167 218 L176 226 L167 234" className="study-line study-trace" pathLength="1" />
     {amounts.map(({ value,y,color },i)=><g key={value}>
@@ -187,14 +225,15 @@ function Ledger() {
         className="study-trace study-allocation" style={{"--delay":.54+i*.22} as CSSProperties} />
       <circle cx="344" cy={y} r="6" fill="var(--background)" stroke={color} />
       <text x="344" y={y-15} textAnchor="middle" className="study-text">{value}</text>
+      <Packet route={`M177 226 C255 226 242 ${y} 322 ${y} S407 ${y} 460 ${y}`} offset={.58+i*.27}/>
     </g>)}
     <g className="study-reconcile">
       <text x="487" y="78" className="study-text">Ledger</text>
       <path d="M474 95 V299 M594 95 V299 M475 127 H596 M474 163 H596 M474 200 H596 M474 237 H596 M474 274 H596" className="study-grid" />
-      {["−1200","+500","+400","+300","0"].map((value,i)=>
+      {["−"+total,...credits.map(credit=>"+"+credit),String(balance)].map((value,i)=>
         <text key={value} x="575" y={117+i*36.8} textAnchor="end" className={i===4?"study-emphasis study-text":"study-text"}>{value}</text>)}
       <path d="M489 291 l6 6 11 -13" className="study-line study-emphasis" />
-      <text x="474" y="331" className="study-text study-emphasis">Balance = 0</text>
+      <text x="474" y="331" className="study-text study-emphasis">Balance = {balance}</text>
     </g>
   </>;
 }
@@ -209,6 +248,13 @@ export function ProjectMotion({ slug, active, reduced }: { slug: string; active:
     <figure className="project-study" data-playing={active && !reduced || undefined} style={{"--study-tone":info.tone} as CSSProperties}>
       <svg key={generation} viewBox="0 0 640 360" role="img" aria-labelledby={uid + "-description"}>
         <title id={uid + "-description"}>{info.description}</title>
+        <defs>
+          <linearGradient id={uid+"-glass"} x1="0" y1="0" x2="1" y2="1">
+            <stop stopColor="var(--study-glass)" />
+            <stop offset=".48" stopColor="var(--surface)" stopOpacity=".84" />
+            <stop offset="1" stopColor="var(--background)" stopOpacity=".91" />
+          </linearGradient>
+        </defs>
         <Scene uid={uid} />
       </svg>
       <figcaption>
@@ -220,4 +266,19 @@ export function ProjectMotion({ slug, active, reduced }: { slug: string; active:
       </figcaption>
     </figure>
   );
+}
+
+export function ProjectCoverVisual({ slug }: {slug:SceneId}) {
+  const cover = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(false);
+  const reduceMotion = useReducedMotion();
+  useEffect(() => {
+    if (!cover.current || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry])=>setActive(entry.isIntersecting),{threshold:.30});
+    observer.observe(cover.current);
+    return ()=>observer.disconnect();
+  },[]);
+  return <div ref={cover} className="case-study-visual" data-familiar-protect data-familiar-yield>
+    <ProjectMotion slug={slug} active={active} reduced={Boolean(reduceMotion)} />
+  </div>;
 }

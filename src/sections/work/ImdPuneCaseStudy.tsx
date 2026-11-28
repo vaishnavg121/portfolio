@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useRef } from 'react';
-import { VisualSlot } from './VisualSlot';
+import { ProjectCoverVisual } from './ProjectMotion';
+import { TechnicalFlow } from './TechnicalFlow';
+import { ImdCorrelations, ImdResult } from './ProjectResults';
 import Link from 'next/link';
 import { MoveLeft } from 'lucide-react';
 import { useCaseMotion } from "./useCaseMotion";
@@ -47,6 +49,7 @@ export const ImdPuneCaseStudy = () => {
             <h1 className="hero-elem case-title font-display lg:text-5xl uppercase tracking-tighter leading-tight mb-4 lg:mb-8 text-white/90">
               Using AI/ML To Predict Vertical Visibility In Airports
             </h1>
+            <p className="hero-elem case-lede">Aligning airport sensor feeds and comparing models for aviation visibility forecasting.</p>
             
             <div className="hero-elem font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase mb-4 lg:mb-8 space-y-2">
               <p>Practice School I</p>
@@ -61,15 +64,10 @@ export const ImdPuneCaseStudy = () => {
               <span className="px-3 py-1 bg-white/5 border border-white/10">Sensor Integration</span>
             </div>
             
-            <div className="hero-elem mt-4 lg:mt-16 font-mono text-xs text-text-muted tracking-widest uppercase flex items-center gap-3">
-              <span className="w-4 h-[1px] bg-text-muted" /> SCROLL TO EXPLORE
-            </div>
           </div>
           
-          <div className="lg:w-2/3">
-            <div className="hero-elem case-art w-full aspect-[4/3] md:aspect-[16/10] relative rounded-sm overflow-hidden border border-white/10 bg-[#050505]">
-               <VisualSlot src="/assets/projects/imd-pune/imd-hero-aviation-weather.png" alt="IMD Pune Aviation Weather Hero" className="h-full p-4" objectFit="contain" />
-            </div>
+          <div className="hero-elem lg:w-2/3">
+            <ProjectCoverVisual slug="imdpune" />
           </div>
         </div>
       </section>
@@ -92,9 +90,7 @@ export const ImdPuneCaseStudy = () => {
         {/* 03 OBSERVATION NETWORK */}
         <CaseSection>
           <SectionHeader number="03" title="Observation Network" />
-          <div className="w-full h-auto aspect-[16/7] md:aspect-[2/1] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
-            <VisualSlot src="/assets/projects/imd-pune/imd-observation-network.png" alt="IMD Pune multi-sensor observation network showing PTU, visibility, cloud, wind and present-weather inputs." className="h-full w-full" objectFit="contain" />
-          </div>
+          <TechnicalFlow id="observations" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
               Our primary data consisted of five distinct meteorological sensor networks:
@@ -141,9 +137,7 @@ export const ImdPuneCaseStudy = () => {
         {/* 06 PREPROCESSING PIPELINE */}
         <CaseSection>
           <SectionHeader number="06" title="Preprocessing Pipeline" />
-          <div className="w-full h-auto aspect-[16/7] md:aspect-[2/1] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
-            <VisualSlot src="/assets/projects/imd-pune/imd-forecasting-pipeline.png" alt="IMD Pune data preprocessing pipeline from raw observations to ML-ready temporal dataset." className="h-full w-full" objectFit="contain" />
-          </div>
+          <TechnicalFlow id="forecast" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
               The pipeline transforms raw meteorological observations through validation, timestamp synchronization, duplicate handling, missing-value analysis, cloud decoding, temporal alignment, and integration, concluding with feature preparation.
@@ -157,9 +151,6 @@ export const ImdPuneCaseStudy = () => {
         {/* 07 EXPLORATORY DATA ANALYSIS */}
         <CaseSection>
           <SectionHeader number="07" title="Exploratory Data Analysis" />
-          <div className="w-full h-auto aspect-[4/3] md:aspect-[16/9] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
-            <VisualSlot src="/assets/projects/imd-pune/imd-eda-overview.png" alt="Exploratory data analysis showing statistical distributions of visibility, cloud base height, and temperature." className="h-full w-full" objectFit="contain" />
-          </div>
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
               Exploratory Data Analysis evaluated visibility, temperature, humidity, wind-speed, and cloud-base distributions. The distributions revealed that visibility contains discrete reporting behavior, with strong concentration near the upper visibility limits representing clear conditions. Low-visibility events, while operationally critical, occurred relatively infrequently, establishing an imbalanced distribution for model training.
@@ -170,36 +161,15 @@ export const ImdPuneCaseStudy = () => {
         {/* 08 CORRELATION ANALYSIS */}
         <CaseSection>
           <SectionHeader number="08" title="Correlation Analysis" />
-          <div className="flex flex-col lg:flex-row gap-12 lg:items-center">
-            <div className="lg:w-1/2 w-full aspect-square rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2">
-              <VisualSlot src="/assets/projects/imd-pune/imd-correlation-analysis.png" alt="Correlation matrix heatmap of meteorological variables." className="h-full w-full" objectFit="contain" />
-            </div>
-            <div className="lg:w-1/2 prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light" data-familiar-protect data-familiar-reaction="read">
-              <p>
-                Correlation analysis identified useful relationships to inform feature interpretation. Key findings included:
-              </p>
-              <ul className="font-mono text-[11px] space-y-2 mt-4 text-white/70 bg-white/5 border border-white/10 p-4 md:p-6">
-                <li className="flex justify-between border-b border-white/5 pb-2"><span>Visibility ↔ Vertical Vis:</span> <span className="text-accent">+0.62</span></li>
-                <li className="flex justify-between border-b border-white/5 pb-2"><span>Visibility ↔ Temperature:</span> <span className="text-accent">+0.58</span></li>
-                <li className="flex justify-between border-b border-white/5 pb-2"><span>Visibility ↔ Pressure:</span> <span className="text-white/40">-0.49</span></li>
-                <li className="flex justify-between border-b border-white/5 pb-2"><span>Temperature ↔ Humidity:</span> <span className="text-white/40">-0.59</span></li>
-                <li className="flex justify-between border-b border-white/5 pb-2"><span>Humidity ↔ Dew Point:</span> <span className="text-accent">+0.74</span></li>
-                <li className="flex justify-between border-b border-white/5 pb-2"><span>Dew Point ↔ Pressure:</span> <span className="text-white/40">-0.60</span></li>
-                <li className="flex justify-between"><span>Pressure ↔ Wind Speed:</span> <span className="text-white/40">-0.51</span></li>
-              </ul>
-              <p className="mt-6 text-xs text-white/50 border-l border-accent pl-4">
-                While these correlations guide our architecture, they strictly identify statistical relationships, not underlying causal meteorological mechanisms.
-              </p>
-            </div>
-          </div>
+          <ImdCorrelations />
+          <p className="max-w-3xl text-sm leading-relaxed text-text-muted">
+            These relationships helped guide feature selection. They do not establish causal meteorological mechanisms.
+          </p>
         </CaseSection>
 
         {/* 09 TEMPORAL ANALYSIS */}
         <CaseSection>
           <SectionHeader number="09" title="Temporal Analysis" />
-          <div className="w-full h-auto aspect-[16/7] md:aspect-[2/1] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
-            <VisualSlot src="/assets/projects/imd-pune/imd-temporal-analysis.png" alt="Time-series plot showing temporal evolution of visibility." className="h-full w-full" objectFit="contain" />
-          </div>
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
               Temporal analysis exposed repeated high-visibility plateaus interrupted by intermittent, sharp reduced-visibility intervals. This temporal variability demonstrates recurring low-visibility episodes rather than smooth continuous seasonal transitions, highlighting the highly dynamic nature of the prediction target.
@@ -210,9 +180,7 @@ export const ImdPuneCaseStudy = () => {
         {/* 10 CLASSICAL MACHINE LEARNING */}
         <CaseSection>
           <SectionHeader number="10" title="Classical Machine Learning" />
-          <div className="w-full h-auto aspect-[16/9] md:aspect-[2/1] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
-            <VisualSlot src="/assets/projects/imd-pune/imd-classical-ml-results.png" alt="Performance metrics comparison of classical ML models including XGBoost, LightGBM, and Random Forest." className="h-full w-full" objectFit="contain" />
-          </div>
+          <ImdResult target="range" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
               We evaluated numerous model families, including Linear Regression, Ridge, Lasso, ElasticNet, Random Forest, Gradient Boosting, Extra Trees, Histogram Gradient Boosting, XGBoost, LightGBM, CatBoost, and AdaBoost.
@@ -248,9 +216,7 @@ export const ImdPuneCaseStudy = () => {
         {/* 13 & 14 DEEP LEARNING & FINDINGS */}
         <CaseSection>
           <SectionHeader number="13" title="Sequential Deep Learning" />
-          <div className="w-full h-auto aspect-[16/7] md:aspect-[2/1] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
-            <VisualSlot src="/assets/projects/imd-pune/imd-deep-learning-results.png" alt="Performance summary of sequential deep learning architectures including GRU, Attention-LSTM, and CNN-LSTM." className="h-full w-full" objectFit="contain" />
-          </div>
+          <ImdResult target="cloud" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
               We benchmarked several recurrent architectures: LSTM, GRU, CNN-LSTM, and Attention-LSTM. Training utilized a sliding-window sequential setup, supplying the previous 15 minutes of meteorological observations to predict future visibility parameters.

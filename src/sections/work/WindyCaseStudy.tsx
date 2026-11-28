@@ -1,8 +1,8 @@
-/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import React, { useRef } from 'react';
-import { VisualSlot } from './VisualSlot';
+import { ProjectCoverVisual } from './ProjectMotion';
+import { TechnicalFlow } from './TechnicalFlow';
 import Link from 'next/link';
 import { MoveLeft, ArrowRight, ExternalLink } from 'lucide-react';
 import { useCaseMotion } from "./useCaseMotion";
@@ -48,6 +48,7 @@ export const WindyCaseStudy = () => {
             <h1 className="hero-elem case-title font-display lg:text-5xl uppercase tracking-tighter leading-tight mb-4 lg:mb-8 text-white/90">
               Agentic Aviation Weather Intelligence
             </h1>
+            <p className="hero-elem case-lede">An aviation-weather research tool that routes questions to numerical analysis, pattern discovery, or source retrieval.</p>
             
             <div className="hero-elem font-mono text-[10px] md:text-xs text-text-muted tracking-widest uppercase mb-4 lg:mb-8 space-y-2">
               <p>Meteorological Analytics</p>
@@ -61,25 +62,10 @@ export const WindyCaseStudy = () => {
               <span className="px-3 py-1 bg-white/5 border border-white/10">PCA / K-Means</span>
             </div>
             
-            <div className="hero-elem mt-4 lg:mt-16 font-mono text-xs text-text-muted tracking-widest uppercase flex items-center gap-3">
-              <span className="w-4 h-[1px] bg-text-muted" /> SCROLL TO EXPLORE
-            </div>
           </div>
           
-          <div className="lg:w-2/3">
-            <div className="hero-elem w-full min-h-[16rem] lg:min-h-0 lg:aspect-[16/10] relative rounded-sm overflow-hidden border border-white/10 bg-[#050505]">
-               <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: "linear-gradient(90deg, #fff 1px, transparent 1px), linear-gradient(0deg, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
-               <div className="inset-0 lg:absolute flex min-h-[16rem] lg:min-h-0 flex-col items-center justify-center text-center p-4 lg:p-8 relative z-10 mix-blend-screen opacity-90">
-                 <div className="w-full max-w-lg font-mono text-[10px] md:text-xs text-accent/70 tracking-widest text-left space-y-2 mb-5 lg:mb-8 p-3 lg:p-4 max-lg:[overflow-wrap:anywhere] border border-accent/20 bg-accent/5">
-                   <p>&#123;</p>
-                   <p className="pl-4">"intent": "pattern_discovery",</p>
-                   <p className="pl-4">"tool": "WeatherQueryTool",</p>
-                   <p className="pl-4">"backend": "DuckDB"</p>
-                   <p>&#125;</p>
-                 </div>
-                 <h2 className="font-display text-2xl lg:text-4xl text-white/40 tracking-tight uppercase">Numerical Grounding</h2>
-               </div>
-            </div>
+          <div className="hero-elem lg:w-2/3">
+            <ProjectCoverVisual slug="windy" />
           </div>
         </div>
       </section>
@@ -115,9 +101,7 @@ export const WindyCaseStudy = () => {
         {/* 03 SYSTEM ARCHITECTURE */}
         <CaseSection>
           <SectionHeader number="03" title="System Architecture" />
-          <div className="w-full h-auto aspect-[16/10] md:aspect-[16/9] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
-            <VisualSlot src="/assets/projects/windy/windy-weather-intelligence-pipeline.png" alt="Weather intelligence pipeline. Numerical weather truth remains inside deterministic tools; synthesis happens downstream." className="h-full w-full" objectFit="contain" />
-          </div>
+          <TechnicalFlow id="windy" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
               Windy is an agentic aviation-weather intelligence system. It routes natural-language questions through a strict pipeline:
@@ -188,9 +172,7 @@ export const WindyCaseStudy = () => {
         {/* 07 ANALYTICS & INSIGHTS */}
         <CaseSection>
           <SectionHeader number="07" title="Analytics & Decision Insights" />
-          <div className="w-full h-auto aspect-[16/10] md:aspect-[16/9] mb-12 rounded-sm overflow-hidden relative border border-white/5 bg-[#050505] p-2 md:p-6">
-            <VisualSlot src="/assets/projects/windy/windy-analytics-decision-insights.png" alt="Analytics and decision insights showing grounded synthesis and deterministic evidence bounds." className="h-full w-full" objectFit="contain" />
-          </div>
+          <TechnicalFlow id="windyOutput" />
           <div className="prose prose-invert prose-p:text-text-muted prose-p:leading-relaxed prose-p:font-light max-w-3xl" data-familiar-protect data-familiar-reaction="read">
             <p>
               The frontend receives the final synthesis and the raw evidence payload, allowing it to render the conclusion alongside supporting tables, descriptive charts, and explicit RAG citations.
