@@ -35,9 +35,9 @@ export function startStudio(
   const materials = studioMaterials(canvas);
   const contact = contactMaterial();
   const removeLight = lightStudio(renderer, scene, materials, params.get("light") ?? "");
-  studioArchitecture(model, materials, contact, params.get("shell") ?? "C");
-  const straightWing = params.get("room") === "straight";
-  const interior = studioInterior(model,materials,contact,straightWing);
+  const straight = params.get("room") === "straight";
+  studioArchitecture(model, materials, contact, params.get("shell") ?? "C",straight);
+  const interior = studioInterior(model,materials,contact,straight);
   const variant = params.get("agentic");
   const financeVariant = params.get("finance");
   const roboticsVariant = params.get("robotics");

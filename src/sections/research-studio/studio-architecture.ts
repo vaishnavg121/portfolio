@@ -1,4 +1,4 @@
-import { Group, Mesh, PlaneGeometry, ShaderMaterial, Vector3 } from "three";
+import { ExtrudeGeometry, Group, Mesh, PlaneGeometry, ShaderMaterial, Shape, Vector3, type Material } from "three";
 import { modelGroup, placeShadow, plateMaterial, type StudioMaterials } from "./studio-model";
 import { studioBays } from "./studio-plan";
 import type { MeshBasicMaterial } from "three";
@@ -7,35 +7,59 @@ const nameplates = [
   ["SYSTEMS", "ROBOTICS BAY"], ["AGENTIC", "RAG BAY"], ["MARKETS", "FINANCE BAY"], ["FORECASTING", "AI / MACHINE LEARNING"],
 ] as const;
 
-export function studioArchitecture(parent: Group, m: StudioMaterials, shadow: MeshBasicMaterial, variant: string) {
-  const room = modelGroup(parent);
-  room.box(m.rubber, 0, -.66, 0, 11.66, .20, 6.95, .095);
-  room.box(m.alloy, 0, -.50, 0, 11.88, .17, 7.13, .08);
-  room.box(m.edge, 0, -.414, 0, 11.84, .050, 7.11, .024);
-  room.box(m.ceramic, 0, -.24, 0, 12.01, .32, 7.25, .14);
-  room.box(m.panel, 0, -.059, 0, 11.84, .13, 7.08, .06);
-  placeShadow(parent, shadow, new Vector3(.35, -.79, .45), 15.2, 10.5);
-
-  const floorShades = [.046, .066, .077].map(m.tile);
-  for (let row = 0; row < 5; row++) {
-    for (let slot = 0; slot < 12; slot++) {
-      const x = (slot - 5.5) * .966, z = (row - 2) * 1.38;
-      room.box(floorShades[(row * 5 + slot * 2) % 3], x, .022, z, .948, .046, 1.355, .022);
-    }
+function foundation(parent: Group, m: StudioMaterials, shadow: MeshBasicMaterial, straight: boolean) {
+  const outline = new Shape();
+  outline.moveTo(-5.91,3.53);
+  outline.lineTo(10.26,3.53);
+  outline.lineTo(10.26,-(straight ? 4.16 : 4.45));
+  if (!straight) {
+    outline.lineTo(6.21,-4.45);
+    outline.lineTo(4.66,-3.66);
   }
+  outline.lineTo(-5.91,-(straight ? 4.16 : 3.66));
+  outline.closePath();
+
+  const floor = m.satin(m.night.clone().lerp(m.stone,.118),.79,.08);
+  floor.onBeforeCompile = shader => {
+    shader.vertexShader = "varying vec2 floorPosition;\n"+shader.vertexShader.replace("#include <begin_vertex>",
+      "#include <begin_vertex>\nfloorPosition = position.xz;");
+    shader.fragmentShader = "varying vec2 floorPosition;\n"+shader.fragmentShader.replace("#include <color_fragment>",`
+      #include <color_fragment>
+      float row = floor(floorPosition.y / .91);
+      vec2 panel = vec2(floorPosition.x / 1.54 + mod(row, 2.) * .33, floorPosition.y / .91);
+      vec2 edge = min(fract(panel), 1. - fract(panel));
+      float joint = smoothstep(.003,.013,min(edge.x,edge.y));
+      float tone = fract(sin(dot(floor(panel),vec2(12.9898,78.233))) * 43758.546);
+      diffuseColor.rgb *= mix(.76,.95 + tone*.085,joint);
+    `);
+  };
+  function layer(material: Material, y: number, height: number, bevel: number) {
+    const section = new ExtrudeGeometry(outline,{depth:height,steps:1,bevelEnabled:true,bevelSegments:2,bevelSize:bevel,bevelThickness:bevel});
+    section.rotateX(-Math.PI/2);
+    const mesh = new Mesh(section,material);
+    mesh.position.y = y;
+    parent.add(mesh);
+  }
+  layer(m.rubber,-.72,.145,.043);
+  layer(m.alloy,-.57,.105,.072);
+  layer(m.edge,-.444,.031,.050);
+  layer(m.ceramic,-.37,.30,.085);
+  layer(floor,-.052,.071,.022);
+  placeShadow(parent,shadow,new Vector3(2.14,-.77,.47),19.4,11.5);
+}
+
+export function studioArchitecture(parent: Group, m: StudioMaterials, shadow: MeshBasicMaterial, variant: string, straight: boolean) {
+  const room = modelGroup(parent);
+  foundation(parent,m,shadow,straight);
+  const floorShades = [.046, .066, .077].map(m.tile);
 
   // The two service trenches and their crossing spine connect all bay plinths.
-  room.box(m.ceramic, 0, .061, 0, .72, .062, 6.89, .035);
-  room.box(m.ceramic, 0, .063, .035, 11.59, .064, .56, .034);
-  for (const x of [-.29, .29]) room.box(m.metal, x, .092, 0, .028, .018, 6.76);
-  for (const z of [-.18, .23]) room.box(m.metal, 0, .096, z, 11.43, .018, .024);
-  room.box(m.strip, 0, .098, .015, 11.32, .012, .016);
+  room.box(m.rubber,0,.063,.015,11.43,.038,.31,.019);
+  for (const z of [-.123,.153]) room.box(m.metal,0,.091,z,11.35,.014,.018,.007);
+  room.box(m.rubber,0,.052,.04,.16,.020,6.94,.009);
+  room.box(m.metal,0,.067,.04,.024,.014,6.94,.006);
   room.box(m.alloy, 0, .099, .024, .42, .030, .41, .066);
   room.cylinder(m.edge, 0, .125, .024, .11, .035, 18);
-  for (const x of [-5.42, -4.03, -2.64, -1.25, 1.25, 2.64, 4.03, 5.42]) {
-    room.box(m.trace, x, .104, .015, .112, .012, .023);
-  }
-  for (const z of [-2.55, -1.69, -.84, .86, 1.71, 2.56]) room.box(m.strip, 0, .104, z, .033, .015, .36);
 
   for (const [index, bay] of studioBays.entries()) {
     const { x, z } = bay;
@@ -80,10 +104,10 @@ export function studioArchitecture(parent: Group, m: StudioMaterials, shadow: Me
       room.box(m.metal, x, rearHeight * .5, rear, .16, rearHeight, .23, .039);
       room.box(m.edge, x, rearHeight * .5, rear + .122, .031, 2.91, .024);
     }
-    room.box(m.alloy, 0, rearHeight, rear, 11.45, .198, .30, .06);
-    room.box(m.edge, 0, rearHeight - .077, rear + .14, 11.12, .023, .035);
-    room.box(m.strip, 0, rearHeight - .13, rear + .088, 10.55, .034, .068);
-    room.box(m.metal, 0, .49, rear, 11.36, .078, .16, .025);
+    room.box(m.alloy, 2.31, rearHeight, rear, 16.07, .198, .32, .06);
+    room.box(m.edge, 2.31, rearHeight - .077, rear + .16, 15.92, .023, .035);
+    room.box(m.strip, 2.31, rearHeight - .13, rear + .14, 15.65, .029, .048);
+    room.box(m.metal, 2.30, .49, rear, 15.94, .078, .16, .025);
     room.box(m.alloy, 0, 2.35, rear, 11.39, .065, .13, .025);
     const sheen = new ShaderMaterial({
       uniforms: { tint: { value: m.ivory } },
@@ -130,7 +154,7 @@ export function studioArchitecture(parent: Group, m: StudioMaterials, shadow: Me
     room.box(m.strip, 0, .91, rear, 11.31, .033, .22);
   }
 
-  for (const x of [-5.44, -.28, .28, 5.44]) {
+  for (const x of [-5.44, -.28, .28, 4.52]) {
     room.box(m.grout, x, -.25, 3.64, .14, .10, .028, .014);
     room.box(m.strip, x, -.22, 3.659, .066, .021, .012);
   }

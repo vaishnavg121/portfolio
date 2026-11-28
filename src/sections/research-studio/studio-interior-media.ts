@@ -54,7 +54,7 @@ export function studioScreen(parent:Group,m:StudioMaterials,location:Vector3,wid
   };
 }
 
-export function studioPicture(parent:Group,m:StudioMaterials,location:Vector3,width:number,height:number,weather:boolean) {
+export function studioPicture(parent:Group,m:StudioMaterials,location:Vector3,width:number,height:number,art:"ridge"|"arcade"|"ink") {
   const frame=modelGroup(parent);
   frame.box(m.rubber,location.x+.018,location.y-.025,location.z-.031,width+.045,height+.045,.05,.016);
   frame.box(m.edge,location.x,location.y,location.z,width+.05,height+.05,.052,.011);
@@ -63,42 +63,71 @@ export function studioPicture(parent:Group,m:StudioMaterials,location:Vector3,wi
   canvas.width=384;
   canvas.height=Math.round(384*height/width);
   const ctx=canvas.getContext("2d")!;
-  const warm="#"+m.ivory.getHexString(), ink="#"+m.night.getHexString(), rose="#"+m.rose.getHexString(), h=canvas.height;
+  const warm="#"+m.ivory.getHexString(), ink="#"+m.night.getHexString(), h=canvas.height;
   const texture=new CanvasTexture(canvas);
   texture.colorSpace=SRGBColorSpace;
   ctx.fillStyle=warm;
   ctx.fillRect(0,0,384,h);
-  if(weather) {
-    ctx.fillStyle=ink;
-    ctx.font="600 20px system-ui";
-    ctx.fillText("AVIATION WEATHER",20,h-15);
-    // Use the existing project illustration at print size through a compact derivative.
-    const print=new Image();
-    print.onload=()=>{
-      if(!texture.source.data) return;
-      ctx.drawImage(print,14,12,356,h-48);
-      texture.needsUpdate=true;
-    };
-    texture.addEventListener("dispose",()=>{print.onload=null;});
-    print.src="/images/research-studio/weather-print.webp";
-  } else {
-    ctx.fillStyle=ink;
-    ctx.fillRect(13,13,358,h-26);
-    ctx.lineWidth=2.2;
-    const orbital = width > .8;
-    for(let i=0;i<11;i++){
-      ctx.strokeStyle=i%3===0?warm:rose;
-      ctx.globalAlpha=.5+i*.037;
+  const tint=(a:typeof m.stone,b:typeof m.stone,mix:number)=>"#"+a.clone().lerp(b,mix).getHexString();
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(13,13,358,h-26);
+  ctx.clip();
+  if(art==="ridge") {
+    const sky=ctx.createLinearGradient(0,0,0,h);
+    sky.addColorStop(0,tint(m.stone,m.mauve,.42));
+    sky.addColorStop(.82,tint(m.ivory,m.rose,.25));
+    ctx.fillStyle=sky;
+    ctx.fillRect(0,0,384,h);
+    ctx.fillStyle=warm;
+    ctx.beginPath();
+    ctx.arc(238,h*.30,40,0,Math.PI*2);
+    ctx.fill();
+    for(let layer=0;layer<5;layer++){
+      ctx.fillStyle=tint(m.rose,m.night,.21+layer*.14);
       ctx.beginPath();
-      for(let j=0;j<=100;j++){
-        const t=j/100*Math.PI*2;
-        const radius=74+i*9+(orbital ? Math.sin(t*2+i*.18)*16 : Math.sin(t*3+i*.20)*15+Math.cos(t*5)*6);
-        const x=192+radius*Math.cos(t), y=h*.53+radius*Math.sin(orbital ? t+i*.026 : t)*.78;
-        if(j===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+      for(let x=0;x<=388;x+=4){
+        const u=x/384;
+        ctx.lineTo(x,h*(.49+layer*.083 + .07*Math.sin(u*7+layer*1.4) + .039*Math.sin(u*17+layer*.78) + .012*Math.sin(u*52+layer)));
+      }
+      ctx.lineTo(388,h);
+      ctx.lineTo(0,h);
+      ctx.closePath();
+      ctx.fill();
+    }
+  } else if(art==="arcade") {
+    ctx.fillStyle=tint(m.night,m.stone,.52);
+    ctx.fillRect(0,0,384,h);
+    for(let i=0;i<5;i++){
+      const radius=141-i*22, center=160+i*16, top=h*.43+i*7;
+      ctx.fillStyle=tint(i%2?m.mauve:m.stone,m.ivory,i*.14);
+      ctx.beginPath();
+      ctx.moveTo(center-radius,h);
+      ctx.lineTo(center-radius,top);
+      ctx.arc(center,top,radius,Math.PI,Math.PI*2);
+      ctx.lineTo(center+radius,h);
+      ctx.fill();
+    }
+  } else {
+    ctx.fillStyle=tint(m.ivory,m.stone,.29);
+    ctx.fillRect(0,0,384,h);
+    ctx.lineCap="round";
+    for(let i=0;i<36;i++){
+      ctx.strokeStyle=i%7===0?tint(m.stone,m.rose,.4):ink;
+      ctx.lineWidth=i%7===0?2.5:.95;
+      ctx.globalAlpha=.25+(i%5)*.087;
+      ctx.beginPath();
+      for(let x=25;x<=360;x+=4){
+        const u=(x-25)/335;
+        ctx.lineTo(x,h*.40 + i*3.1 + Math.sin(u*7+i*.052)*h*.15 + Math.sin(u*17+i*.13)*h*.036);
       }
       ctx.stroke();
     }
   }
+  ctx.fillStyle=ink;
+  ctx.globalAlpha=.10;
+  for(let i=0;i<4100;i++) ctx.fillRect((i*193.37)%384,(i*89.13)%h,i%7===0?1.4:.65,.72);
+  ctx.restore();
   const mesh=new Mesh(new PlaneGeometry(width-.045,height-.045),new MeshBasicMaterial({map:texture}));
   mesh.position.copy(location).add(new Vector3(0,0,.029));
   parent.add(mesh);
