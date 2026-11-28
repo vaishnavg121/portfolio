@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ArrowUpRight, ScanLine } from "lucide-react";
 import type { startStudio } from "./studio-runtime";
-import { stationDetails, studioBays, type StudioStationId } from "./studio-plan";
+import { stationDetails, studioBays, studioStationIds, type StudioStationId } from "./studio-plan";
 import styles from "./ResearchStudio.module.css";
 
 type Stage = NonNullable<ReturnType<typeof startStudio>>;
@@ -91,7 +91,7 @@ export function ResearchStudio() {
           <p>Four disciplines, one shared laboratory.</p>
         </div>
         <div ref={controls} className={styles.controls} role="group" aria-label="Inspect a workstation">
-          {(["learning", "agentic"] as const).map(id => (
+          {studioStationIds.map(id => (
             <button key={id} type="button" className={`portfolio-control ${styles.inspect}`} data-inspect={id}
               aria-expanded={focused === id} aria-controls={focused === id ? "studio-details" : undefined} onClick={() => inspect(id)}>
               <ScanLine size={14} aria-hidden />{stationDetails[id].control}
@@ -106,7 +106,7 @@ export function ResearchStudio() {
         {!ready && <div className={styles.fallback}>
           <Image fill unoptimized
             src={`/images/research-studio/${details?.image ?? "overview.webp"}`}
-            alt={details?.alt ?? "A four-bay architectural cutaway with agentic retrieval and forecasting workstations"} />
+            alt={details?.alt ?? "A four-bay architectural cutaway with forecasting, agentic retrieval, and finance workstations"} />
         </div>}
         <canvas ref={canvas} className={styles.canvas} data-studio-canvas aria-hidden
           onPointerMove={event => {
@@ -145,6 +145,7 @@ export function ResearchStudio() {
           <p className={styles.kicker}>Conceptual sequence</p>
           <h3>{details.title}</h3>
           <p>{details.summary}</p>
+          {"note" in details && <p className={styles.example}>{details.note}</p>}
           <ol className={styles.phases} aria-label={details.phaseLabel}>
             {details.phases.map((label, index) => (
               <li key={label} aria-current={ready && phase?.station === focused && phase.index === index ? "step" : undefined} data-studio-phase={index}>{label}</li>
@@ -159,7 +160,7 @@ export function ResearchStudio() {
       </div>
       <ul className={styles.bays} aria-label="Studio workstations">
         {studioBays.map(bay => (
-          <li key={bay.id} data-active={bay.id === "learning" || bay.id === "agentic" ? "" : undefined}>
+          <li key={bay.id} data-active={bay.id in stationDetails ? "" : undefined}>
             <span aria-hidden />{bay.title}
           </li>
         ))}
