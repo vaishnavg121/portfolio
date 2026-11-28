@@ -51,16 +51,23 @@
 }
 @media (width >= 52rem) {
   .stage {
-    --panel-width: clamp(14rem, 23vw, 18.3rem);
+    --studio-panel-width: 15rem;
     display:grid;
-    grid-template-columns:minmax(0,var(--panel-left,0px)) minmax(0,1fr) minmax(0,var(--panel-right,0px));
-    transition:grid-template-columns 250ms var(--ease-reveal);
+    grid-template-columns:minmax(0,1fr);
   }
-  .stage[data-panel="left"] { --panel-left:var(--panel-width); }
-  .stage[data-panel="right"] { --panel-right:var(--panel-width); }
-  .viewport { grid-area:1 / 2; }
-  .details { grid-area:1 / 3; width:calc(var(--panel-width) - .6rem); margin-inline:.6rem 0; }
-  .stage[data-panel="left"] .details { grid-area:1 / 1; margin-inline:0 .6rem; }
+  .viewport { grid-area:1 / 1; }
+  .canvas { height:clamp(400px,39vw,600px); }
+  .stage[data-panel] .canvas {
+    mask-image:radial-gradient(ellipse 65% 60% at 50% 50%,#000 64%,transparent 100%),
+      linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent),
+      linear-gradient(transparent,#000 7%,#000 93%,transparent);
+    mask-composite:intersect;
+  }
+  .details { grid-area:1 / 1; justify-self:end; margin-inline:.15rem; width:var(--studio-panel-width); z-index:2; }
+  .stage[data-panel="left"] .details { justify-self:start; }
+  .studio[data-studio-renderer="fallback"] .stage[data-panel="left"] .fallback { inset-inline-start:var(--studio-panel-width); }
+  .studio[data-studio-renderer="fallback"] .stage[data-panel="right"] .fallback { inset-inline-end:var(--studio-panel-width); }
+  .studio[data-studio-view="focus"] .bays { margin-top:-.38rem; }
 }
 @keyframes studio-reveal { from { opacity: 0; transform: translateY(9px) scale(.988); } }
 .cardHeading { display:flex; align-items:center; justify-content:space-between; gap:.45rem; }
@@ -116,7 +123,9 @@
 .station:is(:hover, [data-highlight], [data-related]) > span { background: var(--accent-petal); border-color: var(--accent-petal); }
 .station:is(:hover, [aria-expanded="true"]) { border-bottom-color: var(--accent-mauve); }
 .station[data-related] { border-bottom-color: var(--glass-rim); }
-.studio[data-studio-view="focus"] .bays { margin-top: .35rem; }
+@media (width < 52rem) {
+  .studio[data-studio-view="focus"] .bays { margin-top:.35rem; }
+}
 .connections {
   margin: .65rem auto .45rem;
   max-width: 51rem;

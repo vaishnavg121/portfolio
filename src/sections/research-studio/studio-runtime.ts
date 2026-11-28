@@ -13,6 +13,7 @@ import { roboticsStation } from "./station-robotics";
 import { createStudioDirector, portStation, studioScenarios, type StudioActivity, type StudioObjectId, type StudioView } from "./studio-choreography";
 import { studioNetwork } from "./studio-network";
 import { studioInterior, studioObjectIds } from "./studio-interior";
+import { desktopStudioFit, type PanelSide } from "./studio-camera";
 
 export function startStudio(
   canvas: HTMLCanvasElement,
@@ -104,6 +105,16 @@ export function startStudio(
     risk: destinations.learning.clone().lerp(destinations.markets,.5),
     feedback: destinations.software.clone().lerp(destinations.agentic,.5),
   };
+  const pairBounds = Object.fromEntries(Object.entries(studioScenarios).map(([id,scenario])=>{
+    const [left,right] = scenario.pair;
+    return [id,boundsById.get(left)!.clone().union(boundsById.get(right)!)];
+  })) as Record<keyof typeof pairFrame,Box3>;
+  const desktop = matchMedia("(min-width: 52rem)");
+  const fittingEye = new Vector3();
+  let panel: PanelSide | null = null;
+  let panelWidth = 0, offset = 0;
+  let fixedView: Vector4 | null = null, fixedTarget: Vector3 | null = null;
+  let wantedOffset = 0;
   let width = 0, height = 0, frame = 0, timer = 0, last = 0, visible = false, first = true;
   let selection: StudioView = {kind:"overview"};
   let highlighted: Hit | null = null;
@@ -140,12 +151,29 @@ export function startStudio(
     eye.set(6.6 + (view.z - 6.6) * zoom + lean * 1.3, 8.95 + (view.w - 8.95) * zoom, depth);
     camera.position.copy(target).add(eye);
     camera.lookAt(target);
-    camera.left = -span * aspect / 2;
-    camera.right = -camera.left;
+    const shift = offset*span*aspect;
+    camera.left = -span * aspect / 2-shift;
+    camera.right = span * aspect / 2-shift;
     camera.top = span / 2;
     camera.bottom = -camera.top;
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
+  }
+
+  function refit() {
+    fixedView = null;
+    fixedTarget = null;
+    wantedOffset = 0;
+    if (!desktop.matches || !width || !height || selection.kind === "overview") return;
+    const box = selection.kind === "connection" ? pairBounds[selection.id] : boundsById.get(selection.id)!;
+    const angle = selection.kind === "station" ? views[selection.id]
+      : selection.kind === "object" ? objectViews[selection.id] : pairFrame[selection.id];
+    const proposedDepth = selection.kind === "object" && selection.id === "lounge" ? -2.6 : 12.4;
+    const fit = desktopStudioFit(box,fittingEye.set(angle.z,angle.w,proposedDepth),width,height,panel,panelWidth);
+    fixedTarget = box.getCenter(new Vector3());
+    const roomContext = selection.kind === "object" ? 7.45 : 8.15;
+    fixedView = new Vector4(Math.max(fit.span,roomContext),0,angle.z,angle.w);
+    wantedOffset = fit.offset;
   }
 
   const running = () => prepared && visible && !document.hidden && width > 0 && height > 0;
@@ -195,17 +223,19 @@ export function startStudio(
       }
     }
     network.update(active,paused && connection ? connection : undefined,seconds);
-    const ease = paused ? 1 : 1 - Math.exp(-elapsed / 120);
+    const ease = paused ? 1 : 1 - Math.exp(-elapsed / (desktop.matches ? 52 : 120));
     const desired = focus || object || connection ? 1 : 0;
     zoom += (desired - zoom) * ease;
     lean += (wantedLean - lean) * ease;
     const preferredDepth = object === "lounge" ? -2.6 : 12.4;
     depth += (preferredDepth-depth)*ease;
     if (Math.abs(preferredDepth-depth)<.02) depth=preferredDepth;
-    const destination = focus ? destinations[focus] : object ? interior.centers[object] : connection ? pairCenter[connection] : midpoint;
+    offset += (wantedOffset-offset)*ease;
+    if (Math.abs(wantedOffset-offset)<.001) offset = wantedOffset;
+    const destination = fixedTarget ?? (focus ? destinations[focus] : object ? interior.centers[object] : connection ? pairCenter[connection] : midpoint);
     target.lerp(destination, ease);
     if (target.distanceToSquared(destination) < .000025) target.copy(destination);
-    const destinationView = focus ? views[focus] : object ? objectViews[object] : connection ? pairFrame[connection] : views.learning;
+    const destinationView = fixedView ?? (focus ? views[focus] : object ? objectViews[object] : connection ? pairFrame[connection] : views.learning);
     view.lerp(destinationView, ease);
     if (gap.subVectors(view, destinationView).lengthSq() < .00001) view.copy(destinationView);
     for (const id of studioStationIds) {
@@ -237,7 +267,24 @@ export function startStudio(
       first = false;
       painted();
     }
-    if (zoom !== desired || lean !== wantedLean || depth !== preferredDepth || !target.equals(destination) || !view.equals(destinationView)) request();
+    const moving = zoom !== desired || offset !== wantedOffset || depth !== preferredDepth || !target.equals(destination) || !view.equals(destinationView);
+    if (probe) {
+      canvas.dataset.camera = moving ? "moving" : "settled";
+      const box = focus || object ? boundsById.get((focus ?? object)!) : connection ? pairBounds[connection] : null;
+      if (!moving && box) {
+        const { min, max } = box;
+        let left = Infinity, top = -Infinity, right = -Infinity, bottom = Infinity;
+        for (const x of [min.x,max.x]) for (const y of [min.y,max.y]) for (const z of [min.z,max.z]) {
+          sample.set(x,y,z).project(camera);
+          left = Math.min(left,sample.x);
+          right = Math.max(right,sample.x);
+          top = Math.max(top,sample.y);
+          bottom = Math.min(bottom,sample.y);
+        }
+        canvas.dataset.focusBox = [(left+1)/2,(1-top)/2,(right+1)/2,(1-bottom)/2].map(value => value.toFixed(4)).join(",");
+      } else delete canvas.dataset.focusBox;
+    }
+    if (moving || lean !== wantedLean) request();
     else if (!paused) timer = window.setTimeout(request, focus || object || connection ? 23 : 31);
     else last = 0;
   }
@@ -247,9 +294,12 @@ export function startStudio(
     width = bounds.width;
     height = bounds.height;
     if (!width || !height) return;
+    panelWidth = Math.min(268,width*.265);
+    canvas.closest<HTMLElement>("[data-studio-stage]")?.style.setProperty("--studio-panel-width",panelWidth+"px");
     const pixelBudget = width < 680 ? 310_000 : 775_000;
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1,1.46,Math.sqrt(pixelBudget/(width*height))));
     renderer.setSize(width, height, false);
+    refit();
     pose();
     request();
   }
@@ -287,8 +337,10 @@ export function startStudio(
       activityKey = "";
       priorTransfer = null;
       glance = next.kind === "station" || next.kind === "object" ? next.id : null;
-      // Reserve the opposite gutter once per selection so drag never moves the panel.
-      if (glance) placePanel(panelSide(glance));
+      // The panel follows its selected object's empty side without changing the canvas dimensions.
+      panel = glance ? panelSide(glance) : null;
+      if (panel) placePanel(panel);
+      refit();
       stage = -1;
       request();
     },
