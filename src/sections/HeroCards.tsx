@@ -176,7 +176,7 @@ export const HeroCards = () => {
             "--deck-order": index,
             "--deck-progress": index / (CARDS.length - 1),
             "--deck-turn": `${RESTING_ROTATIONS[index]}deg`,
-            "--deck-settle": index % 2 === 0 ? "6px" : "15px",
+            "--deck-settle": index % 2 === 0 ? "6px" : "10px",
           } as CSSProperties}
           onPointerMove={event => {
             if (event.pointerType === "mouse" && window.matchMedia("(width >= 43rem) and (hover: hover) and (pointer: fine)").matches) {
@@ -198,7 +198,13 @@ export const HeroCards = () => {
             type="button"
             className="hero-card-select"
             aria-label={`Select ${card.title}`}
-            aria-pressed={compactActive === index}
+            aria-pressed={(selected ?? 0) === index}
+            onFocus={event => {
+              if (event.currentTarget.matches(":focus-visible")) {
+                setHovered(null);
+                setFocused(index);
+              }
+            }}
             onClick={() => selectCard(index)}
           />
           <Link
