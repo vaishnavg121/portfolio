@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, ArrowUpRight, Network } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Network, X } from "lucide-react";
 import type { startStudio } from "./studio-runtime";
-import { stationDetails, studioBays, type StudioStationId } from "./studio-plan";
-import { studioScenarios, type ScenarioId, type StudioActivity, type StudioView } from "./studio-choreography";
+import { stationDetails, studioBays, studioObjects, type StudioStationId } from "./studio-plan";
+import { studioScenarios, type ScenarioId, type StudioActivity, type StudioObjectId, type StudioView } from "./studio-choreography";
 import { StudioConnections } from "./StudioConnections";
 import styles from "./ResearchStudio.module.css";
 
@@ -25,13 +25,18 @@ export function ResearchStudio() {
   const touch = useRef<{ id: number; x: number; y: number; rotating: boolean } | null>(null);
   const [ready, setReady] = useState(false);
   const [view, setView] = useState<StudioView>(overview);
-  const [hover, setHover] = useState<StudioStationId | null>(null);
+  const [hover, setHover] = useState<StudioStationId | StudioObjectId | null>(null);
   const [phase, setPhase] = useState<{ station: StudioStationId; index: number }>();
   const [activity, setActivity] = useState<StudioActivity | null>(null);
+  const [panel, setPanel] = useState<"left" | "right">("right");
+  const [channel, setChannel] = useState(0);
+  const lastObjectControl = useRef<HTMLButtonElement | null>(null);
   const focused = view.kind === "station" ? view.id : null;
+  const object = view.kind === "object" ? view.id : null;
   const connection = view.kind === "connection" ? view.id : null;
   const details = focused ? stationDetails[focused] : null;
-  const ambientBeat = view.kind === "overview" && activity?.beat && !activity.beat.guided ? activity.beat : null;
+  const objectDetails = object ? studioObjects[object] : null;
+  const card = details ?? objectDetails;
 
   useEffect(() => {
     const surface = canvas.current;
@@ -44,7 +49,7 @@ export function ResearchStudio() {
       const token = ++request;
       import("./studio-runtime").then(({ startStudio }) => {
         if (stopped || request !== token || !seen) return;
-        runtime.current = startStudio(surface, () => setReady(true), (station, index) => setPhase({station,index}), setActivity);
+        runtime.current = startStudio(surface, () => setReady(true), (station, index) => setPhase({station,index}), setActivity, setPanel);
         runtime.current?.visible(seen);
       }).catch(() => {
         if (!stopped) setReady(false);
@@ -83,8 +88,15 @@ export function ResearchStudio() {
     runtime.current?.select(view);
   }, [view, ready]);
 
-  function inspect(station: StudioStationId) {
-    if (focused !== station) setView({kind:"station",id:station});
+  useEffect(() => {
+    if (ready) runtime.current?.tune(channel);
+  }, [channel, ready]);
+
+  function inspect(id: StudioStationId | StudioObjectId) {
+    if (id === focused || id === object) return;
+    setView(Object.hasOwn(studioObjects,id)
+      ? {kind:"object",id:id as StudioObjectId}
+      : {kind:"station",id:id as StudioStationId});
   }
 
   function guide(id: ScenarioId) {
@@ -96,20 +108,21 @@ export function ResearchStudio() {
     setView(overview);
     setHover(null);
     runtime.current?.highlight(null);
-    const original = focused ? controls.current?.querySelector<HTMLButtonElement>(`[data-inspect="${focused}"]`) : explore.current;
+    const original = focused ? controls.current?.querySelector<HTMLButtonElement>(`[data-inspect="${focused}"]`) : object ? lastObjectControl.current ?? explore.current : explore.current;
     original?.focus({preventScroll:true});
   }
 
   return (
     <section id="research-studio" className={styles.studio} aria-labelledby="studio-title"
-      data-studio-renderer={ready ? "webgl" : "fallback"} data-studio-view={focused ? "focus" : connection ? "connection" : "overview"}
+      data-studio-renderer={ready ? "webgl" : "fallback"} data-studio-view={focused ? "focus" : object ? "object" : connection ? "connection" : "overview"}
       data-studio-station={focused ?? undefined} data-studio-connection={connection ?? undefined}
+      data-studio-object={object ?? undefined}
       data-studio-beat={activity?.beat ? `${activity.beat.id}:${activity.beat.index}` : undefined}
       onKeyDown={event => { if (event.key === "Escape" && view.kind !== "overview") reset(); }}>
       <header className={styles.heading} data-familiar-yield>
         <div>
           <h2 id="studio-title">The Research Studio</h2>
-          <p>A miniature laboratory for the disciplines I work across.</p>
+          <p>I study Computer Science with a Finance minor at BITS Pilani, Hyderabad Campus. This little room brings together what I build and what I enjoy outside class.</p>
         </div>
         <button ref={explore} type="button" className={`portfolio-control ${styles.explore}`}
           aria-controls={connection ? "studio-connections" : undefined}
@@ -117,11 +130,11 @@ export function ResearchStudio() {
           {view.kind === "overview" ? <><Network size={14} aria-hidden />Explore connections</> : <><ArrowLeft size={14} aria-hidden />Overview</>}
         </button>
       </header>
-      <div className={styles.stage} data-studio-stage data-familiar-protect data-familiar-yield data-familiar-margin="8" data-hover={hover ?? undefined}>
+      <div className={styles.stage} data-panel={card ? panel : undefined} data-studio-stage data-familiar-protect data-familiar-yield data-familiar-margin="8" data-hover={hover ?? undefined}>
+        <div className={styles.viewport}>
         {!ready && <div className={styles.fallback}>
-          <Image fill unoptimized
-            src={`/images/research-studio/${details?.image ?? "overview.webp"}`}
-            alt={details?.alt ?? "A four-bay laboratory cutaway with forecasting, agentic retrieval, finance, and robotics workstations"} />
+          <Image fill unoptimized src={`/images/research-studio/${object === "television" && channel === 1 ? "television-alt.webp" : card?.image ?? "overview.webp"}`}
+            alt={object === "television" && channel === 1 ? "A television showing animated contour-inspired artwork" : card?.alt ?? "An architectural cutaway of four research workstations, a lounge, and a gaming desk"} />
         </div>}
         <canvas ref={canvas} className={styles.canvas} data-studio-canvas aria-hidden
           onPointerMove={event => {
@@ -153,23 +166,35 @@ export function ResearchStudio() {
             if (start?.rotating) runtime.current?.lean(0);
             if (!start?.rotating && start?.id === event.pointerId && Math.hypot(event.clientX - start.x, event.clientY - start.y) < 9) {
               const id = runtime.current?.hit(event.clientX, event.clientY);
-              if (id) inspect(id);
+              if (id) {
+                lastObjectControl.current = null;
+                if (id === "television" && object === id) setChannel(value => 1 - value);
+                else inspect(id);
+              }
             }
           }} />
-        {details && <aside key={focused} id="studio-details" className={styles.details}>
-          <p className={styles.kicker}>Conceptual sequence</p>
-          <h3>{details.title}</h3>
-          <p>{details.summary}</p>
-          {"note" in details && <p className={styles.example}>{details.note}</p>}
+        </div>
+        {card && <aside key={card.title} id="studio-details" aria-labelledby="studio-card-title" className={styles.details} data-familiar-protect data-familiar-yield>
+          <div className={styles.cardHeading}>
+            <h3 id="studio-card-title">{card.title}</h3>
+            <button className={styles.close} type="button" aria-label="Close details" onClick={reset}><X size={15} aria-hidden /></button>
+          </div>
+          <p>{card.summary}</p>
+          {details && <details className={styles.motionDetails}>
+          <summary>What’s moving</summary>
           <ol className={styles.phases} aria-label={details.phaseLabel}>
             {details.phases.map((label, index) => (
               <li key={label} aria-current={ready && phase?.station === focused && phase.index === index ? "step" : undefined} data-studio-phase={index}>{label}</li>
             ))}
           </ol>
+          </details>}
           <div className={styles.links}>
-            {details.projects.map(project => (
+            {details?.projects.map(project => (
               <Link key={project.href} className="portfolio-text-link" href={project.href}>{project.label} <ArrowUpRight size={12} aria-hidden /></Link>
             ))}
+            {object === "artwork" && <Link className="portfolio-text-link" href="/work/imdpune">Aviation weather project <ArrowUpRight size={12} aria-hidden /></Link>}
+            {object === "television" && <button type="button" className={styles.detailConnection} onClick={() => setChannel(value => 1 - value)}>Change scene</button>}
+            {object === "television" && <span className={styles.channel} role="status">{channel === 0 ? "Evening ridge" : "Contour study"}</span>}
             {focused && <button type="button" className={styles.detailConnection} onClick={() => guide(relatedScenario[focused])}>View connection</button>}
           </div>
         </aside>}
@@ -186,7 +211,15 @@ export function ResearchStudio() {
           </button>
         ))}
       </div>
-      {view.kind === "overview" && <div className={styles.ambient} aria-hidden>{ambientBeat ? studioScenarios[ambientBeat.id].beats[ambientBeat.index].label : null}</div>}
+      <details className={styles.roomObjects} data-familiar-yield>
+        <summary>Explore the room</summary>
+        <div role="group" aria-label="Personal objects">
+          {(Object.keys(studioObjects) as StudioObjectId[]).map(id => (
+            <button key={id} className={styles.detailConnection} type="button" data-object={id} aria-pressed={id === object}
+              onClick={event => {lastObjectControl.current = event.currentTarget; inspect(id);}}>{studioObjects[id].title}</button>
+          ))}
+        </div>
+      </details>
       {connection && <StudioConnections id={connection} activity={activity} ready={ready} select={guide} stop={reset} />}
     </section>
   );
