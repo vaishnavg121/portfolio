@@ -10,8 +10,15 @@ import { agenticStation } from "./station-agentic";
 import { financeStation } from "./station-finance";
 import { learningStation } from "./station-learning";
 import { roboticsStation } from "./station-robotics";
+import { createStudioDirector, portStation, studioScenarios, type StudioActivity, type StudioView } from "./studio-choreography";
+import { studioNetwork } from "./studio-network";
 
-export function startStudio(canvas: HTMLCanvasElement, painted: () => void, onPhase: (station: StudioStationId, phase: number) => void) {
+export function startStudio(
+  canvas: HTMLCanvasElement,
+  painted: () => void,
+  onPhase: (station: StudioStationId, phase: number) => void,
+  onActivity: (activity: StudioActivity) => void,
+) {
   const context = canvas.getContext("webgl2", { alpha: true, antialias: true, powerPreference: "low-power" });
   if (!context) return null;
   const renderer = new WebGLRenderer({ canvas, context, antialias: true, alpha: true });
@@ -36,6 +43,10 @@ export function startStudio(canvas: HTMLCanvasElement, painted: () => void, onPh
     markets: financeStation(model, materials, contact, financeVariant === "research" || financeVariant === "engineering" ? financeVariant : "hybrid"),
     software: roboticsStation(model, materials, contact, roboticsVariant === "assembly" || roboticsVariant === "computing" ? roboticsVariant : "hybrid"),
   };
+  const network = studioNetwork(model, materials, {
+    learning: stations.learning.ports, agentic: stations.agentic.ports, markets: stations.markets.ports, software: stations.software.ports,
+  }, params.get("hub") !== "0");
+  const director = createStudioDirector(params.get("mode") !== "exhibit");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   const pointer = new Vector2();
   const ray = new Raycaster();
@@ -64,12 +75,26 @@ export function startStudio(canvas: HTMLCanvasElement, painted: () => void, onPh
     software: new Vector4(3.09, 4.56, 6.4, 5.95),
   };
   const view = views.learning.clone(), gap = new Vector4();
+  const pairFrame = {
+    evidence: new Vector4(7.80,13.13,7.35,6.72),
+    risk: new Vector4(5.52,8.85,8.78,6.77),
+    feedback: new Vector4(5.65,8.98,6.48,6.34),
+  };
+  const pairCenter = {
+    evidence: destinations.learning.clone().lerp(destinations.agentic,.5),
+    risk: destinations.learning.clone().lerp(destinations.markets,.5),
+    feedback: destinations.software.clone().lerp(destinations.agentic,.5),
+  };
   let width = 0, height = 0, frame = 0, timer = 0, last = 0, visible = false, first = true;
-  let focus: StudioStationId | null = null, highlighted: StudioStationId | null = null;
+  let selection: StudioView = {kind:"overview"};
+  let highlighted: StudioStationId | null = null;
   let zoom = 0, lean = 0, wantedLean = 0, stage = -1;
-  const time = { learning: 0, agentic: 0, markets: 0, software: 0 };
   const emphasis = { learning: 0, agentic: 0, markets: 0, software: 0 };
   const still = params.get("still") === "1";
+  const glancePoint = new Vector3();
+  let glance: StudioStationId | null = null;
+  let ambient = 0, activityKey = "";
+  let priorTransfer: string | null = null;
 
   function pose() {
     const aspect = width / height;
@@ -94,26 +119,62 @@ export function startStudio(canvas: HTMLCanvasElement, painted: () => void, onPh
     if (!frame && running()) frame = requestAnimationFrame(paint);
   }
 
+  function suspend() {
+    if (frame) cancelAnimationFrame(frame);
+    if (timer) window.clearTimeout(timer);
+    frame = timer = last = 0;
+  }
+
+  function onVisibility() {
+    if (document.hidden) suspend();
+    else request();
+  }
+
   function paint(now: number) {
     frame = 0;
     if (!running()) return;
     const elapsed = last ? Math.min(75, now - last) : 16;
     last = now;
     const paused = reduced.matches || still;
+    const seconds = paused ? 0 : elapsed / 1000;
+    director.setReduced(paused);
+    director.update(seconds);
+    ambient += seconds;
+    const active = director.beat;
+    const beat = active ? studioScenarios[active.id].beats[active.index] : null;
+    const focus = selection.kind === "station" ? selection.id : null;
+    const connection = selection.kind === "connection" ? selection.id : null;
+    const activity = active ? `${active.id}/${active.index}/${active.guided}` : "";
+    const key = `${activity}/${director.completed}/${paused}`;
+    if (activityKey !== key) {
+      activityKey = key;
+      onActivity({beat:active ? {id:active.id,index:active.index,guided:active.guided} : null,completed:director.completed,paused});
+    }
+    if (!paused && selection.kind === "connection" && active?.guided && beat?.kind === "transfer" && active.progress > .93) {
+      const receiver = portStation(beat.to);
+      if (receiver && priorTransfer !== activity) {
+        priorTransfer = activity;
+        glance = receiver;
+      }
+    }
+    network.update(active,paused && connection ? connection : undefined,seconds);
     const ease = paused ? 1 : 1 - Math.exp(-elapsed / 120);
-    const desired = focus ? 1 : 0;
+    const desired = focus || connection ? 1 : 0;
     zoom += (desired - zoom) * ease;
     lean += (wantedLean - lean) * ease;
-    const destination = focus ? destinations[focus] : midpoint;
+    const destination = focus ? destinations[focus] : connection ? pairCenter[connection] : midpoint;
     target.lerp(destination, ease);
     if (target.distanceToSquared(destination) < .000025) target.copy(destination);
-    const destinationView = views[focus ?? "learning"];
+    const destinationView = focus ? views[focus] : connection ? pairFrame[connection] : views.learning;
     view.lerp(destinationView, ease);
     if (gap.subVectors(view, destinationView).lengthSq() < .00001) view.copy(destinationView);
     for (const id of studioStationIds) {
-      emphasis[id] += (Number(focus === id || highlighted === id) - emphasis[id]) * ease;
-      if (!paused && (!focus || focus === id)) time[id] += elapsed / 1000;
-      const phase = stations[id].animate(time[id], emphasis[id], paused, focus === id);
+      const clock = director.station[id];
+      const detailed = focus === id || (beat?.kind === "process" && beat.at === id && !!active?.guided);
+      const awake = focus === id ? 1 : clock.signal === "shared" ? (active?.guided ? .89 : .47) : 0;
+      const cue = Math.max(awake,highlighted === id ? .69 : 0,network.emission[id] * .93);
+      emphasis[id] += (cue - emphasis[id]) * ease;
+      const phase = stations[id].animate(clock.time,emphasis[id],paused,detailed,clock.signal,ambient);
       if (focus === id && stage !== phase) {
         stage = phase;
         onPhase(id, phase);
@@ -122,13 +183,20 @@ export function startStudio(canvas: HTMLCanvasElement, painted: () => void, onPh
     if (Math.abs(desired - zoom) < .002) zoom = desired;
     if (Math.abs(wantedLean - lean) < .004) lean = wantedLean;
     pose();
+    if (glance && !paused) {
+      glancePoint.copy(network.stationPoint(glance)).project(camera);
+      const bounds = canvas.getBoundingClientRect();
+      const x = bounds.left + (1 + Math.max(-.9,Math.min(.9,glancePoint.x))) * bounds.width * .5;
+      window.dispatchEvent(new CustomEvent("companionInteract",{detail:{type:"studio-glance",data:{x}}}));
+    }
+    glance = null;
     renderer.render(scene, camera);
     if (first) {
       first = false;
       painted();
     }
     if (zoom !== desired || lean !== wantedLean || !target.equals(destination) || !view.equals(destinationView)) request();
-    else if (!paused) timer = window.setTimeout(request, focus ? 23 : 38);
+    else if (!paused) timer = window.setTimeout(request, focus || connection ? 23 : 38);
     else last = 0;
   }
 
@@ -144,7 +212,7 @@ export function startStudio(canvas: HTMLCanvasElement, painted: () => void, onPh
   }
   const observer = new ResizeObserver(resize);
   observer.observe(canvas);
-  document.addEventListener("visibilitychange", request);
+  document.addEventListener("visibilitychange", onVisibility);
   reduced.addEventListener("change", request);
   resize();
 
@@ -152,17 +220,16 @@ export function startStudio(canvas: HTMLCanvasElement, painted: () => void, onPh
     visible(next: boolean) {
       visible = next;
       if (visible) request();
-      else {
-        if (frame) cancelAnimationFrame(frame);
-        if (timer) window.clearTimeout(timer);
-        frame = timer = last = 0;
-      }
+      else suspend();
     },
-    focus(next: StudioStationId | null) {
-      if (next === focus) return;
-      if (next) time[next] = 0;
+    select(next: StudioView) {
+      if (next === selection) return;
+      selection = next;
+      director.setView(next);
+      activityKey = "";
+      priorTransfer = null;
+      glance = next.kind === "station" ? next.id : null;
       stage = -1;
-      focus = next;
       request();
     },
     highlight(next: StudioStationId | null) { highlighted = next; request(); },
@@ -184,10 +251,9 @@ export function startStudio(canvas: HTMLCanvasElement, painted: () => void, onPh
       return closest;
     },
     dispose() {
-      if (frame) cancelAnimationFrame(frame);
-      if (timer) window.clearTimeout(timer);
+      suspend();
       observer.disconnect();
-      document.removeEventListener("visibilitychange", request);
+      document.removeEventListener("visibilitychange", onVisibility);
       reduced.removeEventListener("change", request);
       const geometries = new Set<BufferGeometry>(), used = new Set<Material>();
       scene.traverse(object => {

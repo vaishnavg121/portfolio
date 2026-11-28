@@ -34,6 +34,7 @@ export const CompanionController = () => {
   const protectedRectsRef = useRef<{rect: DOMRect, margin: number}[]>([]);
   const priorityRectsRef = useRef<DOMRect[]>([]);
   const activeHoverTargetRef = useRef<HTMLElement | null>(null);
+  const studioGlanceRef = useRef<{x: number; until: number} | null>(null);
 
   const activeRequestRef = useRef<StateRequest>({
     state: "SLEEP", priority: 0, source: "init", minDuration: 0, requestedAt: typeof performance !== "undefined" ? performance.now() : 0
@@ -227,6 +228,12 @@ export const CompanionController = () => {
          requestState(stateType as CompanionState, "section", 70, 1500, stateType === "WAVE" ? 10000 : 0);
       } else if (detail?.type === "github-cell-hover") {
          requestState("INSPECT", "github", 85, 1200, 200);
+      } else if (detail?.type === "studio-glance") {
+         const x = detail.data?.x;
+         if (typeof x === "number" && Number.isFinite(x)) {
+           requestState("INSPECT", "studio", 77, 1150, 3300);
+           studioGlanceRef.current = {x,until:performance.now()+1150};
+         }
       } else if (detail?.type === "chat-hover" || detail?.type === "chat-open") {
          requestState("INSPECT", "chat-open", 90, 1500, 1000);
       } else if (detail?.type === "chat-typing" || detail?.type === "chat-streaming") {
@@ -398,9 +405,12 @@ export const CompanionController = () => {
       }
 
       // Direction Hysteresis
-      if (Math.abs(targetX - posRef.current.x) > 20) {
-        if (targetX > posRef.current.x && direction !== "right") setDirection("right");
-        if (targetX < posRef.current.x && direction !== "left") setDirection("left");
+      const studioGlance = studioGlanceRef.current;
+      const lookX = !reducedMotion && studioGlance && studioGlance.until > time && activeRequestRef.current.source === "studio"
+        ? studioGlance.x : targetX;
+      if (Math.abs(lookX - posRef.current.x) > 20) {
+        if (lookX > posRef.current.x && direction !== "right") setDirection("right");
+        if (lookX < posRef.current.x && direction !== "left") setDirection("left");
       }
       
       // Calculate continuous speed

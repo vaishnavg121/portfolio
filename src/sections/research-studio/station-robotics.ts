@@ -6,6 +6,8 @@ import { roboticsCell, rover, type RoboticsComposition } from "./robotics-cell";
 import { armAssembly, armFeeder, robotArmTarget, robotCues, robotEase, robotGrip, robotPayload, robotStill, solveRobotArm } from "./robotics-kinematics";
 import { roboticsBay } from "./studio-plan";
 import { modelGroup, type StudioMaterials } from "./studio-model";
+import { railEnd, worldPort } from "./studio-ports";
+import type { StationSignal } from "./studio-choreography";
 
 const point = (x: number, y: number, z: number) => new Vector3(x, y, z);
 const curve = (...points: Vector3[]) => new CatmullRomCurve3(points);
@@ -29,8 +31,7 @@ export function roboticsStation(parent: Group, m: StudioMaterials, shadow: MeshB
   const probeBus = curve(fixture, point(1.22, .229, -.164), point(1.405, .235, -.295), testPort);
   const backBus = curve(testPort, point(1.19, .237, -.762), point(.329, .220, -.804), point(-.63, .197, -.778),
     point(-1.11, .231, -.429), controller.clone().add(point(-.079, .009, -.012)));
-  const line = curve(point(2.71, .013, -1.745), point(1.25, .010, -1.745), point(-.19, .010, -1.745),
-    point(-.69, .012, -1.661), point(-.62, .020, -1.254), servicePort,
+  const line = curve(railEnd(root.position,-.82), point(-.69, .031, -1.61), point(-.62, .020, -1.254), servicePort,
     point(-.567, .216, -.751), point(-.892, .234, -.472), controller);
   const wires = modelGroup(root);
   const braid = m.satin(sage.clone().lerp(m.night, .44), .61, .31);
@@ -38,7 +39,7 @@ export function roboticsStation(parent: Group, m: StudioMaterials, shadow: MeshB
     wires.piece(new TubeGeometry(path, path === line ? 44 : 20, path === line ? .012 : .016, 5), braid, 0, 0, 0);
     path.getLengths();
   }
-  for (const port of [point(1.209, .017, -1.745), point(-.218, .017, -1.745), point(-.663, .042, -1.264)]) {
+  for (const port of [point(-.663, .042, -1.264)]) {
     wires.box(m.edge, port.x, port.y, port.z, .076, .023, .064, .013);
   }
   wires.build();
@@ -78,6 +79,7 @@ export function roboticsStation(parent: Group, m: StudioMaterials, shadow: MeshB
   const tangent = point(0, 0, 0);
   const shade = quiet.clone();
   let count = 0, tick = -1, stage = 0, lastDetail = false, lastPaused = false, lastEmphasis = -1;
+  let lastSignal: StationSignal | undefined;
 
   function send(path: CatmullRomCurve3, distance: number, repeats: number, power: number, reverse = false) {
     for (let index = 0; index < repeats && count < 14; index++) {
@@ -99,14 +101,16 @@ export function roboticsStation(parent: Group, m: StudioMaterials, shadow: MeshB
   const heldPoint = point(0, 0, 0);
   const joints = { yaw: 0, shoulder: 0, elbow: 0, wrist: 0 };
   return {
-    animate(elapsed: number, emphasis: number, paused: boolean, detailed: boolean) {
+    ports: { input: worldPort(root.position,line,true), output: worldPort(root.position,line,true), tint: ice },
+    animate(elapsed: number, emphasis: number, paused: boolean, detailed: boolean, status: StationSignal) {
       const nextTick = Math.floor(elapsed * 10);
       if (!detailed && nextTick === tick && lastDetail === detailed && lastPaused === paused &&
-        Math.abs(emphasis - lastEmphasis) < .035) return stage;
+        lastSignal === status && Math.abs(emphasis - lastEmphasis) < .035) return stage;
       tick = nextTick;
       lastDetail = detailed;
       lastPaused = paused;
       lastEmphasis = emphasis;
+      lastSignal = status;
       const t = paused ? robotStill : elapsed % robotCues[6];
       while (stage > 0 && t < robotCues[stage]) stage--;
       while (t >= robotCues[stage + 1]) stage++;
@@ -148,14 +152,14 @@ export function roboticsStation(parent: Group, m: StudioMaterials, shadow: MeshB
 
       count = 0;
       const repeats = detailed ? 5 : 2, power = .63 + .37 * emphasis;
-      if (!paused) {
-        if (stage === 0) send(line, (t - .02) / 1.28, repeats, power);
+      if (!paused && (status === "local" || status === "shared")) {
+        if (stage === 0 && status === "local") send(line, (t - .02) / 1.28, repeats, power);
         if (stage === 1) send(hingeBus, (t - 1.66) / 1.09, repeats, power);
         if (stage === 2) send(deckBus, (t - 6.79) / .75, repeats, power);
         if (stage === 3) send(probeBus, (t - 7.79) / .82, repeats, power);
         if (stage === 4) {
           send(backBus, (t - 10.36) / 1.05, repeats, power);
-          send(line, (t - 11.11) / .87, detailed ? 3 : 1, power * .59, true);
+          if (status === "local") send(line, (t - 11.11) / .87, detailed ? 3 : 1, power * .59, true);
         }
       }
       packets.count = count;

@@ -30,6 +30,7 @@ export type CompanionEventType =
   | "github-cell-hover"
   | "notes-open"
   | "command-trigger"
+  | "studio-glance"
   | "companion-trail-start"
   | "companion-trail-update"
   | "companion-trail-end";

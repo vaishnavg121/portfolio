@@ -5,6 +5,8 @@ import {
 import { agenticMachinery, type AgenticComposition } from "./agentic-machinery";
 import { modelGroup, type StudioMaterials } from "./studio-model";
 import { agenticBay } from "./studio-plan";
+import { railEnd, worldPort } from "./studio-ports";
+import type { StationSignal } from "./studio-choreography";
 
 const cue = [0, 1.65, 3.95, 5.95, 8.10, 10.15, 12.6];
 const ease = (value: number, start: number, end: number) => MathUtils.smoothstep(value, start, end);
@@ -39,15 +41,16 @@ export function agenticStation(parent: Group, m: StudioMaterials, shadow: MeshBa
   const approve = route(gate, verified, point(1.33, .49, .47), output.clone().add(point(0, .11, 0)));
   const reject = route(gate, point(1.04, .58, .42), point(.75, .45, .73), rejectTray);
   const corridor = route(output.clone().add(point(0, .045, 0)), point(1.29, .086, .84),
-    point(1.20, .018, 1.28), point(1.19, .015, 1.63), point(1.31, .008, 1.695),
-    point(3.13, .008, 1.695), point(4.94, .008, 1.695), point(5.40, .012, 1.76), point(5.57, .01, 2.10));
+    point(1.20, .030, 1.28), point(1.21, .033, 1.58), railEnd(root.position,1.37));
+  const inlet = route(queryPort, point(-1.565,.20,.79), point(-1.641,.059,1.10),
+    point(-1.66,.032,1.54), railEnd(root.position,-1.53));
 
   // Permanent connections remain visible throughout the cycle.
   const conduit = m.satin(m.mauve.clone().lerp(m.night, .43), .63, .40);
   const brass = m.satin(m.stone.clone().lerp(m.night, .36), .52, .42);
   const cables = modelGroup(root);
-  for (const [index, path] of [query, encode, feed, retrieval, exchange, returnMessage, check, approve, reject, corridor].entries()) {
-    const floor = path === corridor;
+  for (const [index, path] of [query, encode, feed, retrieval, exchange, returnMessage, check, approve, reject, corridor, inlet].entries()) {
+    const floor = path === corridor || path === inlet;
     cables.piece(new TubeGeometry(path, floor ? 46 : 18, floor ? .010 : .014, 5), index % 3 === 0 ? brass : conduit, 0, 0, 0);
     path.getLengths();
   }
@@ -124,7 +127,7 @@ export function agenticStation(parent: Group, m: StudioMaterials, shadow: MeshBa
   const scan = route(vaultPort, probe, centroids[nearest]);
   scan.getLengths();
   let packetCount = 0;
-  let lastTick = -1;
+  let lastTick = -1, lastSignal: StationSignal | undefined, lastEmphasis = -1;
   let stage = 0;
 
   function send(path: CatmullRomCurve3, progress: number, count: number, strength: number, size = .051) {
@@ -144,11 +147,14 @@ export function agenticStation(parent: Group, m: StudioMaterials, shadow: MeshBa
   }
 
   return {
-    animate(elapsed: number, emphasis: number, paused: boolean, detailed: boolean) {
+    ports: { input: worldPort(root.position,inlet), output: worldPort(root.position,corridor) },
+    animate(elapsed: number, emphasis: number, paused: boolean, detailed: boolean, status: StationSignal) {
       const t = paused ? 7.20 : elapsed % cue[6];
       const tick = detailed ? -1 : Math.floor(elapsed * 12);
-      if (!paused && !detailed && tick === lastTick) return stage;
+      if (!paused && !detailed && tick === lastTick && lastSignal === status && Math.abs(emphasis-lastEmphasis) < .035) return stage;
       lastTick = tick;
+      lastSignal = status;
+      lastEmphasis = emphasis;
       while (stage > 0 && t < cue[stage]) stage--;
       while (t >= cue[stage + 1]) stage++;
       const part = (t - cue[stage]) / (cue[stage + 1] - cue[stage]);
@@ -224,22 +230,24 @@ export function agenticStation(parent: Group, m: StudioMaterials, shadow: MeshBa
       }
 
       packetCount = 0;
-      if (stage === 0) send(query, part * 1.29, traces, energy);
-      if (stage === 0 || stage === 1) send(encode, (t - 1.09) / 1.02, traces, energy);
-      if (stage === 1) send(scan, (t - 2.12) / 1.16, traces, energy);
-      if (stage === 1 || stage === 2) send(retrieval, (t - 3.22) / 1.13, traces, energy);
-      if (stage === 2) {
-        send(exchange, part * 1.42, traces, energy);
-        send(returnMessage, (part - .19) * 1.63, traces, energy * .75);
-        send(check, (part - .51) * 2.17, traces, energy);
+      if (status === "local" || status === "shared") {
+        if (stage === 0) send(query, part * 1.29, traces, energy);
+        if (stage === 0 || stage === 1) send(encode, (t - 1.09) / 1.02, traces, energy);
+        if (stage === 1) send(scan, (t - 2.12) / 1.16, traces, energy);
+        if (stage === 1 || stage === 2) send(retrieval, (t - 3.22) / 1.13, traces, energy);
+        if (stage === 2) {
+          send(exchange, part * 1.42, traces, energy);
+          send(returnMessage, (part - .19) * 1.63, traces, energy * .75);
+          send(check, (part - .51) * 2.17, traces, energy);
+        }
+        if (stage === 3) {
+          send(check, part * 2.1, traces, energy);
+          send(approve, (part - .45) * 1.88, traces, energy);
+          send(reject, (part - .49) * 2.1, 2, energy * .35);
+        }
+        if (stage === 4) send(approve, part * 1.38, traces, energy);
+        if (stage === 5 && status === "local") send(corridor, part * 1.23, traces + 2, energy, .093);
       }
-      if (stage === 3) {
-        send(check, part * 2.1, traces, energy);
-        send(approve, (part - .45) * 1.88, traces, energy);
-        send(reject, (part - .49) * 2.1, 2, energy * .35);
-      }
-      if (stage === 4) send(approve, part * 1.38, traces, energy);
-      if (stage === 5) send(corridor, part * 1.23, traces + 2, energy, .093);
       packets.count = packetCount;
       packets.instanceMatrix.needsUpdate = true;
       if (packets.instanceColor) packets.instanceColor.needsUpdate = true;

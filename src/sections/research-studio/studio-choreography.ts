@@ -66,6 +66,7 @@ export const stationCycles = { learning: 9.85, agentic: 12.6, markets: 14, softw
 export type StationSignal = "idle" | "local" | "shared" | "settling";
 export type StationClock = { time: number; signal: StationSignal };
 export type ActiveBeat = { id: ScenarioId; index: number; progress: number; guided: boolean };
+export type StudioActivity = { beat: Omit<ActiveBeat,"progress"> | null; completed: boolean; paused: boolean };
 type Run = { id: ScenarioId; index: number; seconds: number; guided: boolean };
 const OVERVIEW: StudioView = { kind: "overview" };
 const ids = Object.keys(stationCycles) as StudioStationId[];

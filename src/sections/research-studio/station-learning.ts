@@ -4,6 +4,8 @@ import {
 } from "three";
 import { learningBay } from "./studio-plan";
 import { modelGroup, placeShadow, type StudioMaterials } from "./studio-model";
+import { railEnd, worldPort } from "./studio-ports";
+import type { StationSignal } from "./studio-choreography";
 
 const cycle = 9.85;
 const vial = { x: -.71, z: -.17 };
@@ -77,8 +79,12 @@ export function learningStation(parent: Group, materials: StudioMaterials, shado
   const feed = curve([[-2.30,.32,.61],[-1.79,.32,.60],[-1.62,.46,.43],[-1.50,.66,.20],[-1.28,.71,-.15],[-.76,.72,-.17]]);
   const encoded = curve([[vial.x,.86,vial.z],[vial.x,1.37,vial.z],[-.66,1.59,-.28],[-.17,1.31,-.40],[.37,1.03,-.26]]);
   const transfer = curve([[.37,1.03,-.26],[.72,.84,-.15],[.82,.38,-.15],[1.30,.34,-.15],[1.55,.67,-.16]]);
-  const exit = curve([[1.82,.64,-.12],[1.85,.36,-.47],[1.74,.10,-.82],[1.22,.052,-1.25],[.91,.045,-1.69],[.08,.02,-1.74],[-1.21,.025,-1.74]]);
-  for (const [path, radius] of [[feed,.036], [encoded,.033], [transfer,.030], [exit,.038]] as const) {
+  const exit = curve([[1.82,.64,-.12],[1.85,.36,-.47],[1.74,.10,-.82],[1.22,.052,-1.25],[.98,-.03,-1.62]]);
+  exit.points.push(railEnd(root.position,.67));
+  const inlet = curve([[-2.30,.32,.61],[-2.48,.24,.63],[-2.56,.023,.60],[-2.54,-.157,.43],
+    [-2.53,-.164,-.09],[-2.52,-.164,-1.36],[-2.48,-.164,-1.58]]);
+  inlet.points.push(railEnd(root.position,-2.26));
+  for (const [path, radius] of [[feed,.036], [encoded,.033], [transfer,.030], [exit,.036], [inlet,.014]] as const) {
     piece(new TubeGeometry(path, 32, radius, 8), m.metal, 0, 0, 0);
     const line = new TubeGeometry(path, 32, radius * .19, 5);
     line.translate(0, radius, 0);
@@ -142,23 +148,32 @@ export function learningStation(parent: Group, materials: StudioMaterials, shado
   const ink = glow.color.clone();
 
   return {
-    animate(elapsed: number, emphasis: number, paused: boolean) {
+    ports: { input: worldPort(root.position,inlet), output: worldPort(root.position,exit) },
+    animate(elapsed: number, emphasis: number, paused: boolean, detailed: boolean, signal: StationSignal, ambient: number) {
       const time = paused ? 5.4 : elapsed % cycle;
       const stage = time < 2.1 ? 0 : time < 4.4 ? 1 : time < 6.62 ? 2 : 3;
-      rotor.rotation.y = paused ? .77 : elapsed * (.30 + .18 * emphasis);
-      const amplitude = .78 + .13 * Math.sin(time * 3.4) + emphasis * .24;
+      rotor.rotation.y = paused ? .77 : signal === "idle" ? ambient * .14 : elapsed * (.30 + .18 * emphasis);
+      const amplitude = signal === "idle" && !paused ? .64 + .08 * Math.sin(ambient * 1.14) + emphasis * .27
+        : .78 + .13 * Math.sin(time * 3.4) + emphasis * .24;
       glow.color.copy(ink).multiplyScalar(amplitude);
       const reveal = paused ? 1 : Math.max(.21, Math.min(1, (time - 4.05) * .65));
       for (const line of plot) {
         const triangles = line.geometry.index!.count / 3;
         line.geometry.setDrawRange(0, Math.round(triangles * reveal) * 3);
       }
-      for (let i = 0; i < count; i++) {
+      const idle = !paused && (signal === "idle" || signal === "settling");
+      particles.count = idle ? 9 : detailed ? count : 25;
+      for (let i = 0; i < particles.count; i++) {
         const delay = (i % 11) * .105;
         const t = (time + cycle - delay) % cycle;
         const lane = (i % 3 - 1) * .027;
         let size = .72 + (i % 5) * .14;
-        if (i >= 30) {
+        if (idle) {
+          const phase = ambient * .68 + i * 2.39;
+          const radius = .09 + i % 4 * .034;
+          position.set(vial.x + Math.cos(phase) * radius, .72 + i * .052, vial.z + Math.sin(phase) * radius);
+          size *= .54;
+        } else if (i >= 30) {
           const phase = t * 1.12 + i * 2.39;
           const radius = .10 + (i % 5) * .046;
           position.set(vial.x + Math.cos(phase) * radius, .67 + ((i - 30) / 11) * .66, vial.z + Math.sin(phase) * radius);
@@ -168,7 +183,7 @@ export function learningStation(parent: Group, materials: StudioMaterials, shado
         else if (t < 6.62) transfer.getPointAt((t - 4.4) / 2.22, position);
         else {
           exit.getPointAt(Math.min(1, (t - 6.62) / 2.63), position);
-          size *= Math.min(1, Math.max(0, (9.48 - t) * 4.5));
+          size *= signal === "shared" ? .34 : Math.min(1, Math.max(0, (9.48 - t) * 4.5));
         }
         mover.position.copy(position);
         mover.position.y += .031 + lane * .46;
