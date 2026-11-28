@@ -5,15 +5,16 @@ export const studioBays = [
   { id: "learning", title: "AI & machine learning", x: 3.15, z: 1.76 },
 ] as const;
 
+export const roboticsBay = studioBays[0];
 export const agenticBay = studioBays[1];
 export const marketsBay = studioBays[2];
 export const learningBay = studioBays[3];
-export const studioStationIds = ["learning", "agentic", "markets"] as const;
+export const studioStationIds = ["learning", "agentic", "markets", "software"] as const;
 export type StudioStationId = typeof studioStationIds[number];
 export const learningPhases = ["Ingest observations", "Condition & encode", "Build a forecast", "Route the result"] as const;
 export const stationDetails = {
   learning: {
-    control: "Inspect AI / ML",
+    control: "AI / ML",
     title: "Sensor to forecast",
     summary: "Follow observations through conditioning, model inference and a visibility forecast. The animation illustrates the pipeline.",
     phases: learningPhases,
@@ -23,7 +24,7 @@ export const stationDetails = {
     projects: [{ href: "/work/imdpune", label: "Vertical Visibility" }, { href: "/work/windy", label: "Windy" }],
   },
   agentic: {
-    control: "Inspect Agentic / RAG",
+    control: "Agentic / RAG",
     title: "Question to sourced response",
     summary: "Follow a query through the document archive, semantic retrieval and an evidence gate. The floor conduit depicts a conceptual handoff.",
     phases: ["Interpret the query", "Retrieve source passages", "Exchange findings", "Verify the evidence", "Assemble the response", "Transfer the result"],
@@ -33,7 +34,7 @@ export const stationDetails = {
     projects: [{ href: "/work/swaneeti", label: "Swa.Neeti" }],
   },
   markets: {
-    control: "Inspect Finance & Markets",
+    control: "Finance & Markets",
     title: "Markets, risk and ledgers",
     summary: "An illustrative protective-put surface shows profit or loss by spot price and time remaining. In the separate loss model, VaR marks the worst 5% cutoff and Expected Shortfall is the mean of that tail.",
     note: "Illustrative ledger in minor units. 1,200 − 500 − 400 − 300 = 0.",
@@ -42,5 +43,16 @@ export const stationDetails = {
     image: "markets.webp",
     alt: "Finance workstation with a three-dimensional protective-put scenario surface, a circular risk instrument, and a three-lane ledger engine",
     projects: [{ href: "/work/spenza", label: "Spenza" }],
+  },
+  software: {
+    control: "Systems & Robotics",
+    title: "Compute, build, inspect",
+    summary: "A controller signals an arm to fit a sensor cassette onto a demonstration rover. An optical sweep illustrates inspection and returns feedback to the controller.",
+    note: "Conceptual test cell inspired by ThriveForce’s chassis and CAD work.",
+    phases: ["Process the input", "Move the arm", "Fit the cassette", "Scan the assembly", "Return sensor feedback", "Settle and reset"],
+    phaseLabel: "Robotics engineering stages",
+    image: "robotics.webp",
+    alt: "Robotics workstation showing an articulated arm, a four-wheel demonstration rover, a circuit board, and an optical inspection rail",
+    projects: [{ href: "#robotics", label: "ThriveForce" }],
   },
 } as const;

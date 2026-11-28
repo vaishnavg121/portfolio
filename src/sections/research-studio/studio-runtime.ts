@@ -5,10 +5,11 @@ import {
 import { studioArchitecture } from "./studio-architecture";
 import { lightStudio } from "./studio-light";
 import { contactMaterial, studioMaterials } from "./studio-model";
-import { agenticBay, learningBay, marketsBay, studioStationIds, type StudioStationId } from "./studio-plan";
+import { agenticBay, learningBay, marketsBay, roboticsBay, studioStationIds, type StudioStationId } from "./studio-plan";
 import { agenticStation } from "./station-agentic";
 import { financeStation } from "./station-finance";
 import { learningStation } from "./station-learning";
+import { roboticsStation } from "./station-robotics";
 
 export function startStudio(canvas: HTMLCanvasElement, painted: () => void, onPhase: (station: StudioStationId, phase: number) => void) {
   const context = canvas.getContext("webgl2", { alpha: true, antialias: true, powerPreference: "low-power" });
@@ -28,10 +29,12 @@ export function startStudio(canvas: HTMLCanvasElement, painted: () => void, onPh
   studioArchitecture(model, materials, contact, params.get("shell") ?? "C");
   const variant = params.get("agentic");
   const financeVariant = params.get("finance");
+  const roboticsVariant = params.get("robotics");
   const stations = {
     learning: learningStation(model, materials, contact),
     agentic: agenticStation(model, materials, contact, variant === "mechanical" || variant === "optical" ? variant : "hybrid"),
     markets: financeStation(model, materials, contact, financeVariant === "research" || financeVariant === "engineering" ? financeVariant : "hybrid"),
+    software: roboticsStation(model, materials, contact, roboticsVariant === "assembly" || roboticsVariant === "computing" ? roboticsVariant : "hybrid"),
   };
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   const pointer = new Vector2();
@@ -40,6 +43,9 @@ export function startStudio(canvas: HTMLCanvasElement, painted: () => void, onPh
     ["learning", new Box3(new Vector3(learningBay.x - 2.15, .21, .58), new Vector3(learningBay.x + 2.11, 2.58, 2.93))],
     ["agentic", new Box3(new Vector3(agenticBay.x - 1.89, .25, agenticBay.z - .82), new Vector3(agenticBay.x + 1.84, 1.73, agenticBay.z + .93))],
     ["markets", new Box3(new Vector3(marketsBay.x - 1.86, .24, marketsBay.z - .72), new Vector3(marketsBay.x + 1.78, 1.64, marketsBay.z + .83))],
+    ["software", new Box3(new Vector3(roboticsBay.x - 1.83, .24, roboticsBay.z - .82), new Vector3(roboticsBay.x + 1.83, .66, roboticsBay.z + .86))],
+    ["software", new Box3(new Vector3(roboticsBay.x - 1.24, .66, roboticsBay.z - .60), new Vector3(roboticsBay.x + .74, 1.72, roboticsBay.z + .68))],
+    ["software", new Box3(new Vector3(roboticsBay.x + .50, .66, roboticsBay.z - .51), new Vector3(roboticsBay.x + 1.63, 1.28, roboticsBay.z + .82))],
   ] as const;
   const intersection = new Vector3();
   const midpoint = new Vector3(0, 1.04, .12);
@@ -48,19 +54,21 @@ export function startStudio(canvas: HTMLCanvasElement, painted: () => void, onPh
     learning: new Vector3(learningBay.x, 1.24, learningBay.z - .11),
     agentic: new Vector3(agenticBay.x - .04, .87, agenticBay.z + .035),
     markets: new Vector3(marketsBay.x - .095, .88, marketsBay.z + .035),
+    software: new Vector3(roboticsBay.x - .026, .90, roboticsBay.z - .035),
   };
   // Each inspection pose has its own vertical span, minimum width, and viewing angle.
   const views = {
     learning: new Vector4(4.05, 6.4, 6.6, 5.3),
     agentic: new Vector4(3.27, 5.12, 5.97, 5.07),
     markets: new Vector4(3.38, 5.20, 9.15, 7.1),
+    software: new Vector4(3.09, 4.56, 6.4, 5.95),
   };
   const view = views.learning.clone(), gap = new Vector4();
   let width = 0, height = 0, frame = 0, timer = 0, last = 0, visible = false, first = true;
   let focus: StudioStationId | null = null, highlighted: StudioStationId | null = null;
   let zoom = 0, lean = 0, wantedLean = 0, stage = -1;
-  const time = { learning: 0, agentic: 0, markets: 0 };
-  const emphasis = { learning: 0, agentic: 0, markets: 0 };
+  const time = { learning: 0, agentic: 0, markets: 0, software: 0 };
+  const emphasis = { learning: 0, agentic: 0, markets: 0, software: 0 };
   const still = params.get("still") === "1";
 
   function pose() {

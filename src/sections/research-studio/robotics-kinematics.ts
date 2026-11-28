@@ -14,9 +14,9 @@ export const armGeometry = {
 export const armFeeder = { x: -1.25, y: .423, z: .49 } as const;
 export const armAssembly = { x: .62, y: .556, z: .37 } as const;
 export const robotCues = [0, 1.65, 3.7, 7.75, 10.35, 12, 18.6] as const;
-export const robotStill = 6.17;
+export const robotStill = 5.24;
 
-const rest = { x: -.39, y: 1.025, z: .32 };
+const rest = { x: -.28, y: 1.135, z: .29 };
 const overFeeder = { ...armFeeder, y: .77 };
 const overAssembly = { ...armAssembly, y: .897 };
 const beats = { grip: 3.98, install: 6.83, lift: 14.22, return: 16.9 } as const;

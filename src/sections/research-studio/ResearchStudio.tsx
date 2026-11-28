@@ -93,8 +93,9 @@ export function ResearchStudio() {
         <div ref={controls} className={styles.controls} role="group" aria-label="Inspect a workstation">
           {studioStationIds.map(id => (
             <button key={id} type="button" className={`portfolio-control ${styles.inspect}`} data-inspect={id}
+              aria-label={`Inspect ${stationDetails[id].control}`}
               aria-expanded={focused === id} aria-controls={focused === id ? "studio-details" : undefined} onClick={() => inspect(id)}>
-              <ScanLine size={14} aria-hidden />{stationDetails[id].control}
+              <ScanLine size={14} aria-hidden /><span><span className={styles.inspectPrefix}>Inspect </span>{stationDetails[id].control}</span>
             </button>
           ))}
           {focused && <button type="button" className={`portfolio-control ${styles.inspect}`} onClick={reset}>
@@ -106,7 +107,7 @@ export function ResearchStudio() {
         {!ready && <div className={styles.fallback}>
           <Image fill unoptimized
             src={`/images/research-studio/${details?.image ?? "overview.webp"}`}
-            alt={details?.alt ?? "A four-bay architectural cutaway with forecasting, agentic retrieval, and finance workstations"} />
+            alt={details?.alt ?? "A four-bay laboratory cutaway with forecasting, agentic retrieval, finance, and robotics workstations"} />
         </div>}
         <canvas ref={canvas} className={styles.canvas} data-studio-canvas aria-hidden
           onPointerMove={event => {
@@ -160,7 +161,7 @@ export function ResearchStudio() {
       </div>
       <ul className={styles.bays} aria-label="Studio workstations">
         {studioBays.map(bay => (
-          <li key={bay.id} data-active={bay.id in stationDetails ? "" : undefined}>
+          <li key={bay.id} data-highlight={bay.id === focused || bay.id === hover ? "" : undefined}>
             <span aria-hidden />{bay.title}
           </li>
         ))}

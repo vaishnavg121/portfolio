@@ -49,7 +49,7 @@
   box-shadow: var(--glass-shadow);
   animation: studio-reveal 210ms var(--ease-reveal) both;
 }
-.studio[data-studio-station="agentic"] .details { left: auto; right: 1.2%; }
+.studio:is([data-studio-station="agentic"], [data-studio-station="software"]) .details { left: auto; right: 1.2%; }
 @keyframes studio-reveal { from { opacity: 0; transform: translateY(5px); } }
 .details .kicker {
   font: .6rem var(--portfolio-mono), monospace;
@@ -77,22 +77,24 @@
   font: .61rem/1.3 var(--portfolio-mono), monospace;
 }
 .bays li { display: flex; align-items: center; gap: .42rem; }
-.bays li > span { width: .32rem; height: .32rem; border: 1px solid var(--accent-mauve); border-radius: 50%; }
-.bays li[data-active] { color: var(--text-primary); }
-.bays li[data-active] > span { background: var(--accent-petal); border-color: var(--accent-petal); }
+.bays li > span { width: .32rem; height: .32rem; border: 1px solid var(--accent-mauve); border-radius: 50%; background: color-mix(in srgb, var(--accent-petal) 52%, transparent); }
+.bays li[data-highlight] { color: var(--text-primary); }
+.bays li[data-highlight] > span { background: var(--accent-petal); border-color: var(--accent-petal); }
 .studio[data-studio-view="focus"] .bays { margin-top: .45rem; }
 
 @media (width < 52rem) {
   .canvas, .fallback { height: clamp(250px, 73vw, 380px); }
-  .studio:is([data-studio-station="agentic"], [data-studio-station="markets"]) .fallback img { object-fit: cover; }
+  .studio:is([data-studio-station="agentic"], [data-studio-station="markets"], [data-studio-station="software"]) .fallback img { object-fit: cover; }
   .details { position: relative; left: auto; bottom: auto; width: auto; margin-bottom: 1rem; }
-  .studio[data-studio-station="agentic"] .details { right: auto; }
+  .studio:is([data-studio-station="agentic"], [data-studio-station="software"]) .details { right: auto; }
   .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bays { display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); justify-content: start; }
 }
 @media (width < 37rem) {
   .heading { display: grid; }
-  .controls { justify-content: flex-start; }
+  .controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); justify-content: start; }
+  .inspect { justify-content: flex-start; }
+  .inspectPrefix { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .details { animation: none; }
