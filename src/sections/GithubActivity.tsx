@@ -1,5 +1,7 @@
 "use client";
 
+import { AtmosphereFilaments } from "@/components/AtmosphereFilaments";
+
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import { ArrowRightToLine, ArrowUpRight, GitCommitHorizontal, X } from "lucide-react";
 import { fetchGithubContributions } from "@/lib/actions/github";
@@ -406,7 +408,8 @@ export function GithubActivity() {
   }, []);
 
   return (
-    <section className="github-compact min-w-0" id="github" aria-labelledby="github-title" data-familiar-protect data-familiar-yield>
+    <section className="github-compact min-w-0 relative isolate" id="github" aria-labelledby="github-title" data-familiar-protect data-familiar-yield>
+      <AtmosphereFilaments zone="github" />
       <header className="github-compact-head">
         <h2 id="github-title"><GitCommitHorizontal aria-hidden="true" size={14} /> GitHub activity</h2>
         <a href={socials.github} className="portfolio-text-link" target="_blank" rel="noopener noreferrer" aria-label="Open GitHub profile">

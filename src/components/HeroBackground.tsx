@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { type MotionValue } from "framer-motion";
+import { AtmosphereFilaments } from "./AtmosphereFilaments";
 
 type HeroBackgroundProps = {
   bgX: MotionValue<number>;
@@ -68,6 +69,7 @@ export function HeroBackground({ bgX, bgY, reduced }: HeroBackgroundProps) {
   return (
     <div ref={root} aria-hidden="true" className="hero-ambient">
       <div ref={field} className="hero-ambient-field">
+        <AtmosphereFilaments zone="hero" />
         <svg className="hero-ambient-dust" viewBox="0 0 390 372">
           <g className="dust-far">{farDust.map(([x, y, size, opacity]) => <circle key={x} cx={x} cy={y} r={size} opacity={opacity} />)}</g>
           <g className="dust-near">{nearDust.map(([x, y, size, opacity], index) => (

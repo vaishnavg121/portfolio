@@ -8,6 +8,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronLeft, ChevronRight, MoveRight } from "lucide-react";
 import { MagneticEffect } from "@/components/effects";
 import { ProjectMotion } from "./work/ProjectMotion";
+import { AtmosphereFilaments } from "@/components/AtmosphereFilaments";
 import { projects as PROJECTS } from "@/lib/profile";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
@@ -120,6 +121,7 @@ export const SelectedWork = () => {
 
   return (
     <section className="portfolio-chapter chapter-divider relative" id="work" ref={section}>
+      <AtmosphereFilaments zone="work" />
       <div className="portfolio-frame">
         <header className="project-heading">
           <h2 className="chapter-heading">Selected Work</h2>

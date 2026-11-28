@@ -1,5 +1,7 @@
 "use client";
 
+import { AtmosphereFilaments } from "@/components/AtmosphereFilaments";
+
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -133,6 +135,7 @@ export function ResearchStudio() {
         </button>
       </header>
       <div className={styles.stage} data-panel={card ? panel : undefined} data-studio-stage data-familiar-protect data-familiar-yield data-familiar-margin="8" data-hover={hover ?? undefined}>
+        <AtmosphereFilaments zone="studio" />
         <div className={styles.viewport}>
         {!ready && <div className={styles.fallback}>
           <Image fill unoptimized src={`/images/research-studio/${object === "television" && channel === 1 ? "television-alt.webp" : card?.image ?? "overview.webp"}`}

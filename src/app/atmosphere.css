@@ -41,7 +41,7 @@
   pointer-events: none;
 }
 .hero-ambient-field::before {
-  opacity: var(--filament-opacity);
+  opacity: calc(var(--filament-opacity) * .48);
   background: url("/assets/theme/global/atmosphere-drift.svg") right top / 100% auto no-repeat;
   mask-image: linear-gradient(90deg, transparent 3%, black 38%);
 }
@@ -95,7 +95,6 @@
 }
 .portfolio-atmosphere > #notes {
   background-image:
-    linear-gradient(#0b0809, transparent min(7rem, 20%)),
     radial-gradient(ellipse 54% 68% at 57% 53%, color-mix(in srgb, var(--accent-mauve) 10%, transparent), transparent);
 }
 .portfolio-atmosphere > #contact {
@@ -130,3 +129,52 @@
 @media (prefers-reduced-motion: reduce) {
   .hero-ambient-dust :is(.dust-near, .dust-far) { animation: none; }
 }
+
+.atmosphere-filaments {
+  position: absolute;
+  z-index: -1;
+  width: min(96%, 70rem);
+  height: 100%;
+  fill: none;
+  stroke-width: .72;
+  opacity: var(--field-presence, .22);
+  pointer-events: none;
+  mask-image: radial-gradient(ellipse 72% 64% at 52% 51%, black 27%, transparent 86%);
+}
+.atmosphere-filaments[data-filaments="hero"] {
+  z-index: 0;
+  inset: 4% 0 auto;
+  width: 100%;
+  height: 80%;
+  --field-presence: .4;
+}
+.atmosphere-filaments[data-filaments="studio"] {
+  z-index: 0;
+  inset: auto 0 0 auto;
+  height: 58%;
+  --field-presence: .2;
+}
+.atmosphere-filaments[data-filaments="github"] {
+  inset: 0 0 auto auto;
+  width: min(72%, 46rem);
+  --field-presence: .14;
+}
+.atmosphere-filaments[data-filaments="work"] { inset: 3% auto auto 0; height: min(48rem, 80%); }
+.atmosphere-filaments[data-filaments="contact"] { inset: auto -3% -8% auto; height: 100%; --field-presence: .32; }
+.atmosphere-filaments[data-treatment="quiet"] { opacity: 0; }
+.atmosphere-filaments[data-treatment="contour"] { opacity: calc(var(--field-presence, .22) * 1.45); }
+.atmosphere-filaments[data-treatment="contour"] .atmosphere-current { display: none; }
+.atmosphere-current {
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-dasharray: 9 91;
+  animation: atmosphere-current 17s linear infinite paused;
+}
+.atmosphere-filaments[data-moving] .atmosphere-current { animation-play-state: running; }
+@keyframes atmosphere-current { to { stroke-dashoffset: -100; } }
+@media (width < 43rem) {
+  .atmosphere-filaments[data-filaments="hero"] { height: 70%; opacity: calc(var(--field-presence) * .76); }
+  .atmosphere-filaments[data-filaments="hero"][data-treatment="quiet"] { opacity: 0; }
+  .atmosphere-filaments[data-filaments="hero"][data-treatment="contour"] { opacity: var(--field-presence); }
+}
+@media (prefers-reduced-motion: reduce) { .atmosphere-current { display: none; } }

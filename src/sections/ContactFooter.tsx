@@ -30,6 +30,7 @@ export const ContactFooter = () => {
 
   return (
     <footer className="contact-section portfolio-chapter chapter-divider relative overflow-hidden" id="contact" ref={containerRef}>
+      <AtmosphereFilaments zone="contact" />
       <div className="portfolio-frame relative z-10 flex flex-col items-center text-center">
 
         <div className="mb-8 lg:mb-16 relative">
@@ -88,3 +89,4 @@ export const ContactFooter = () => {
     </footer>
   );
 };
+import { AtmosphereFilaments } from "@/components/AtmosphereFilaments";
