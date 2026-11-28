@@ -7,7 +7,7 @@ import { ChatbotLauncher } from "./ChatbotLauncher";
 
 const sections = [
   ["github", "GitHub activity"],
-  ["interwoven", "Interwoven Intelligence"],
+  ["research-studio", "Research Studio"],
   ["work", "Selected work"],
   ["knowledge", "Skills landscape"],
   ["about", "Experience & education"],

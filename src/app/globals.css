@@ -275,7 +275,7 @@ body {
 .hero-frame {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "name" "portrait" "intro" "interwoven" "cards";
+  grid-template-areas: "name" "portrait" "intro" "studio" "cards";
   gap: clamp(0.85rem, 2vw, 1.4rem);
   padding-block: clamp(2rem, 5svh, 4rem) clamp(2.75rem, 5vw, 5rem);
 }
@@ -499,7 +499,7 @@ body {
 @media (width >= 43rem), (width >= 35rem) and (height <= 30rem) {
   .hero-frame {
     grid-template-columns: minmax(0, 1.42fr) minmax(0, 1fr);
-    grid-template-areas: "name portrait" "intro portrait" "interwoven interwoven" "cards cards";
+    grid-template-areas: "name portrait" "intro portrait" "studio studio" "cards cards";
     column-gap: clamp(0.8rem, 3vw, 2.25rem);
   }
   .hero-name { font-size: clamp(2.8rem, 8vw, 6rem); }

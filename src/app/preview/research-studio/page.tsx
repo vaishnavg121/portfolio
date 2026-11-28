@@ -1,11 +1,5 @@
 import { notFound } from "next/navigation";
-import { Hero } from "@/sections/Hero";
-import { ResearchStudio } from "@/sections/research-studio/ResearchStudio";
-import { SelectedWork } from "@/sections/SelectedWork";
-import { SkillsConstellation } from "@/sections/SkillsConstellation";
-import { ThriveForceSection } from "@/sections/robotics/ThriveForceSection";
-import { ContactFooter } from "@/sections/ContactFooter";
-import "../../atmosphere.css";
+import Home from "../../page";
 
 export const metadata = {
   title: "Research Studio preview | Vaishnav Gadamsetty",
@@ -14,13 +8,5 @@ export const metadata = {
 
 export default function ResearchStudioPreview() {
   if (process.env.NODE_ENV !== "development" && process.env.RESEARCH_STUDIO_PREVIEW !== "1") notFound();
-  return (
-    <main className="portfolio-atmosphere relative">
-      <Hero researchStudio={<ResearchStudio />} />
-      <SelectedWork />
-      <SkillsConstellation />
-      <ThriveForceSection />
-      <ContactFooter />
-    </main>
-  );
+  return <Home />;
 }

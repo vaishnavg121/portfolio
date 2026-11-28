@@ -1,12 +1,14 @@
-# Research Studio prototype
+# Research Studio
 
-The prototype lives at `/preview/research-studio` in local development. A deployed preview requires `RESEARCH_STUDIO_PREVIEW=1` at build time. The home route continues to render Interwoven Intelligence.
+The Studio lives on the homepage at `#research-studio`. The comparison route at `/preview/research-studio` renders the homepage in local development and on deployments built with `RESEARCH_STUDIO_PREVIEW=1`.
 
 ## Editing the model
 
 - `studio-plan.ts` defines the four bay coordinates, phase labels, and project links for the completed stations.
 - `studio-architecture.ts` models the foundation, service routes, reserved bays, and glazing. The preview query `shell=A` shows the open shell and `shell=B` adds the deeper smoked-glass enclosure. The default is the hybrid shell.
 - `studio-model.ts` derives materials from portfolio tokens, rounds and batches opaque geometry, and creates the local contact shading and nameplates. Transparent panes stay separate for depth sorting.
+- `studio-interior.ts` adds the lounge wing, deep window reveals, three framed prints, and curtain panels. The `room=straight` comparison shortens the gaming alcove. The default L-shaped wing gives the desk and seating more room. Curtain vertices update at up to 12 Hz from a light analytic deformation.
+- `studio-furniture.ts` batches the floor lamp, rug, desk, and gaming equipment. The rounded cushions have a shaped profile and modeled seams. The PC fans and seat response advance on the room clock. `studio-interior-media.ts` uses two original screen shaders and a small derivative of the existing IMD project artwork.
 - `studio-light.ts` creates a small prefiltered environment map once, with a warm key light and restrained fill. The preview queries `light=soft` and `light=rim` show the alternative light rigs.
 - `station-learning.ts` contains the sensor manifold, transparent chamber, encoder rotor, compute modules, forecast panes and conduit paths. Its data particles are instanced. The visible forecast shapes are illustrative and carry no measured values.
 - `agentic-machinery.ts` models the archive, horizontal optical vault, distinct processing units, verification gate, and output tray. The hybrid combines a three-tier archive with a wider chamber. The preview queries `agentic=mechanical` and `agentic=optical` show the two alternative compositions.
@@ -16,11 +18,13 @@ The prototype lives at `/preview/research-studio` in local development. A deploy
 - `robotics-arm.ts` builds the pedestal, beveled links, layered bearings, cable guides, wrist, and opposed fingers. `robotics-cell.ts` builds the controller, feeder, demonstration rover, and side-mounted optical carriage. The queries `robotics=assembly` and `robotics=computing` show the initial alternatives.
 - `robotics-kinematics.ts` defines the arm geometry, joint limits, tool trajectory, and cassette handoffs. `station-robotics.ts` poses the rig, follows the gripper's world position, animates the inspection sweep, and routes the control and feedback signals.
 - `studio-ports.ts` maps each workstation's local intake and outlet to the common floor rail. `studio-network.ts` builds the trench hardware, recessed junction, and physical collars. It caches arc-length samples, draws packets in two instanced pools, and reuses the same buffer for the trail. The trail, floor reflection, and port lamps follow the current transfer.
-- `studio-choreography.ts` describes timed transfers, station-specific processing windows, and rests. The director advances on elapsed time from the renderer. Station animations keep their own internal clocks. Selecting the machine already in motion continues from its current pose. An interrupted arm completes its cycle and returns the cassette to the feeder at reduced emphasis.
-- `studio-runtime.ts` owns the camera, single render loop, lifecycle, and resource disposal. The ambient overview holds its camera still and cycles through the three scenarios with quiet intervals. Guided exploration reframes the active pair, while standalone inspection frames one station. Detailed motion is reserved for a selected station or guided processing. The renderer suspends outside the viewport and while the tab is hidden.
-- `ResearchStudio.tsx` and `StudioConnections.tsx` expose selection and contextual links by pointer, touch, and keyboard. Reduced-motion and WebGL fallback visitors can inspect all four workstations and read each connection. Reduced motion uses a stationary route with no continuous animation.
+- `studio-choreography.ts` advances four independently offset station clocks even while a machine or personal object is selected. Route cues raise local emphasis and gate departures on the sending station’s existing output phase. Switching views leaves all station poses continuous.
+- `studio-runtime.ts` owns the camera, single render loop, lifecycle, and resource disposal. It frames the whole room, a route, or an individual target. A pixel budget caps resolution as the viewport grows. Background machinery uses its lower update cadence. The renderer suspends outside the viewport and while the tab is hidden.
+- `ResearchStudio.tsx` and `StudioConnections.tsx` expose selection and contextual links by pointer, touch, and keyboard. Desktop uses the projected object bounds to pick a stable panel gutter. The panel sits beneath the model on phones. The object list and still renders provide equivalent inspection controls when WebGL is unavailable. Reduced motion has a stationary room and route.
 
-The models are generated from editable Three.js geometry. The five WebP files are renders of the same scene for browsers without WebGL. To regenerate the fallback art, open the preview with `still=1`, capture the transparent WebGL canvas in the overview and selected poses, and trim the transparent margin before exporting WebP.
+The fallback WebPs are renders of the same editable Three.js geometry. To regenerate them, open the preview with `still=1`, capture the transparent WebGL canvas in the overview and selected poses, and trim the transparent margin before exporting WebP.
+
+The cutaway composition takes cues from the use of deliberate room boundaries and soft baked shadows in authored browser interiors. The curtains use vertex deformation to suggest fabric folds with a fixed geometry budget. [Interactive room case study](https://tympanus.net/codrops/2025/04/08/3d-world-in-the-browser-with-blender-and-three-js/) · [Baked lighting case study](https://tympanus.net/codrops/2026/11/25/brice-deguigne-3d-portfolio/) · [Blender cloth reference](https://docs.blender.org/manual/en/latest/physics/cloth/introduction.html).
 
 ## Shared sequences
 

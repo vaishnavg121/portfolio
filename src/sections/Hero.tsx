@@ -10,11 +10,10 @@ import { HeroBackground } from "@/components/HeroBackground";
 import { DotPortrait } from "@/components/portrait/DotPortrait";
 import { HeroCards } from "./HeroCards";
 import { GithubActivity } from "./GithubActivity";
-import { Interwoven } from "./interwoven/Interwoven";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-export const Hero = ({ researchStudio }: { researchStudio?: ReactNode }) => {
+export const Hero = ({ researchStudio }: { researchStudio: ReactNode }) => {
   const reduced = useReducedMotion();
   const pointer = usePointer();
   const bgX = useTransform(pointer.sNX, [-1, 1], [-10, 10]);
@@ -83,7 +82,7 @@ export const Hero = ({ researchStudio }: { researchStudio?: ReactNode }) => {
           <GithubActivity />
         </motion.div>
 
-        {researchStudio ?? <Interwoven />}
+        {researchStudio}
 
         <div className="hero-deck-stage">
           <HeroCards />
