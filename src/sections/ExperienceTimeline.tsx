@@ -47,10 +47,6 @@ export const ExperienceTimeline = () => {
           scrollTrigger: { trigger: chapter, start: "top 88%", once: true },
         });
       }
-      gsap.fromTo(".exp-timeline-rail-active", { scaleY: 0 }, {
-        scaleY: 1, ease: "none",
-        scrollTrigger: { trigger: ".exp-timeline-container", start: "top 72%", end: "bottom 56%", scrub: 0.45 },
-      });
     }, containerRef);
     return () => media.revert();
   }, { scope: containerRef });
@@ -58,22 +54,14 @@ export const ExperienceTimeline = () => {
   return (
     <section className="portfolio-chapter chapter-divider experience-section overflow-hidden relative" id="about" ref={containerRef}>
       <div className="portfolio-frame relative z-10">
-        <h2 className="chapter-heading mb-8 border-b border-border pb-4 relative z-20 lg:mb-16">
+        <h2 className="chapter-heading mb-10 relative z-20 lg:mb-16">
           Experience / Chapters
         </h2>
 
-        <div className="exp-timeline-container flex flex-col gap-8 max-lg:pl-5 lg:gap-14 relative">
-
-          <div className="absolute left-1 lg:left-[50%] top-0 bottom-0 w-[1px] bg-border/30 z-0" />
-          <div className="exp-timeline-rail-active absolute left-1 lg:left-[50%] top-0 bottom-0 w-[1px] bg-accent z-0 origin-top" />
-
-          {CHAPTERS.map((chapter, i) => (
-            <div key={chapter.num} className="relative chapter-block border-b border-border pb-6 last:border-b-0 last:pb-0 lg:pb-9">
-              <div className="bg-num absolute -top-3 right-0 lg:right-auto lg:-top-8 lg:-left-3 text-[56px] lg:text-[8.4rem] font-display font-bold text-surface-elevated z-0 leading-none select-none opacity-55">
-                0{i + 1}
-              </div>
-
-              <div className="chap-content relative z-10 grid grid-cols-1 lg:grid-cols-[50%_50%] gap-3 lg:gap-0 items-start" data-familiar-avoid>
+        <div className="exp-timeline-container flex flex-col gap-10 lg:gap-16 relative">
+          {CHAPTERS.map(chapter => (
+            <article key={chapter.num} className="relative chapter-block">
+              <div className="chap-content relative z-10 grid grid-cols-1 lg:grid-cols-[47%_1fr] gap-2 lg:gap-8 items-start" data-familiar-avoid>
                 
                 <div className="pt-2 lg:pr-20 max-w-full">
                   <div className="font-mono text-accent text-xs tracking-widest mb-2 lg:mb-4">
@@ -84,7 +72,7 @@ export const ExperienceTimeline = () => {
                   </h3>
                 </div>
 
-                <div className="pt-1 lg:pt-2 lg:pl-20">
+                <div className="pt-1 lg:pt-8">
                   <div className="text-text-primary font-mono text-xs tracking-wider mb-2 lg:mb-4 uppercase">
                     {chapter.subtitle}
                   </div>
@@ -93,7 +81,7 @@ export const ExperienceTimeline = () => {
                   </p>
                 </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </div>

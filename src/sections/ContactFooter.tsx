@@ -46,8 +46,8 @@ export const ContactFooter = () => {
               className="contact-build inline-block relative z-10"
               data-familiar-avoid
             >
-              LET&apos;S BUILD SOMETHING <br className="hidden md:block" />
-            </span>
+              LET&apos;S BUILD SOMETHING
+            </span>{" "}
 
             <span
               className="contact-interesting text-accent italic font-serif inline-block relative z-10"
