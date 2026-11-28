@@ -16,7 +16,7 @@ export const stationDetails = {
   learning: {
     control: "AI / ML",
     title: "AI & machine learning",
-    summary: "During my internship at IMD Pune, I cleaned and aligned aviation-weather observations and compared forecasting models. I wanted to see how well they held up on messy sensor data.",
+    summary: "I enjoy figuring out what a model can learn from messy data. Aviation weather got me interested in time-series forecasting, especially when observations come from different sensors.",
     phases: learningPhases,
     phaseLabel: "Forecasting stages",
     image: "station.webp",
@@ -26,7 +26,7 @@ export const stationDetails = {
   agentic: {
     control: "Agentic / RAG",
     title: "Agentic intelligence & RAG",
-    summary: "I like building LLM tools that can show where an answer came from. I used retrieval alongside weather analytics in Windy. In Swa.Neeti, I’ve been working on finding relevant legal sources and tracing answers back to them.",
+    summary: "I’m curious what LLMs can do when they can look things up and use tools. In Swa.Neeti and Windy, I’ve explored how to keep answers tied to the evidence behind them.",
     phases: ["Interpret the query", "Retrieve source passages", "Exchange findings", "Verify the evidence", "Assemble the response", "Transfer the result"],
     phaseLabel: "Agentic retrieval stages",
     image: "agentic.webp",
@@ -36,7 +36,7 @@ export const stationDetails = {
   markets: {
     control: "Finance & Markets",
     title: "Finance & markets",
-    summary: "I’m doing a Finance minor alongside Computer Science. I’ve studied derivatives and risk, and I’ve been building Spenza, where even a rounding decision can change what someone owes.",
+    summary: "My Finance minor got me interested in how markets price risk and how a small change in an assumption can change a decision. I like working through those questions with code.",
     phases: ["Receive market inputs", "Reprice the scenarios", "Measure the loss tail", "Allocate the expense", "Route the balanced output", "Return to rest"],
     phaseLabel: "Financial research stages",
     image: "markets.webp",
@@ -46,7 +46,7 @@ export const stationDetails = {
   software: {
     control: "Systems & Robotics",
     title: "Systems & robotics",
-    summary: "I enjoy seeing software move something physical. I’ve studied microprocessors and digital design, and I’ve worked on mechanical design with ThriveForce. The arm here is an imagined test cell.",
+    summary: "I like seeing what happens when software meets something physical. Working with ThriveForce gave me a chance to explore that from the mechanical side too.",
     phases: ["Process the input", "Move the arm", "Fit the cassette", "Scan the assembly", "Return sensor feedback", "Settle and reset"],
     phaseLabel: "Robotics engineering stages",
     image: "robotics.webp",
@@ -60,26 +60,26 @@ import type { StudioObjectId } from "./studio-choreography";
 export const studioObjects = {
   lounge: {
     title: "The lounge",
-    summary: "I enjoy sketching and taking photos outside coursework and projects. I put a sketchbook here for that part of the room.",
+    summary: "I like sketching when I get the time. Taking photos is another way I notice little details I would usually walk past.",
     image: "lounge.webp",
     alt: "A rounded sofa with three cushions, a sketchbook on the side table, and a floor lamp beside the curtains",
   },
   desk: {
     title: "Gaming desk",
-    summary: "I enjoy PC gaming in my free time.",
+    summary: "PC gaming is one of my favourite ways to unwind after class or a long stretch of coding.",
     image: "desk.webp",
     alt: "A gaming desk with a monitor, keyboard, headphones, and a PC with lit fans",
   },
   television: {
     title: "Television",
-    summary: "I enjoy watching movies, so I gave the lounge a small screen.",
+    summary: "I like watching movies when I have an evening free. I put a couple of short visual loops on this screen.",
     image: "television.webp",
     alt: "A television on a low console showing a pixel landscape beneath the window",
   },
   artwork: {
     title: "Wall prints",
-    summary: "I put a print from my aviation-weather project next to a couple of abstract studies.",
+    summary: "I wanted this corner to feel quiet, so I went with a mountain scene, a study of arches, and an ink print.",
     image: "artwork.webp",
-    alt: "Framed aviation-weather illustration and abstract contour prints",
+    alt: "Framed mountain landscape, architectural arches, and an abstract ink print",
   },
 } as const satisfies Record<StudioObjectId,{ title:string; summary:string; image:string; alt:string }>;

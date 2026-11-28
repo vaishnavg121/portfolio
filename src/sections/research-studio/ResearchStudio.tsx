@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ArrowUpRight, Network, X } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { startStudio } from "./studio-runtime";
 import { stationDetails, studioBays, studioObjects, type StudioStationId } from "./studio-plan";
 import { studioScenarios, type ScenarioId, type StudioActivity, type StudioObjectId, type StudioView } from "./studio-choreography";
@@ -30,6 +31,7 @@ export function ResearchStudio() {
   const [activity, setActivity] = useState<StudioActivity | null>(null);
   const [panel, setPanel] = useState<"left" | "right">("right");
   const [channel, setChannel] = useState(0);
+  const reducedMotion = useReducedMotion();
   const lastObjectControl = useRef<HTMLButtonElement | null>(null);
   const focused = view.kind === "station" ? view.id : null;
   const object = view.kind === "object" ? view.id : null;
@@ -122,7 +124,7 @@ export function ResearchStudio() {
       <header className={styles.heading} data-familiar-yield>
         <div>
           <h2 id="studio-title">The Research Studio</h2>
-          <p>I study Computer Science with a Finance minor at BITS Pilani, Hyderabad Campus. This little room brings together what I build and what I enjoy outside class.</p>
+          <p>I study Computer Science with a minor in Finance. This little room is full of things I enjoy learning about, building, and doing outside class.</p>
         </div>
         <button ref={explore} type="button" className={`portfolio-control ${styles.explore}`}
           aria-controls={connection ? "studio-connections" : undefined}
@@ -174,7 +176,12 @@ export function ResearchStudio() {
             }
           }} />
         </div>
-        {card && <aside key={card.title} id="studio-details" aria-labelledby="studio-card-title" className={styles.details} data-familiar-protect data-familiar-yield>
+        <AnimatePresence initial={false}>
+        {card && <motion.aside key="studio-details" id="studio-details" aria-labelledby="studio-card-title" className={styles.details}
+          initial={reducedMotion ? false : {opacity:0,y:7,scale:.987}} animate={{opacity:1,y:0,scale:1}}
+          exit={reducedMotion ? undefined : {opacity:0,y:3,transition:{duration:.12}}}
+          transition={reducedMotion ? {duration:0} : {type:"spring",stiffness:385,damping:33}}
+          data-familiar-protect data-familiar-yield>
           <div className={styles.cardHeading}>
             <h3 id="studio-card-title">{card.title}</h3>
             <button className={styles.close} type="button" aria-label="Close details" onClick={reset}><X size={15} aria-hidden /></button>
@@ -192,12 +199,12 @@ export function ResearchStudio() {
             {details?.projects.map(project => (
               <Link key={project.href} className="portfolio-text-link" href={project.href}>{project.label} <ArrowUpRight size={12} aria-hidden /></Link>
             ))}
-            {object === "artwork" && <Link className="portfolio-text-link" href="/work/imdpune">Aviation weather project <ArrowUpRight size={12} aria-hidden /></Link>}
             {object === "television" && <button type="button" className={styles.detailConnection} onClick={() => setChannel(value => 1 - value)}>Change scene</button>}
             {object === "television" && <span className={styles.channel} role="status">{channel === 0 ? "Evening ridge" : "Contour study"}</span>}
             {focused && <button type="button" className={styles.detailConnection} onClick={() => guide(relatedScenario[focused])}>View connection</button>}
           </div>
-        </aside>}
+        </motion.aside>}
+        </AnimatePresence>
       </div>
       <div ref={controls} className={styles.bays} role="group" aria-label="Inspect a workstation" data-familiar-yield>
         {studioBays.map(bay => (
