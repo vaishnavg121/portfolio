@@ -3,7 +3,7 @@ import {
   Raycaster, Scene, Texture, Vector2, Vector3, Vector4, WebGLRenderer, type BufferGeometry, type Material,
 } from "three";
 import { studioArchitecture } from "./studio-architecture";
-import { lightStudio } from "./studio-light";
+import { lightStudio, studioReflections } from "./studio-light";
 import { contactMaterial, studioMaterials } from "./studio-model";
 import { agenticBay, learningBay, marketsBay, roboticsBay, studioStationIds, type StudioStationId } from "./studio-plan";
 import { agenticStation } from "./station-agentic";
@@ -28,13 +28,15 @@ export function startStudio(
   renderer.toneMapping = ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.24;
   const scene = new Scene();
+  const lightingRequest = new AbortController();
+  const reflectionMap = studioReflections(lightingRequest.signal).catch(() => null);
   const camera = new OrthographicCamera(-1, 1, 1, -1, .1, 90);
   const model = new Group();
   scene.add(model);
   const params = new URLSearchParams(location.search);
   const materials = studioMaterials(canvas);
   const contact = contactMaterial();
-  const removeLight = lightStudio(renderer, scene, materials, params.get("light") ?? "");
+  lightStudio(scene, materials, params.get("light") ?? "");
   const straight = params.get("room") === "straight";
   studioArchitecture(model, materials, contact, params.get("shell") ?? "C",straight);
   const interior = studioInterior(model,materials,contact,straight);
@@ -113,6 +115,7 @@ export function startStudio(
   let ambient = 0, activityKey = "";
   let priorTransfer: string | null = null;
   let channel = 0;
+  let prepared = false;
   const probe = params.get("probe") === "1";
   const sample = new Vector3();
   const isObject = (id: Hit): id is StudioObjectId => Object.hasOwn(interior.centers,id);
@@ -145,7 +148,7 @@ export function startStudio(
     camera.updateMatrixWorld();
   }
 
-  const running = () => visible && !document.hidden && width > 0 && height > 0;
+  const running = () => prepared && visible && !document.hidden && width > 0 && height > 0;
   function request() {
     if (timer) window.clearTimeout(timer);
     timer = 0;
@@ -255,6 +258,21 @@ export function startStudio(
   document.addEventListener("visibilitychange", onVisibility);
   reduced.addEventListener("change", request);
   resize();
+  void reflectionMap.then(async map => {
+    if (lightingRequest.signal.aborted) {
+      map?.dispose();
+      return;
+    }
+    scene.environment = map;
+    try {
+      await renderer.compileAsync(scene,camera);
+    } catch {
+      if (context.isContextLost()) return;
+    }
+    if (lightingRequest.signal.aborted) return;
+    prepared = true;
+    request();
+  });
 
   return {
     visible(next: boolean) {
@@ -295,6 +313,7 @@ export function startStudio(
     },
     dispose() {
       suspend();
+      lightingRequest.abort();
       observer.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       reduced.removeEventListener("change", request);
@@ -315,7 +334,7 @@ export function startStudio(
         if ("map" in material && material.map instanceof Texture) material.map.dispose();
         material.dispose();
       });
-      removeLight();
+      scene.environment?.dispose();
       renderer.dispose();
     },
   };
