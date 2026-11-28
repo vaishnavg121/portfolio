@@ -275,7 +275,7 @@ body {
 .hero-frame {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "name" "portrait" "intro" "studio" "cards";
+  grid-template-areas: "name" "portrait" "intro" "studio" "activity" "cards";
   gap: clamp(0.85rem, 2vw, 1.4rem);
   padding-block: clamp(2rem, 5svh, 4rem) clamp(2.75rem, 5vw, 5rem);
 }
@@ -499,7 +499,7 @@ body {
 @media (width >= 43rem), (width >= 35rem) and (height <= 30rem) {
   .hero-frame {
     grid-template-columns: minmax(0, 1.42fr) minmax(0, 1fr);
-    grid-template-areas: "name portrait" "intro portrait" "studio studio" "cards cards";
+    grid-template-areas: "name portrait" "intro portrait" "studio studio" "activity activity" "cards cards";
     column-gap: clamp(0.8rem, 3vw, 2.25rem);
   }
   .hero-name { font-size: clamp(2.8rem, 8vw, 6rem); }
@@ -583,33 +583,11 @@ body {
   overflow-wrap: anywhere;
 }
 
-.case-art, .case-visual {
-  border: 1px solid var(--border-strong);
-  background: radial-gradient(ellipse at 70% 50%, #1c1519, #0d0a0b 72%);
-}
-
-.case-art { box-shadow: 0 24px 70px #0006; }
 .case-body { max-width: 68rem; padding-block: var(--chapter-space); }
 .case-body > * + * { margin-block-start: var(--chapter-space); }
 .case-section { border-block-start: 1px solid var(--border); padding-block-start: clamp(1.25rem, 3.5vw, 2.75rem); }
 .case-section > :is(p, div) > p { line-height: 1.68; }
 .case-section-header h2 { text-wrap: balance; }
-
-body:has(.case-image-dialog[open]) { overflow: hidden; }
-.case-image-dialog {
-  position: fixed;
-  inset: 0;
-  width: min(calc(100% - 2 * var(--portfolio-edge)), 70rem);
-  max-height: calc(100dvh - 2 * var(--portfolio-edge));
-  margin: auto;
-  color: var(--text-primary);
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-card);
-  overflow: auto;
-}
-
-.case-image-dialog::backdrop { background: #080506e8; }
 
 .experience-section { --chapter-glow-x: 22%; }
 .experience-section .exp-timeline-container { max-width: 72rem; margin-inline: auto; }

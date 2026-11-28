@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { ArrowRightToLine, ArrowUpRight, GitCommitHorizontal, X } from "lucide-react";
 import { fetchGithubContributions } from "@/lib/actions/github";
 import {
-  calendarDate, calendarKeyIndex, contributionAnchor, contributionColumns, contributionMonthOffset, contributionMonths, contributionView,
+  calendarDate, calendarKeyIndex, contributionAnchor, contributionColumns, contributionFit, contributionMonthOffset, contributionMonths,
   type GithubCalendarData,
 } from "@/lib/github-calendar";
 import { socials } from "@/lib/profile";
@@ -25,6 +25,8 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
   const [hovered, setHovered] = useState(-1);
   const [keyboard, setKeyboard] = useState(-1);
   const [flat, setFlat] = useState(false);
+  const [inspecting, setInspecting] = useState(false);
+  const [canInspect, setCanInspect] = useState(false);
   const [ready, setReady] = useState(false);
   const [modeAvailable, setModeAvailable] = useState(false);
   const [lastDetail, setLastDetail] = useState(-1);
@@ -35,7 +37,6 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
   const scene = useRef<Sculpture | null>(null);
   const contact = useRef<{ id: number; x: number; y: number; index: number } | null>(null);
   const lean = useRef({ x: 0, y: 0 });
-  const positioned = useRef(false);
   const entered = useRef(false);
   const sculpted = ready && !flat;
   const hot = hovered < 0 ? keyboard : hovered;
@@ -50,25 +51,27 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
   useLayoutEffect(() => {
     const element = viewport.current;
     if (!element) return;
-    const place = () => {
-      if (!element.clientWidth || !element.scrollWidth) return false;
-      if (!positioned.current) {
-        element.scrollTo({ left: element.scrollWidth, behavior: "instant" });
-        positioned.current = true;
-      }
+    const place = (initial = false) => {
+      if (!element.clientWidth) return;
+      const fit = contributionFit(element.clientWidth,weeks.length,inspecting);
+      element.style.setProperty("--gh-unit",fit.pitch+"px");
+      element.style.setProperty("--gh-height",fit.height+"px");
+      element.style.setProperty("--gh-width",fit.boardWidth+"px");
       element.dataset.calendarReady = "";
-      return true;
+      setCanInspect(contributionFit(element.clientWidth,weeks.length,false).pitch < 13.5);
+      if (initial) element.scrollLeft = inspecting ? element.scrollWidth : 0;
     };
-    if (place()) return;
-    const observer = new ResizeObserver(() => { if (place()) observer.disconnect(); });
+    place(true);
+    const observer = new ResizeObserver(() => place());
     observer.observe(element);
     return () => observer.disconnect();
-  }, [last]);
+  }, [inspecting,weeks.length]);
 
   useLayoutEffect(() => {
     const board = viewport.current;
     if (!board) return;
     const labels = Array.from(board.querySelectorAll<HTMLElement>(".github-month"));
+    const grid = board.querySelector(".github-calendar-grid");
     let active = true;
     const fit = () => {
       if (!active) return;
@@ -85,6 +88,7 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
     fit();
     const resize = new ResizeObserver(fit);
     resize.observe(board);
+    if (grid) resize.observe(grid);
     document.fonts?.ready.then(fit);
     return () => { active = false; resize.disconnect(); };
   }, [weeks, sculpted]);
@@ -299,10 +303,9 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
           move between days. Use Enter or Space to select a day and Escape to dismiss its details.
         </p>
         <div ref={viewport} className="github-calendar-viewport" role="region" aria-label="Contribution calendar"
-          aria-describedby="github-description" data-anchor="github-calendar-center">
+          aria-describedby="github-description" data-anchor="github-calendar-center" data-inspecting={inspecting || undefined}>
           <div className="github-calendar-grid" data-sculpted={sculpted ? "" : undefined}
-            style={{ "--gh-weeks": weeks.length, "--gh-tail": contributionView.tail,
-              "--gh-month-offset": contributionMonthOffset } as CSSProperties}>
+            style={{ "--gh-month-offset": contributionMonthOffset } as CSSProperties}>
             <span className="github-edge-anchor" data-anchor="github-calendar-start" />
             <canvas ref={canvas} className="github-canvas" aria-hidden="true" data-github-sculpture
               onPointerMove={event => {
@@ -377,10 +380,12 @@ function ContributionCalendar({ calendar }: { calendar: GithubCalendarData }) {
             <button type="button" className="tactile-quiet" aria-label="Show 3D contribution sculpture"
               aria-pressed={!flat} onClick={() => { if (flat) { setFlat(false); clearHover(); } }}>3D</button>
           </div>}
-          <button type="button" className="github-latest tactile-quiet" aria-label="Show latest contributions"
+          {(canInspect || inspecting) && <button type="button" className="github-latest tactile-quiet" aria-pressed={inspecting}
+            onClick={() => { setInspecting(value=>!value); setSelected(-1); clearHover(); }}>{inspecting ? "Full year" : "Inspect dates"}</button>}
+          {inspecting && <button type="button" className="github-latest tactile-quiet" aria-label="Show latest contributions"
             onClick={() => viewport.current?.scrollTo({
               left: viewport.current.scrollWidth, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-            })}>Latest <ArrowRightToLine aria-hidden="true" size={12} /></button>
+            })}>Latest <ArrowRightToLine aria-hidden="true" size={12} /></button>}
         </div>
       </footer>
     </>

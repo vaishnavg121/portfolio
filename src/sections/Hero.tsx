@@ -79,10 +79,10 @@ export const Hero = ({ researchStudio }: { researchStudio: ReactNode }) => {
             </div>
             <p className="hero-annotation font-hand text-xl text-accent md:text-2xl">{"// curiosity usually gets out of hand"}</p>
           </div>
-          <GithubActivity />
         </motion.div>
 
         {researchStudio}
+        <GithubActivity />
 
         <div className="hero-deck-stage">
           <HeroCards />

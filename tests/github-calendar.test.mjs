@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { calendarDate, calendarKeyIndex, contributionAnchor, contributionColumns, contributionMonths, parsePublicCalendar } from "../src/lib/github-calendar.ts";
+import { calendarDate, calendarKeyIndex, contributionAnchor, contributionColumns, contributionFit, contributionMonths, contributionView, parsePublicCalendar } from "../src/lib/github-calendar.ts";
 
 test("public GitHub cells are sorted, grouped by UTC week and counted from source tooltips", () => {
   const cell = (id, date, level, count) => `<td id="contribution-day-component-${id}" data-date="${date}" data-level="${level}"></td>
@@ -41,4 +41,16 @@ test("month labels use the week that actually contains the month boundary", () =
   ]), [
     { date: "2026-11-29", week: 0 }, { date: "2026-12-01", week: 0 }, { date: "2027-01-01", week: 2 },
   ]);
+});
+
+test("full-year projection fits the whole calendar while inspection keeps touch-sized pitch", () => {
+  for (const width of [286,352,742,1296]) {
+    const fit = contributionFit(width,53,false);
+    assert.equal(fit.boardWidth,width);
+    assert.ok(Math.abs(fit.pitch*(53+contributionView.tail)-width)<1e-9);
+    assert.ok(fit.height >= fit.pitch*8.7);
+  }
+  const detail = contributionFit(352,53,true);
+  assert.ok(detail.pitch>=15);
+  assert.ok(detail.boardWidth>352);
 });

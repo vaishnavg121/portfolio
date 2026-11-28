@@ -48,6 +48,13 @@ function sculptureView(x: number, y: number, z: number) {
 export const contributionView = sculptureView(-.49, .75, .65);
 export const contributionMonthOffset = contributionView.left + contributionView.right.z / contributionView.right.x * 6.58;
 
+export function contributionFit(width: number, weekCount: number, inspect: boolean) {
+  const units = weekCount + contributionView.tail;
+  const fit = width / units;
+  const pitch = inspect ? Math.max(15.25,fit) : fit;
+  return { pitch, height: Math.max(66,pitch * 8.7), boardWidth: inspect ? Math.ceil(pitch * units) : width };
+}
+
 export function contributionMonths(weeks: GithubContribution[][]) {
   const months: { date: string; week: number }[] = [];
   for (const [week, days] of weeks.entries()) {

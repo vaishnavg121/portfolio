@@ -1,9 +1,11 @@
 .github-compact {
   --gh-unit: 11.5px;
-  --gh-height: 111px;
+  --gh-height: clamp(72px,14vw,205px);
+  grid-area: activity;
   position: relative;
-  margin-block-start: 1.05rem;
-  max-width: 42rem;
+  margin-block: .35rem .62rem;
+  padding-block-start: .62rem;
+  border-top: 1px solid var(--edge-soft);
 }
 
 .github-compact-head, .github-compact-foot, .github-actions {
@@ -17,7 +19,7 @@
   align-items: center;
   gap: .42rem;
   color: var(--text-primary);
-  font-size: .84rem;
+  font-size: .97rem;
   font-weight: 600;
 }
 .github-compact-head h2 svg { color: var(--accent-petal); }
@@ -39,7 +41,7 @@
 }
 .github-calendar-viewport {
   position: relative;
-  overflow: auto hidden;
+  overflow: clip;
   overscroll-behavior-inline: contain;
   overflow-anchor: none;
   scrollbar-width: thin;
@@ -47,10 +49,11 @@
   touch-action: pan-x pan-y pinch-zoom;
 }
 .github-calendar-viewport:not([data-calendar-ready]) { visibility: hidden; }
+.github-calendar-viewport[data-inspecting] { overflow: auto hidden; }
 .github-calendar-grid {
   position: relative;
-  width: max(100%, calc((var(--gh-weeks) + var(--gh-tail)) * var(--gh-unit)));
-  height: calc(var(--gh-height) + 7px);
+  width: var(--gh-width,100%);
+  height: calc(var(--gh-height) + 13px);
 }
 .github-canvas {
   position: absolute;
@@ -194,7 +197,7 @@
   border-left: 1px solid var(--edge-soft);
   font-variant-numeric: tabular-nums;
 }
-.github-actions { gap: .46rem; }
+.github-actions { gap: .46rem; flex-wrap: wrap; justify-content: flex-end; }
 .github-mode {
   display: inline-flex;
   align-items: center;
@@ -233,8 +236,7 @@
 }
 
 @media (pointer: coarse) {
-  .github-compact { --gh-unit: 16px; --gh-height: 142px; }
-  .github-calendar-viewport { mask-image: linear-gradient(90deg, transparent, black 7px, black calc(100% - 7px), transparent); }
+  .github-calendar-viewport[data-inspecting] { mask-image: linear-gradient(90deg, transparent, black 7px, black calc(100% - 7px), transparent); }
   .github-latest, .github-mode button, .github-tooltip button { min-height: 44px; }
   .github-mode button, .github-tooltip button { min-width: 44px; }
   .github-mode { padding: 1px; }
