@@ -150,7 +150,7 @@
 @media (width < 52rem) {
   .canvas { height: clamp(262px, 77vw, 420px); }
   .stage[data-panel] .canvas { height: clamp(275px, 80vw, 430px); }
-  .details { margin: -.05rem .12rem .55rem; }
+  .details { margin: .20rem .12rem .55rem; }
   .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bays { display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); justify-content: start; }
 }

@@ -211,11 +211,12 @@ export function ResearchStudio() {
           </button>
         ))}
       </div>
-      <details className={styles.roomObjects} data-familiar-yield>
+      <details className={styles.roomObjects} data-familiar-protect data-familiar-yield>
         <summary>Explore the room</summary>
         <div role="group" aria-label="Personal objects">
           {(Object.keys(studioObjects) as StudioObjectId[]).map(id => (
             <button key={id} className={styles.detailConnection} type="button" data-object={id} aria-pressed={id === object}
+              aria-controls={id === object ? "studio-details" : undefined}
               onClick={event => {lastObjectControl.current = event.currentTarget; inspect(id);}}>{studioObjects[id].title}</button>
           ))}
         </div>
