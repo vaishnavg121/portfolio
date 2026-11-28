@@ -135,10 +135,17 @@
   z-index: -1;
   width: min(96%, 70rem);
   height: 100%;
+  overflow: clip;
+  pointer-events: none;
+}
+.atmosphere-filaments > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   fill: none;
   stroke-width: .72;
   opacity: var(--field-presence, .22);
-  pointer-events: none;
   mask-image: radial-gradient(ellipse 72% 64% at 52% 51%, black 27%, transparent 86%);
 }
 .atmosphere-filaments[data-filaments="hero"] {
@@ -162,19 +169,33 @@
 .atmosphere-filaments[data-filaments="work"] { inset: 3% auto auto 0; height: min(48rem, 80%); }
 .atmosphere-filaments[data-filaments="contact"] { inset: auto -3% -8% auto; height: 100%; --field-presence: .32; }
 .atmosphere-filaments[data-treatment="quiet"] { opacity: 0; }
-.atmosphere-filaments[data-treatment="contour"] { opacity: calc(var(--field-presence, .22) * 1.45); }
+.atmosphere-filaments[data-treatment="contour"] > svg { opacity: calc(var(--field-presence, .22) * 1.45); }
 .atmosphere-filaments[data-treatment="contour"] .atmosphere-current { display: none; }
 .atmosphere-current {
-  stroke-width: 1.25;
-  stroke-linecap: round;
-  stroke-dasharray: 9 91;
-  animation: atmosphere-current 17s linear infinite paused;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
 }
-.atmosphere-filaments[data-moving] .atmosphere-current { animation-play-state: running; }
-@keyframes atmosphere-current { to { stroke-dashoffset: -100; } }
+.atmosphere-current::before {
+  content: "";
+  position: absolute;
+  inset: -1px auto auto -20px;
+  width: 40px;
+  height: 3px;
+  background: radial-gradient(ellipse, var(--accent-stone), transparent 70%);
+}
+.atmosphere-filaments[data-moving] .atmosphere-current {
+  animation: atmosphere-current 17s linear infinite;
+}
+@keyframes atmosphere-current {
+  0% { transform: translate(var(--current-0)); opacity: 0; }
+  20% { transform: translate(var(--current-1)); opacity: .15; }
+  40% { transform: translate(var(--current-2)); opacity: .42; }
+  60% { transform: translate(var(--current-3)); opacity: .42; }
+  80% { transform: translate(var(--current-4)); opacity: .14; }
+  100% { transform: translate(var(--current-5)); opacity: 0; }
+}
 @media (width < 43rem) {
-  .atmosphere-filaments[data-filaments="hero"] { height: 70%; opacity: calc(var(--field-presence) * .76); }
-  .atmosphere-filaments[data-filaments="hero"][data-treatment="quiet"] { opacity: 0; }
-  .atmosphere-filaments[data-filaments="hero"][data-treatment="contour"] { opacity: var(--field-presence); }
+  .atmosphere-filaments[data-filaments="hero"] { height: 70%; --field-presence: .30; }
 }
 @media (prefers-reduced-motion: reduce) { .atmosphere-current { display: none; } }

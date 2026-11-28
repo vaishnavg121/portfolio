@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, type CSSProperties } from "react";
 
 const profiles = {
   hero: { count: 7, curve: [299, 60, 397, 24], spacing: 13 },
@@ -11,10 +11,18 @@ const profiles = {
 } as const;
 
 export function AtmosphereFilaments({ zone }: { zone: keyof typeof profiles }) {
-  const field = useRef<SVGSVGElement>(null);
+  const field = useRef<HTMLDivElement>(null);
   const shade = "filament" + useId();
   const { count, curve, spacing } = profiles[zone];
   const [start, left, right, end] = curve;
+  const pulse = Object.fromEntries([0, .2, .4, .6, .8, 1].map((time, index) => {
+    const remaining = 1 - time;
+    const weights = [remaining ** 3, 3 * remaining ** 2 * time, 3 * remaining * time ** 2, time ** 3];
+    const x = weights[0] * -30 + weights[1] * 239 + weights[2] * 516 + weights[3] * 830;
+    const y = weights[0] * (start + spacing) + weights[1] * (left + spacing * .66)
+      + weights[2] * (right + spacing * 1.09) + weights[3] * (end + spacing);
+    return [`--current-${index}`, `${x / 8}%, ${y / 4.8}%`];
+  })) as CSSProperties;
 
   useEffect(() => {
     const layer = field.current;
@@ -41,26 +49,25 @@ export function AtmosphereFilaments({ zone }: { zone: keyof typeof profiles }) {
   }, []);
 
   return (
-    <svg ref={field} aria-hidden="true" focusable="false" data-filaments={zone}
-      className="atmosphere-filaments" width="0" height="0" viewBox="0 0 800 480" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id={shade}>
-          <stop offset="0" stopColor="var(--accent-mauve)" stopOpacity="0" />
-          <stop offset=".38" stopColor="var(--accent-petal)" />
-          <stop offset=".65" stopColor="var(--accent-stone)" />
-          <stop offset="1" stopColor="var(--accent-stone)" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <g stroke={`url(#${shade})`} fill="none">
-        {Array.from({ length: count }, (_, index) => {
-          const s = index * spacing;
-          const d = `M -30 ${start+s} C 239 ${left+s*.66}, 516 ${right+s*1.09}, 830 ${end+s}`;
-          return <path key={index} d={d} vectorEffect="non-scaling-stroke" />;
-        })}
-      </g>
-      <g className="atmosphere-current" fill="none" stroke={`url(#${shade})`}>
-        <path vectorEffect="non-scaling-stroke" pathLength="100" d={`M -30 ${start+spacing} C 239 ${left+spacing*.66}, 516 ${right+spacing*1.09}, 830 ${end+spacing}`} />
-      </g>
-    </svg>
+    <div ref={field} aria-hidden="true" data-filaments={zone} className="atmosphere-filaments" style={pulse}>
+      <svg focusable="false" width="0" height="0" viewBox="0 0 800 480" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={shade}>
+            <stop offset="0" stopColor="var(--accent-mauve)" stopOpacity="0" />
+            <stop offset=".38" stopColor="var(--accent-petal)" />
+            <stop offset=".65" stopColor="var(--accent-stone)" />
+            <stop offset="1" stopColor="var(--accent-stone)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <g stroke={`url(#${shade})`} fill="none">
+          {Array.from({ length: count }, (_, index) => {
+            const s = index * spacing;
+            const d = `M -30 ${start+s} C 239 ${left+s*.66}, 516 ${right+s*1.09}, 830 ${end+s}`;
+            return <path key={index} d={d} vectorEffect="non-scaling-stroke" />;
+          })}
+        </g>
+      </svg>
+      <span className="atmosphere-current" />
+    </div>
   );
 }
