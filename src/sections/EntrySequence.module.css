@@ -1,0 +1,15 @@
+.entry {
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:45;
+  place-items:center;
+  pointer-events:none;
+  background:radial-gradient(ellipse at 59% 45%, color-mix(in srgb,var(--accent-mauve) 11%,var(--background)),var(--background) 69%);
+  opacity:1;
+}
+.entry[data-signature], :global(html[data-entry-pending]) .entry { display:grid; }
+.entry canvas { display:block; width:min(37.5rem,94vw); height:auto; }
+@media (prefers-reduced-motion:reduce) {
+  .entry[data-signature], :global(html[data-entry-pending]) .entry { display:none; }
+}

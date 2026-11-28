@@ -39,6 +39,27 @@ export const viewport: Viewport = {
   themeColor: "#0a0a0a",
 };
 
+const entryBootstrap = `(() => {
+  if (location.pathname !== "/" || location.hash || document.hidden ||
+    matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const debug = ${process.env.NODE_ENV === "development"} && new URLSearchParams(location.search).get("entry");
+  if (debug === "off") return;
+  try {
+    if (!debug && sessionStorage.getItem("portfolio-signature-v1")) return;
+    if (!debug) sessionStorage.setItem("portfolio-signature-v1", "1");
+  } catch { return; }
+  const root = document.documentElement;
+  root.dataset.entryPending = String(performance.now());
+  const release = () => {
+    delete root.dataset.entryPending;
+    for (const type of ["pointerdown","keydown","scroll","visibilitychange"])
+      window.removeEventListener(type, release);
+  };
+  for (const type of ["pointerdown","keydown","scroll","visibilitychange"])
+    window.addEventListener(type, release, {passive:true});
+  setTimeout(release, 1380);
+})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -47,8 +68,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${caveat.variable} antialiased`}
     >
+      <head><script dangerouslySetInnerHTML={{ __html: entryBootstrap }} /></head>
       <body className="min-h-full bg-background text-text-primary flex flex-col selection:bg-accent-soft selection:text-accent">
         <div className="portfolio-content">
           <PointerProvider>
