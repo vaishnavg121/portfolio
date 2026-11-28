@@ -1,0 +1,75 @@
+.section {
+  --chapter-glow-x: 71%;
+  color: var(--text-primary);
+}
+
+.composition {
+  max-width: 74rem;
+  margin-inline: auto;
+  display: grid;
+  grid-template-areas: "intro" "visual" "inspection";
+  align-items: center;
+  gap: 1.3rem;
+}
+
+.intro { grid-area: intro; }
+.intro h2 { margin-block: .65rem 1rem; }
+.intro > p:not(.role), .readout p, .context p {
+  max-width: 40ch;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.role {
+  font-family: var(--portfolio-mono), monospace;
+  text-transform: uppercase;
+  font-size: .72rem;
+  letter-spacing: .06em;
+  color: var(--accent-stone);
+}
+
+.visual {
+  grid-area: visual;
+  position: relative;
+  isolation: isolate;
+  height: clamp(13rem, 41vw, 33rem);
+  min-width: 0;
+  background: radial-gradient(ellipse 53% 43% at 53% 55%, var(--atmosphere-stone), transparent);
+}
+.visual img {
+  object-fit: contain;
+}
+.inspection { grid-area: inspection; align-self: start; min-width: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1.15rem; }
+.controls button { min-height: 44px; padding-inline: clamp(.65rem, 2vw, .9rem); }
+.controls button[aria-pressed="true"] {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+}
+.readout { min-height: 8.2rem; }
+.readout h3 { font-family: var(--portfolio-display), sans-serif; font-size: 1.25rem; margin-bottom: .3rem; }
+.readout > div { animation: thriveforce-in .24s var(--ease-reveal) both; }
+.context { font-size: .9rem; }
+.context summary {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: .6rem;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--accent-stone);
+}
+.context summary::-webkit-details-marker { display: none; }
+.context[open] summary svg { rotate: 180deg; }
+.context p { margin-top: .35rem; }
+
+@media (width >= 58rem) {
+  .composition {
+    grid-template-areas: "intro visual" "inspection visual";
+    grid-template-columns: minmax(18rem, .77fr) minmax(0, 1.23fr);
+    gap: 1.65rem clamp(2rem, 4vw, 5rem);
+  }
+  .intro { align-self: end; }
+}
+@media (prefers-reduced-motion: reduce) { .readout > div { animation: none; } }
+@keyframes thriveforce-in { from { opacity: 0; transform: translateY(5px); } }
