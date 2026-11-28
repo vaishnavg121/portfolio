@@ -131,7 +131,7 @@ export function roboticsStation(parent: Group, m: StudioMaterials, shadow: MeshB
       const inspect = robotEase(t, 8.27, 8.68) * (1 - robotEase(t, 10.03, 10.39));
       const scanReturn = 1 - robotEase(t, 10.23, 11.54);
       scanner.position.z = park + (scan * scanReturn) * (.794 - park);
-      sweep.visible = detailed && inspect > .03;
+      sweep.visible = inspect > .03;
       sweep.position.z = scanner.position.z;
       sheetMaterial.opacity = .10 * inspect;
       const drawOutline = robotEase(t, 8.77, 9.58) * (1 - robotEase(t, 10.37, 11.66));

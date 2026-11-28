@@ -92,7 +92,7 @@ export function financeStation(parent: Group, m: StudioMaterials, shadow: MeshBa
     return { x: toLossX(z), shape: normalDensity(z) / normalDensity(0), inTail: z >= normalLossTail.threshold };
   });
   let packetCount = 0, tick = -1, lastDetail = false, lastPaused = false, stage = 0, lastSignal: StationSignal | undefined;
-  let activeLedger = true, lastEmphasis = -1;
+  let lastEmphasis = -1;
 
   function send(path: CatmullRomCurve3, progress: number, length: number, count: number, energy: number, highlight = ivoryTrace) {
     for (let i = 0; i < count && packetCount < 16; i++) {
@@ -120,7 +120,6 @@ export function financeStation(parent: Group, m: StudioMaterials, shadow: MeshBa
       lastPaused = paused;
       lastSignal = status;
       lastEmphasis = emphasis;
-      if (status !== "settling") activeLedger = status === "local";
       const t = paused ? 10.28 : elapsed % cues[6];
       while (stage > 0 && t < cues[stage]) stage--;
       while (t >= cues[stage + 1]) stage++;
@@ -154,7 +153,7 @@ export function financeStation(parent: Group, m: StudioMaterials, shadow: MeshBa
       density.instanceMatrix.needsUpdate = true;
       if (density.instanceColor) density.instanceColor.needsUpdate = true;
 
-      const ledgerTime = paused || activeLedger ? t : Math.min(t,7.4);
+      const ledgerTime = t;
       const routing = ease(ledgerTime, 7.57, 8.22) * (1 - ease(ledgerTime, 9.56, 10.26));
       let credited = 0;
       const available = ease(ledgerTime, 7.47, 8.16) * expenseExample.total;
